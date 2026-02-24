@@ -7,12 +7,20 @@ namespace GMPS.API.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        public readonly IUserInterface userInterface;
+        public readonly IUserInterface _userInterface;
+
+        public UserController(IUserInterface userInterface)
+        {
+            _userInterface = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUser()
+        {
+            var data = await _userInterface.GetUser();
+            return Ok(data);
 
 
-
-
-
-
+        }
     }
 }

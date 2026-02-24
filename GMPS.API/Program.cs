@@ -1,4 +1,6 @@
+using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.Mappers;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,9 +13,8 @@ builder.Services.AddSwaggerGen();
 // Dependency Injection for Services and Repositories
 
  builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
-    
-
-
+builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
+builder.Services.AddScoped<GPMS.APPLICATION.Abstractions.IUserInterface, GPMS.INFRASTRUCTURE.Repositories.SqlServerUserRepository>();
 
 //------------------------------------------------------
 var app = builder.Build();
