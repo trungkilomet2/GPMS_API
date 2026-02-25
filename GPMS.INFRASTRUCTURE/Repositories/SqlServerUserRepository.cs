@@ -25,7 +25,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
          async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
         {
-            var data = await context.USERs.ToListAsync();
+            var data = await context.USER.ToListAsync();
 
             return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
