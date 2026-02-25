@@ -10,11 +10,4 @@
     <ProjectReference Include="..\GPMS.DOMAIN\GPMS.DOMAIN.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="Exceptions\" />
-    <Folder Include="Validators\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
