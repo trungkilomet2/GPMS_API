@@ -9,7 +9,7 @@ namespace GPMS.APPLICATION.Abstractions
 {
     public interface IUserInterface
     {   
-        Task<IEnumerable<User>> GetUser();
+       Task<IEnumerable<User>> GetUser();
 
 
 

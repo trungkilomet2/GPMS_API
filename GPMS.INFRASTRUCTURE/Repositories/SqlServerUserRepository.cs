@@ -22,7 +22,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public async Task<IEnumerable<User>> GetUser()
+
+         async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
         {
             var data = await context.USERs.ToListAsync();
 
