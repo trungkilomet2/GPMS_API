@@ -29,5 +29,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
+        //a 
     }
 }
