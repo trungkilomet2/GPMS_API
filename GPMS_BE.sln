@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E18C9CDA-BFC3-4AA8-8115-EE55531933D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPMS.TEST", "TestProject1\GPMS.TEST.csproj", "{CBEB4075-5DE6-4C62-A391-439A13836BA4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GPMS.TEST", "Tests\GPMS.TEST.csproj", "{CBEB4075-5DE6-4C62-A391-439A13836BA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
