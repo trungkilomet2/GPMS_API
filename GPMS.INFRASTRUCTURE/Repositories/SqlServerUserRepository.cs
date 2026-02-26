@@ -22,27 +22,29 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public Task<User> Create(User entity)
+        public async Task<User> Create(User entity)
         {
             throw new NotImplementedException();
         }
 
-        public Task Delete(object id)
+        public async Task Delete(object id)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<User>> GetAll(object? entity)
+        public async Task<IEnumerable<User>> GetAll(object? entity)
+        {
+            var data = await context.USER.ToListAsync();
+
+            return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
+        }
+
+        public async Task<User> GetById(object id)
         {
             throw new NotImplementedException();
         }
 
-        public Task<User> GetById(object id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<User> Update(User entity)
+        public async Task<User> Update(User entity)
         {
             throw new NotImplementedException();
         }

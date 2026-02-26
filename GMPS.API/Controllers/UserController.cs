@@ -27,7 +27,7 @@ namespace GMPS.API.Controllers
         [HttpGet]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
-            var result = await _userRepo.GetUser();
+            var result = await _userRepo.GetAllUser();
             return new RestDTO<IEnumerable<User>>
             {
                 Data = result,

@@ -9,7 +9,7 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface IUserRepositories
     {   
-       Task<IEnumerable<User>> GetUser();
+       Task<IEnumerable<User>> GetAllUser();
        Task<User> Login(string username, string password);
        Task<User> CreateNewUser(User user);
        Task DisableAnUser(User user);

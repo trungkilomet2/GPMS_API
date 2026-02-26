@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
+using GPMS.INFRASTRUCTURE.Repositories;
+using GPMS.DOMAIN.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +44,12 @@ builder.Services.AddSwaggerGen(
 
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
+
+builder.Services.AddScoped<IBaseRepository<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
+
+
+
 //----------------------CORS-------------------------------
 
 builder.Services.AddCors(options =>
@@ -93,7 +100,6 @@ builder.Services.AddAuthentication(
     }); ;
 
 builder.Services.AddAuthorization();
-
 
 
 
