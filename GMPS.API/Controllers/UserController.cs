@@ -14,7 +14,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+   // [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;

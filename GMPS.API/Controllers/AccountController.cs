@@ -1,5 +1,7 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,12 +18,14 @@ namespace GMPS.API.Controllers
 
         private readonly IConfiguration _configuration;
 
-        public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
+        private readonly UserManager<User> _userManager;
+
+        public AccountController(IAccountRepositories loginRepo, IConfiguration configuration,UserManager<User> userManager)
         {
             _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
             _configuration = configuration;
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         }
-
 
         [HttpPost("login")]
         [ResponseCache(CacheProfileName = "NoCache")]
@@ -36,8 +40,8 @@ namespace GMPS.API.Controllers
                 var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
 
                 var claims = new List<Claim>();
-                // claims.Add(new Claim(ClaimTypes.Name, user.UserName));
-                // claims.AddRange((await _userManager.GetRolesAsync(user)).Select(r => new Claim(ClaimTypes.Role, r)));
+                // claims.Add(new Claim(ClaimTypes.Name, user.Username));
+                 //claims.AddRange((await _userManager.GetRolesAsync(user)).Select(r => new Claim(ClaimTypes.Role, r)));
                 // Tao Jwt Token
                 var jwtObject = new JwtSecurityToken(
                     issuer: _configuration["JWT:Issuer"],

@@ -46,8 +46,9 @@ builder.Services.AddSwaggerGen(
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
 
-builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
+
 builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();
+builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
 
