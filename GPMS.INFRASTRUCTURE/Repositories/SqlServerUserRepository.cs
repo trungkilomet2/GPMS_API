@@ -22,8 +22,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public async Task<User> Login(string username, string password)
+        {
+            var data = await context.USER.FirstOrDefaultAsync(u => u.USERNAME.Equals(username) && u.PASSWORDHASH == password);
+        
+            return mapper.Map<User>(data);
+        }
 
-         async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
+        async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
         {
             var data = await context.USER.ToListAsync();
 

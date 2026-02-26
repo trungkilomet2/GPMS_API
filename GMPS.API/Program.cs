@@ -1,8 +1,10 @@
 using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.Mappers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,13 +64,31 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(
     options =>
     {
-
-
-
-
-
-
-    });
+    // Xac thuc tu request
+     options.DefaultAuthenticateScheme =
+    // Xac thuc khi user chua dang nhap
+     options.DefaultChallengeScheme =
+     // Author
+     options.DefaultForbidScheme =
+     // Sign in va sign out
+     options.DefaultScheme =
+     options.DefaultSignInScheme =
+     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
+            )
+        };
+    }); ;
 
 builder.Services.AddAuthorization();
 
