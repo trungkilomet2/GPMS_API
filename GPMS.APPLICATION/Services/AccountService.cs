@@ -12,26 +12,22 @@ namespace GPMS.APPLICATION.Services
 {
     public class AccountService : IAccountRepositories
     {   
-        private readonly IBaseRepositories<User> _userBaseRepo;
+        private readonly IBaseAccountRepositories _accountBaseRepo;
 
-        public AccountService(IBaseRepositories<User> userBaseRepo)
+        public AccountService(IBaseAccountRepositories accountBaseRepo)
         {
-            _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
+            _accountBaseRepo = accountBaseRepo ?? throw new ArgumentNullException(nameof(accountBaseRepo));
         }
 
         public async Task<User> Login(string username, string password)   
         {
             LoginDTO account = new LoginDTO() { UserName = username, Password = password };
             
-            var data = await _userBaseRepo.Lo
+            var data = await _accountBaseRepo.Login(account.UserName, account.Password);
 
+           
 
-            if (data.Count() > 2)
-            {
-               // Error
-            }
-
-            return data.FirstOrDefault()!;
+            return data;
         }
 
 

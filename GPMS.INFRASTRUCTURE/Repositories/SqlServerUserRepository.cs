@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IBaseRepositories<User>,ILoginRepositories
+    public class SqlServerUserRepository : IBaseRepositories<User>, IBaseAccountRepositories
     {
         private readonly GPMS_SYSTEMContext context;
         private readonly IMapper mapper;
