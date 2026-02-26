@@ -11,12 +11,10 @@ namespace GMPS.API.Controllers
     public class UserController : ControllerBase
     {
         public readonly IUserInterface _userInterface;
-
         public UserController(IUserInterface userInterface)
         {
             _userInterface = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
         }
-
 
         [HttpGet]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
