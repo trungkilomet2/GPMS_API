@@ -1,6 +1,8 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +14,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;

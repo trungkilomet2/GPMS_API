@@ -23,8 +23,9 @@ namespace GMPS.API.Controllers
         }
 
 
-        [HttpPost]
-        public async Task<ActionResult> Login(LoginDTO input)
+        [HttpPost("login")]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> Login([FromBody] LoginDTO input)
         {
 
             var user = await _loginRepo.Login(input.UserName!, input.Password!);
