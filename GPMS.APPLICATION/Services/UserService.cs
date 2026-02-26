@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace GPMS.APPLICATION.Services
 {
-    internal class UserService
+    public class UserService
     {
+
+
     }
 }
