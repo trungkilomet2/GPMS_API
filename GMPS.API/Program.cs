@@ -47,6 +47,7 @@ builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServe
 
 builder.Services.AddScoped<IBaseRepository<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
+builder.Services.AddScoped<IAccountRepositories, AccountService>();
 
 
 

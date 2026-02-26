@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace GPMS.APPLICATION.Services
 {
-    public class LoginService : IAccountRepositories
+    public class AccountService : IAccountRepositories
     {   
         private readonly IBaseRepository<User> _userBaseRepo;
 
-        public LoginService(IBaseRepository<User> userBaseRepo)
+        public AccountService(IBaseRepository<User> userBaseRepo)
         {
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
         }
