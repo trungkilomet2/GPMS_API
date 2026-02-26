@@ -1,4 +1,5 @@
-﻿using GPMS.APPLICATION.Repositories;
+﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
@@ -11,9 +12,9 @@ namespace GPMS.APPLICATION.Services
 {
     public class UserService : IUserRepositories
     {   
-        private readonly IBaseRepository<User> _userBaseRepo;   
+        private readonly IBaseRepositories<User> _userBaseRepo;   
 
-        public UserService(IBaseRepository<User> userBaseRepo)
+        public UserService(IBaseRepositories<User> userBaseRepo)
         {
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
         }   

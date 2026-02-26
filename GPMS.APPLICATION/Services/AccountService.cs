@@ -1,4 +1,5 @@
-﻿using GPMS.APPLICATION.DTOs;
+﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
@@ -11,9 +12,9 @@ namespace GPMS.APPLICATION.Services
 {
     public class AccountService : IAccountRepositories
     {   
-        private readonly IBaseRepository<User> _userBaseRepo;
+        private readonly IBaseRepositories<User> _userBaseRepo;
 
-        public AccountService(IBaseRepository<User> userBaseRepo)
+        public AccountService(IBaseRepositories<User> userBaseRepo)
         {
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
         }
@@ -22,9 +23,9 @@ namespace GPMS.APPLICATION.Services
         {
             LoginDTO account = new LoginDTO() { UserName = username, Password = password };
             
-            var data = await _userBaseRepo.GetAll();
+            var data = await _userBaseRepo.Lo
 
-              data.Where(u => u.Username == account.UserName && u.PasswordHash == account.Password);
+
             if (data.Count() > 2)
             {
                // Error

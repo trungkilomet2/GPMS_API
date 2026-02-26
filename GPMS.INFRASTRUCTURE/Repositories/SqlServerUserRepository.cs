@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
-using GPMS.APPLICATION.Repositories;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.SqlServer.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IBaseRepository<User>
+    public class SqlServerUserRepository : IBaseRepositories<User>,ILoginRepositories
     {
         private readonly GPMS_SYSTEMContext context;
         private readonly IMapper mapper;
@@ -40,6 +41,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         public async Task<User> GetById(object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<User> Login(string username, string password)
+        {
+            var data = await context.USER.Where(u => u.USERNAME.Equals(username) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+            
+            return mapper.Map<User>(data);
+        }
+
+        public Task<User> Register(User user)
         {
             throw new NotImplementedException();
         }

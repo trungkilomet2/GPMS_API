@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.Repositories
+namespace GPMS.APPLICATION.ContextRepo
 {
-    public interface IBaseRepository<T>
+    public interface IBaseRepositories<T>
     {
         Task<IEnumerable<T>> GetAll();
         Task<T> GetById(object id);
