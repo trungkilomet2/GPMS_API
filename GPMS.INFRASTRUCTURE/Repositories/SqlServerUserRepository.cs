@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
-using GPMS.APPLICATION.Abstractions;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.SqlServer.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IUserInterface
+    public class SqlServerUserRepository : IBaseRepositories<User>, IBaseAccountRepositories
     {
         private readonly GPMS_SYSTEMContext context;
         private readonly IMapper mapper;
@@ -22,13 +23,43 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public async Task<User> Create(User entity)
+        {
+            throw new NotImplementedException();
+        }
 
-         async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
+        public async Task Delete(object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<User>> GetAll()
         {
             var data = await context.USER.ToListAsync();
 
             return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
-        //a 
+
+        public async Task<User> GetById(object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<User> Login(string username, string password)
+        {
+            var data = await context.USER.Where(u => u.USERNAME.Equals(username) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+            
+            return mapper.Map<User>(data);
+        }
+
+        public Task<User> Register(User user)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<User> Update(User entity)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
