@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IUserInterface
+    public class SqlServerUserRepository : IUserRepositories
     {
         private readonly GPMS_SYSTEMContext context;
         private readonly IMapper mapper;
@@ -22,6 +22,23 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Task<User> CreateNewUser(User user)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task DisableAnUser(User user)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<User>> GetUser()
+        {
+            var data = await context.USER.ToListAsync();
+
+            return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
+        }
+
         public async Task<User> Login(string username, string password)
         {
             var data = await context.USER.FirstOrDefaultAsync(u => u.USERNAME.Equals(username) && u.PASSWORDHASH == password);
@@ -29,12 +46,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return mapper.Map<User>(data);
         }
 
-        async Task<IEnumerable<DOMAIN.Entities.User>> IUserInterface.GetUser()
-        {
-            var data = await context.USER.ToListAsync();
-
-            return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
-        }
-        //a 
+       
     }
 }

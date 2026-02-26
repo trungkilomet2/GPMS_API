@@ -14,20 +14,20 @@ namespace GMPS.API.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserInterface _userInterface;
+        private readonly IUserRepositories _userRepo;
 
         private readonly IConfiguration _configuration;
 
-        public UserController(IUserInterface userInterface, IConfiguration configuration)
+        public UserController(IUserRepositories userInterface, IConfiguration configuration)
         {
-            _userInterface = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
+            _userRepo = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
             _configuration = configuration;
         }
 
         [HttpGet]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
-            var result = await _userInterface.GetUser();
+            var result = await _userRepo.GetUser();
             return new RestDTO<IEnumerable<User>>
             {
                 Data = result,
@@ -44,7 +44,7 @@ namespace GMPS.API.Controllers
         public async Task<ActionResult> Login(LoginDTO input)
         {
             
-            var user = await _userInterface.Login(input.UserName!, input.Password!);
+            var user = await _userRepo.Login(input.UserName!, input.Password!);
 
             if (user is null) return NotFound("User Name or Password is wrong!");
             else

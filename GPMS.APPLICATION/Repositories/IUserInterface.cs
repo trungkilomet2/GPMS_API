@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace GPMS.APPLICATION.Abstractions
 {
-    public interface IUserInterface
+    public interface IUserRepositories
     {   
        Task<IEnumerable<User>> GetUser();
        Task<User> Login(string username, string password);
-    
-    
+       Task<User> CreateNewUser(User user);
+       Task DisableAnUser(User user);
     }
 }

@@ -26,21 +26,21 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(
    options =>
    {
-       options.AddSecurityDefinition("Bearer" , new OpenApiSecurityScheme
+       options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
        {
            In = ParameterLocation.Header,
            Description = "Please enter token",
            Name = "Authorization",
            Type = SecuritySchemeType.Http,
            BearerFormat = "JWT",
-            Scheme = "bearer"
+           Scheme = "bearer"
        });
    });
 // Dependency Injection for Services and Repositories
 
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
-builder.Services.AddScoped<GPMS.APPLICATION.Abstractions.IUserInterface, GPMS.INFRASTRUCTURE.Repositories.SqlServerUserRepository>();
+builder.Services.AddScoped<GPMS.APPLICATION.Abstractions.IUserRepositories, GPMS.INFRASTRUCTURE.Repositories.SqlServerUserRepository>();
 //----------------------CORS-------------------------------
 
 builder.Services.AddCors(options =>
@@ -64,16 +64,16 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(
     options =>
     {
-    // Xac thuc tu request
-     options.DefaultAuthenticateScheme =
-    // Xac thuc khi user chua dang nhap
-     options.DefaultChallengeScheme =
-     // Author
-     options.DefaultForbidScheme =
-     // Sign in va sign out
-     options.DefaultScheme =
-     options.DefaultSignInScheme =
-     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
+        // Xac thuc tu request
+        options.DefaultAuthenticateScheme =
+        // Xac thuc khi user chua dang nhap
+        options.DefaultChallengeScheme =
+        // Author
+        options.DefaultForbidScheme =
+        // Sign in va sign out
+        options.DefaultScheme =
+        options.DefaultSignInScheme =
+        options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
     })
     .AddJwtBearer(options =>
     {
