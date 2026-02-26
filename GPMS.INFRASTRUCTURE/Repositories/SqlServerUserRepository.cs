@@ -32,7 +32,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<User>> GetAll(object? entity)
+        public async Task<IEnumerable<User>> GetAll()
         {
             var data = await context.USER.ToListAsync();
 

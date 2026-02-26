@@ -9,16 +9,16 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class LoginController : ControllerBase
+    public class AccountController : ControllerBase
     {
 
-        private readonly IUserRepositories _userRepo;
+        private readonly IAccountRepositories _loginRepo;
 
         private readonly IConfiguration _configuration;
 
-        public LoginController(IUserRepositories userInterface, IConfiguration configuration)
+        public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
         {
-            _userRepo = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
+            _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
             _configuration = configuration;
         }
 
@@ -27,7 +27,7 @@ namespace GMPS.API.Controllers
         public async Task<ActionResult> Login(LoginDTO input)
         {
 
-            var user = await _userRepo.Login(input.UserName!, input.Password!);
+            var user = await _loginRepo.Login(input.UserName!, input.Password!);
 
             if (user is null) return NotFound("User Name or Password is wrong!");
             else
