@@ -11,7 +11,10 @@ namespace GPMS.INFRASTRUCTURE.Mappers
     {
         public SqlServerToEntityProfile()
         {
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>();
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>()
+                .ForMember(dest => dest.Id,opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.PhoneNumber,opt => opt.MapFrom(src => src.PHONE_NUMBER));
+                
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
         }
     }

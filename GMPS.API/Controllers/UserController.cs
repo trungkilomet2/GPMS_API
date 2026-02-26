@@ -1,5 +1,8 @@
-﻿using GPMS.APPLICATION.Abstractions;
+﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.Abstractions;
+using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace GMPS.API.Controllers
 {
@@ -14,12 +17,22 @@ namespace GMPS.API.Controllers
             _userInterface = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUser()
-        {
-            var data = await _userInterface.GetUser();
-            return Ok(data);
 
+        [HttpGet]
+        public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
+        {
+            var result = await _userInterface.GetUser();
+            return new RestDTO<IEnumerable<User>>
+            {
+                Data = result,
+                PageIndex = input.PageIndex,
+                PageSize = input.PageSize,
+                RecordCount = result.Count(),
+                Links = new List<LinkDTO>
+                {
+                    new LinkDTO (Url.Action(null,"User", new { input.PageIndex, input.PageSize }, Request.Scheme)!,"self","GET")
+                }
+            };
 
         }
     }
