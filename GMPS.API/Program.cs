@@ -59,11 +59,18 @@ builder.Services.AddCors(options =>
 });
 
 //-------------------------------------------------------
-builder.Services.AddAuthentication();
+builder.Services.AddAuthentication(
+    options =>
+    {
+
+
+
+
+
+
+    });
 
 builder.Services.AddAuthorization();
-
-
 
 
 
