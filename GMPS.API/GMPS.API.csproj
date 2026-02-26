@@ -10,4 +10,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\GPMS.APPLICATION\GPMS.APPLICATION.csproj" />
+    <ProjectReference Include="..\GPMS.DOMAIN\GPMS.DOMAIN.csproj" />
+    <ProjectReference Include="..\GPMS.INFRASTRUCTURE\GPMS.INFRASTRUCTURE.csproj" />
+  </ItemGroup>
+
 </Project>
