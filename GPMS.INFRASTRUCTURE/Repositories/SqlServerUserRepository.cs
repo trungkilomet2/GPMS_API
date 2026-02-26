@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using GPMS.APPLICATION.Abstractions;
+using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IUserRepositories
+    public class SqlServerUserRepository : IBaseRepository<User>
     {
         private readonly GPMS_SYSTEMContext context;
         private readonly IMapper mapper;
@@ -22,30 +22,29 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public Task<User> CreateNewUser(User user)
+        public Task<User> Create(User entity)
         {
             throw new NotImplementedException();
         }
 
-        public Task DisableAnUser(User user)
+        public Task Delete(object id)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<User>> GetUser()
+        public Task<IEnumerable<User>> GetAll(object? entity)
         {
-            var data = await context.USER.ToListAsync();
-
-            return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
+            throw new NotImplementedException();
         }
 
-        public async Task<User> Login(string username, string password)
+        public Task<User> GetById(object id)
         {
-            var data = await context.USER.FirstOrDefaultAsync(u => u.USERNAME.Equals(username) && u.PASSWORDHASH == password);
-        
-            return mapper.Map<User>(data);
+            throw new NotImplementedException();
         }
 
-       
+        public Task<User> Update(User entity)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

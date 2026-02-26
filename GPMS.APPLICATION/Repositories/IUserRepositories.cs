@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.Abstractions
+namespace GPMS.APPLICATION.Repositories
 {
     public interface IUserRepositories
     {   

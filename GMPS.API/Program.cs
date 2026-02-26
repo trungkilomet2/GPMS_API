@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using GPMS.APPLICATION.Repositories;
+using GPMS.APPLICATION.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +42,7 @@ builder.Services.AddSwaggerGen(
 
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
-builder.Services.AddScoped<GPMS.APPLICATION.Abstractions.IUserRepositories, GPMS.INFRASTRUCTURE.Repositories.SqlServerUserRepository>();
+builder.Services.AddScoped<IUserRepositories, UserService>();
 //----------------------CORS-------------------------------
 
 builder.Services.AddCors(options =>
