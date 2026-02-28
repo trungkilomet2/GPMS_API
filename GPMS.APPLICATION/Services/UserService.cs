@@ -40,5 +40,11 @@ namespace GPMS.APPLICATION.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<User> UpdateProfile(User user)
+        {
+            var data = _userBaseRepo.Update(user);
+            return data;
+        }
     }
 }

@@ -43,12 +43,34 @@ namespace GMPS.API.Controllers
                 }
             };
         }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int id, [FromBody] User user)
+        {
+            if (id != user.Id)
+            {
+                return BadRequest("ID mismatch");
+            }
+
+            var updatedUser = await _userRepo.UpdateProfile(user);
+
+            if (updatedUser == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(new RestDTO<User>
+            {
+                Data = updatedUser,
+                Links = new List<LinkDTO>
+        {
+            new LinkDTO(
+                Url.Action(null, "User", new { id = updatedUser.Id }, Request.Scheme)!,
+                "self",
+                "PUT"
+            )
+        }
+            });
+        }
     }
-
-
-
-
-
-
-
 }

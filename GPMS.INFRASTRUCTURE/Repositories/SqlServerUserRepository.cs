@@ -59,7 +59,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> Update(User entity)
         {
-            throw new NotImplementedException();
+            var existingUser = await context.USER.FindAsync(entity.Id);
+            if (existingUser != null)
+            {
+                existingUser.USERNAME = entity.Username;
+                existingUser.PASSWORDHASH = entity.PasswordHash;
+                existingUser.FULLNAME = entity.FullName;
+                existingUser.PHONE_NUMBER = entity.PhoneNumber;
+                existingUser.AVATAR = entity.AvartarUrl;
+                existingUser.EMAIL = entity.Email;
+            }
+                context.USER.Update(existingUser);
+                await context.SaveChangesAsync();
+                return mapper.Map<User>(existingUser);       
         }
     }
 }
