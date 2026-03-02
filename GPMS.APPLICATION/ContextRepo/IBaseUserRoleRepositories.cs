@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.DTOs
+namespace GPMS.APPLICATION.ContextRepo
 {
-    internal class Blank
+    public interface IBaseUserRoleRepositories
     {
+        
+
     }
 }
