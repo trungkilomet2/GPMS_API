@@ -33,6 +33,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
+        public Task<User> FindUserByPhoneNumber(string phoneNumber)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<User> FindUserByUserName(string username)
         {
             var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();

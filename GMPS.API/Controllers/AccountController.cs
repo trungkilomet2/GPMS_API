@@ -20,6 +20,7 @@ namespace GMPS.API.Controllers
             _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
             _configuration = configuration;
         }
+
         [HttpPost("login")]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult> Login([FromBody] LoginDTO input)
@@ -28,9 +29,7 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {   
-
                     var user = await _loginRepo.Login(input.UserName!, input.Password!);
-
                     if (user is null) return NotFound("Invalid Login attempt.");
                     else
                     {
@@ -91,7 +90,6 @@ namespace GMPS.API.Controllers
                     newUser.PhoneNumber = input.PhoneNumber;
                     //Gia tri thu 2 truyen vao CreateAsync la Password goc chu khong phai HashPassword
                     //      var result = await _userManager.CreateAsync(newUser, input.Password);
-
 
                     //  if (result.Succeeded)
                     //  {
