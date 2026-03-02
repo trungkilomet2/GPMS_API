@@ -40,5 +40,11 @@ namespace GPMS.APPLICATION.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<User> ViewProfile(int id)
+        {
+            var data = _userBaseRepo.GetById(id);
+            return data;
+        }
     }
 }
