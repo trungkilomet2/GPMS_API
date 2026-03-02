@@ -32,7 +32,6 @@ namespace GPMS.APPLICATION.Services
         public async Task<LoginDTO> Login(string username, string password)
         {
             var user = await _accountBaseRepo.FindUserByUserName(username);
-
             if (user is null) return null;
             // Check hashed password 
             var hashedPassword = new PasswordHasher<User>().VerifyHashedPassword(user,user.PasswordHash, password);    
@@ -43,8 +42,8 @@ namespace GPMS.APPLICATION.Services
             var userRole = await _roleBaseRepo.GetAll(user);
             LoginDTO data = new LoginDTO() { User = user, UserRole = userRole };
             return data;
-
         }
+
 
 
 
