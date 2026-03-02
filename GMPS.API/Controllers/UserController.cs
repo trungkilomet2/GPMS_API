@@ -50,6 +50,10 @@ namespace GMPS.API.Controllers
         public async Task<ActionResult<RestDTO<User>>> ViewProfile(int id)
         {
             var user = await _userRepo.ViewProfile(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
             var profile = new User
             {
                 Id = user.Id,
