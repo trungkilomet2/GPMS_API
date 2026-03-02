@@ -7,5 +7,6 @@ namespace GPMS.APPLICATION.ContextRepo
     public interface IBaseOrderRepositories
     {
         Task<IEnumerable<Order>> GetAllOrders();
+        Task<Order?> GetOrderById(int id);
     }
 }

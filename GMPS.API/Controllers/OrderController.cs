@@ -41,5 +41,27 @@ namespace GMPS.API.Controllers
                 }
             });
         }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<RestDTO<Order>>> GetOrderById(int id)
+        {
+            var result = await _orderRepo.GetOrderById(id);
+
+            if (result is null)
+                return NotFound();
+
+            return Ok(new RestDTO<Order>
+            {
+                Data = result,
+                Links = new List<LinkDTO>
+                {
+                    new LinkDTO(
+                        Url.Action("GetOrderById", "Order", new { id }, Request.Scheme)!,
+                        "self",
+                        "GET"
+                    )
+                }
+            });
+        }
     }
 }

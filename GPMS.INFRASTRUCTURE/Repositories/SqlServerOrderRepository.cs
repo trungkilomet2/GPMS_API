@@ -28,5 +28,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             return _mapper.Map<IEnumerable<Order>>(data);
         }
+
+        public async Task<Order?> GetOrderById(int id)
+        {
+            var data = await _context.ORDER
+                .Include(o => o.OS)
+                .Include(o => o.O_MATERIAL)
+                .Include(o => o.O_TEMPLATE)
+                .FirstOrDefaultAsync(o => o.ORDER_ID == id);
+
+            if (data is null) return null;
+
+            return _mapper.Map<Order>(data);
+        }
     }
 }

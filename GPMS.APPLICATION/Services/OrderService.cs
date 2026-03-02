@@ -20,5 +20,10 @@ namespace GPMS.APPLICATION.Services
         {
             return await _orderBaseRepo.GetAllOrders();
         }
+
+        public async Task<Order?> GetOrderById(int id)
+        {
+            return await _orderBaseRepo.GetOrderById(id);
+        }
     }
 }

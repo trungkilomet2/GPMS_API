@@ -30,7 +30,15 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS.NAME));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS.NAME))
+                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
+                .ForMember(dest => dest.Samples, opt => opt.MapFrom(src => src.O_TEMPLATE));
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_MATERIAL, GPMS.DOMAIN.Entities.OrderMaterial>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OM_ID));
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OrderSample>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OT_ID));
         }
     }
 }
