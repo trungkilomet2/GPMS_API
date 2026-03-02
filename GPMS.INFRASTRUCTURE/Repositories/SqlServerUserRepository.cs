@@ -73,13 +73,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (user is null) throw new ArgumentNullException(nameof(user));
             try
             {
-
                 USER userSQL = _mapper.Map<USER>(user);
-                userSQL.US_ID = 1;
+                userSQL.US_ID = 1; // 1 equal Active status in User
                 await _context.AddAsync(userSQL);
                 await _context.SaveChangesAsync();
                 return _mapper.Map<User>(userSQL);
-
             }
             catch (Exception ex)
             {
