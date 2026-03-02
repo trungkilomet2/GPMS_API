@@ -37,13 +37,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<IEnumerable<Role>> GetAll(object? obj)
         {
             List<ICollection<ROLE>> userRoles = new List<ICollection<ROLE>>();
-            
-          
 
             if (obj is User user)
             {
                 userRoles = await _context.USER.Include(u => u.ROLE).Where(u=> u.USER_ID == user.Id).Select(u => u.ROLE).ToListAsync();
-
             }
 
             return _mapper.Map<IEnumerable<Role>>(userRoles.SelectMany(ur => ur).ToList()); 
