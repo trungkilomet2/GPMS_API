@@ -13,9 +13,6 @@ namespace GPMS.APPLICATION.DTOs
         public User User { get; set; }
 
         public IEnumerable<Role> UserRole { get; set; }
-        // Data
-        // Status
-        // Errors
 
     }
 }

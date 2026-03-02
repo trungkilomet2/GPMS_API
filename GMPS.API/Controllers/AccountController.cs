@@ -83,12 +83,21 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {
+                {   
+                    if(!input.RePassword.Equals(input.Password))
+                    {
+                        var details = new ValidationProblemDetails(ModelState);
+                        details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                        details.Status = StatusCodes.Status400BadRequest;
+                        details.Detail = "Mật khẩu không khớp";
+                        return new BadRequestObjectResult(details);
+                    }
                     
                     var newUser = new User();
                     newUser.UserName = input.UserName;
-                    newUser.UserName = input.FullName;
+                    newUser.FullName = input.FullName;
                     newUser.PasswordHash = input.Password;
+
 
                     var result = await _accountRepo.Register(newUser);
 
@@ -98,9 +107,7 @@ namespace GMPS.API.Controllers
                         return StatusCode(201, $"User '{newUser.UserName}' has been created");
                     } else if(result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Failed) {
                         throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors)));
-
                     }
-                  
                     return Ok();
                 }
                 else

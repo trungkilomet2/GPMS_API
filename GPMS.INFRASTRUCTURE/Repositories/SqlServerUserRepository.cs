@@ -22,7 +22,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
-        
+
         //Create User in SQL
         public async Task<User> Create(User entity)
         {
@@ -71,10 +71,20 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Register(User user)
         {
             if (user is null) throw new ArgumentNullException(nameof(user));
-            USER userSQL = _mapper.Map<USER>(user);
-            await _context.AddAsync(userSQL);
-            await _context.SaveChangesAsync();
-            return _mapper.Map<User>(userSQL);
+            try
+            {
+
+                USER userSQL = _mapper.Map<USER>(user);
+                userSQL.US_ID = 1;
+                await _context.AddAsync(userSQL);
+                await _context.SaveChangesAsync();
+                return _mapper.Map<User>(userSQL);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public async Task<User> Update(User entity)

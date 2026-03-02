@@ -29,22 +29,37 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            RegisterDTO registerDTO = new RegisterDTO() { User = user };
+            RegisterDTO registerDTO = new RegisterDTO() { User = user , Status = Enum.RegisterStatus.Success};
             // Hash password before save to database, using Microsoft.AspNetCore.Identity package for hashing password
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
-            user.PasswordHash = hashedPassword;
+           
             if (!ValidateUserName(user.UserName))
             {
-                registerDTO.Errors.Add("Tên người dùng phải ít nhất 6 ký tự và nhiều nhất 30 kí tự");
+                registerDTO.Errors.Add("Tên người dùng phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
+
+            if(!ValidatePasswordLength(user.PasswordHash))
+            {
+                registerDTO.Errors.Add("Mật khẩu phải từ 6 đến 50 ký tự");
+                registerDTO.Status = Enum.RegisterStatus.Failed;
+            }
+
+            var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
+            user.PasswordHash = hashedPassword;
+
             await _accountBaseRepo.Register(user);  
             return registerDTO;
         }
 
         public bool ValidateUserName(string username)
         {
-            if (username.Length > 6 && username.Length < 30) return true;
+            if (username.Length >= 6 && username.Length <= 50) return true;
+            return false;
+        }
+
+        public bool ValidatePasswordLength(string password)
+        {
+            if (password.Length >= 6 && password.Length <= 50) return true;
             return false;
         }
 
