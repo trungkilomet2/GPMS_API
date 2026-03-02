@@ -13,28 +13,29 @@ namespace GPMS.APPLICATION.Services
     public class AccountService : IAccountRepositories
     {   
         private readonly IBaseAccountRepositories _accountBaseRepo;
+        private readonly IBaseRepositories<Role> _roleBaseRepo;
 
-        public AccountService(IBaseAccountRepositories accountBaseRepo)
+        public AccountService(IBaseAccountRepositories accountBaseRepo,IBaseRepositories<Role> roleBaseRepo)
         {
             _accountBaseRepo = accountBaseRepo ?? throw new ArgumentNullException(nameof(accountBaseRepo));
+            _roleBaseRepo  = roleBaseRepo ?? throw new ArgumentNullException(nameof(roleBaseRepo));
         }
-
-        public async Task<User> Login(string username, string password)   
-        {
-            LoginDTO account = new LoginDTO() { UserName = username, Password = password };
-            
-            var data = await _accountBaseRepo.Login(account.UserName, account.Password);
-
-           
-
-            return data;
-        }
-
 
         public Task<User> Register(User user)
         {
             throw new NotImplementedException();
         }
 
+        public async Task<LoginDTO> Login(string username, string password)
+        {
+            var user = await _accountBaseRepo.Login(username, password);
+                
+            var userRole = await _roleBaseRepo.GetAll(user);
+
+            LoginDTO data = new LoginDTO() { User = user, UserRole = userRole };
+
+            return data;
+
+        }
     }
 }

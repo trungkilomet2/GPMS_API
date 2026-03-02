@@ -14,13 +14,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 {
     public class SqlServerUserRepository : IBaseRepositories<User>, IBaseAccountRepositories
     {
-        private readonly GPMS_SYSTEMContext context;
-        private readonly IMapper mapper;
+        private readonly GPMS_SYSTEMContext _context;
+        private readonly IMapper _mapper;
 
         public SqlServerUserRepository(GPMS_SYSTEMContext context, IMapper mapper)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         public async Task<User> Create(User entity)
@@ -33,11 +33,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<User>> GetAll()
+      
+        public async Task<IEnumerable<User>> GetAll(object? obj)
         {
-            var data = await context.USER.ToListAsync();
 
-            return mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
+            var data = await _context.USER.ToListAsync();
+
+            return _mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
 
         public async Task<User> GetById(object id)
@@ -47,9 +49,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> Login(string username, string password)
         {
-            var data = await context.USER.Where(u => u.USERNAME.Equals(username) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+            var data = await _context.USER.Where(u => u.USERNAME.Equals(username) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
             
-            return mapper.Map<User>(data);
+            return _mapper.Map<User>(data);
         }
 
         public Task<User> Register(User user)

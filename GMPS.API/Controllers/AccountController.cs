@@ -18,7 +18,6 @@ namespace GMPS.API.Controllers
 
         private readonly IConfiguration _configuration;
 
-       // private readonly UserManager<User> _userManager;
 
         public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
         {
@@ -30,17 +29,20 @@ namespace GMPS.API.Controllers
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult> Login([FromBody] LoginDTO input)
         {
-
+            
             var user = await _loginRepo.Login(input.UserName!, input.Password!);
-
+            
             if (user is null) return NotFound("User Name or Password is wrong!");
             else
             {
                 var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
-
+                
                 var claims = new List<Claim>();
-                claims.Add(new Claim(ClaimTypes.Name, user.Username));
-                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+                
+                claims.Add(new Claim(ClaimTypes.Name, user.User.Username));
+                foreach (var role in user.UserRole.Select(r=> r.Name)) {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
 
                 // Tao Jwt Token
                 var jwtObject = new JwtSecurityToken(

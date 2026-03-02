@@ -67,6 +67,8 @@ builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();
 builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
+
+builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>(); 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 
