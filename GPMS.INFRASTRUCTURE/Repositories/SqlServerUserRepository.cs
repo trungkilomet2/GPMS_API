@@ -32,7 +32,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             throw new NotImplementedException();
         }
-      
+
+        public async Task<User> FindUserByUserName(string username)
+        {
+            var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();
+            
+            if(data is null) return null;
+         
+            return _mapper.Map<User>(data);
+        }
+
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
 

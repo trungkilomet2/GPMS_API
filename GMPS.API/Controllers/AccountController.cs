@@ -27,8 +27,7 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {   // Hased Pasword
-                    string hashedPassword = new PasswordHasher<User>().HashPassword(null, input.Password!);
+                {   
 
                     var user = await _loginRepo.Login(input.UserName!, input.Password!);
 
@@ -91,18 +90,20 @@ namespace GMPS.API.Controllers
                     newUser.PasswordHash = input.Password;
                     newUser.PhoneNumber = input.PhoneNumber;
                     //Gia tri thu 2 truyen vao CreateAsync la Password goc chu khong phai HashPassword
-              //      var result = await _userManager.CreateAsync(newUser, input.Password);
+                    //      var result = await _userManager.CreateAsync(newUser, input.Password);
 
 
-                    if (result.Succeeded)
-                    {
-                  //      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
-                        return StatusCode(201, $"User '{newUser.UserName}' has been created");
-                    }
-                    else
-                    {
-                        throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors.Select(e => e.Description))));
-                    }
+                    //  if (result.Succeeded)
+                    //  {
+                    ////      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
+                    //      return StatusCode(201, $"User '{newUser.UserName}' has been created");
+                    //  }
+                    //  else
+                    //  {
+                    //      throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors.Select(e => e.Description))));
+                    //  }
+
+                    return Ok();
                 }
                 else
                 {

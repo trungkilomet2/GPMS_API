@@ -10,7 +10,9 @@ namespace GPMS.APPLICATION.ContextRepo
     public interface IBaseAccountRepositories
     {
         Task<User> Login(string UserName, string password);
-        Task<User> Register(User user);    
+        Task<User> Register(User user);
+        Task<User> FindUserByUserName(string username);
+
 
     }
 }
