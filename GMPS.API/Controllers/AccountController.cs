@@ -13,18 +13,13 @@ namespace GMPS.API.Controllers
     [Route("api/[controller]")]
     public class AccountController : ControllerBase
     {
-
         private readonly IAccountRepositories _loginRepo;
-
         private readonly IConfiguration _configuration;
-
-
         public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
         {
             _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
             _configuration = configuration;
         }
-
         [HttpPost("login")]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult> Login([FromBody] LoginDTO input)
@@ -32,9 +27,11 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {
+                {   // Hased Pasword
+                    string hashedPassword = new PasswordHasher<User>().HashPassword(null, input.Password!); 
+
                     var user = await _loginRepo.Login(input.UserName!, input.Password!);
-                    if (user is null) return NotFound("User Name or Password is wrong!");
+                    if (user is null) return NotFound("Invalid Login attempt.");
                     else
                     {
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
