@@ -42,7 +42,6 @@ namespace GMPS.API.Controllers
                 claims.Add(new Claim(ClaimTypes.Name, user.Username));
                 claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 
-                //        claims.AddRange((await _userManager.GetRolesAsync(user)).Select(r => new Claim(ClaimTypes.Role, r)));
                 // Tao Jwt Token
                 var jwtObject = new JwtSecurityToken(
                     issuer: _configuration["JWT:Issuer"],
