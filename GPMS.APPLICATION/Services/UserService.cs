@@ -31,12 +31,12 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<User>> GetAllUser()
         {   
-            var data = await _userBaseRepo.GetAll();
+            var data = await _userBaseRepo.GetAll(null);
             
             return data;
         }
 
-        public Task<User> Login(string username, string password)
+        public Task<User> Login(string UserName, string password)
         {
             throw new NotImplementedException();
         }
