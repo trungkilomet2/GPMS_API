@@ -59,7 +59,7 @@ namespace GMPS.API.Controllers
             var profile = new User
             {
                 Id = user.Id,
-                Username = user.Username,
+                UserName = user.UserName,
                 FullName = user.FullName,
                 PhoneNumber = user.PhoneNumber,
                 AvartarUrl = user.AvartarUrl,
