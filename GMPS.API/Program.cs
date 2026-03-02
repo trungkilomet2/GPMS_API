@@ -40,19 +40,39 @@ builder.Services.AddSwaggerGen(
            BearerFormat = "JWT",
            Scheme = "bearer"
        });
+
+       // Default Bearer for token
+       options.AddSecurityRequirement(new OpenApiSecurityRequirement
+         {
+              {
+                new OpenApiSecurityScheme
+                {
+                     Reference = new OpenApiReference
+                     {
+                          Type = ReferenceType.SecurityScheme,
+                          Id = "Bearer"
+                     }
+                },
+                Array.Empty<string>()
+              }
+         });
    });
 // Dependency Injection for Services and Repositories
 
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
 
-builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
+
 builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();
+builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
 
 builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
+builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>(); 
+//----------------------Identity-----------------------------
+//builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 
 
 

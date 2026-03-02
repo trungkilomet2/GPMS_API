@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("USERNAME", Name = "UQ__USER__B15BE12EDC4D15FA", IsUnique = true)]
+[Index("UserName", Name = "UQ__USER__B15BE12EDC4D15FA", IsUnique = true)]
 public partial class USER
 {
     [Key]
     public int USER_ID { get; set; }
 
     [StringLength(50)]
-    public string? USERNAME { get; set; }
+    public string? UserName { get; set; }
 
     [StringLength(255)]
     public string PASSWORDHASH { get; set; } = null!;
