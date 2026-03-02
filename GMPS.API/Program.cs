@@ -51,6 +51,9 @@ builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
 
+builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
+builder.Services.AddScoped<ICommentRepositories, CommentServices>();
+
 
 
 //----------------------CORS-------------------------------
