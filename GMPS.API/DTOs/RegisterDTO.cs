@@ -5,7 +5,7 @@ namespace GMPS.API.DTOs
 
     /// <summary>
     /// -------Register------
-    /// PHONENUMBER
+    /// USERNAME
     /// FULLNAME
     /// PASSWORD
     /// REPASSWORD
@@ -13,9 +13,9 @@ namespace GMPS.API.DTOs
     /// </summary>
     public class RegisterDTO
     {
-        [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
-        [StringLength(11,ErrorMessage = "Số điện thoại có độ dài tối đa là 11")]
-        public string PhoneNumber { get; set; }
+        [Required(ErrorMessage = "Tên tài khoản là bắt buộc")]
+        [StringLength(50,ErrorMessage = "Số điện thoại có độ dài tối đa là 50")]
+        public string UserName { get; set; }
         [Required(ErrorMessage = "Tên người dùng là bắt buộc")]
         public string FullName { get; set; }
         [Required(ErrorMessage = "Mật khẩu là bắt buộc")]

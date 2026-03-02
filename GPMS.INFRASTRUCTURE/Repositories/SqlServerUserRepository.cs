@@ -22,10 +22,15 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
-
+        
+        //Create User in SQL
         public async Task<User> Create(User entity)
         {
-            throw new NotImplementedException();
+            if (entity is null) throw new ArgumentNullException(nameof(entity));
+            USER userSQL = _mapper.Map<USER>(entity);
+            await _context.AddAsync(userSQL);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<User>(userSQL);
         }
 
         public async Task Delete(object id)
@@ -33,17 +38,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<User> FindUserByPhoneNumber(string phoneNumber)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task<User> FindUserByUserName(string username)
         {
             var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();
-            
-            if(data is null) return null;
-         
+
+            if (data is null) return null;
+
             return _mapper.Map<User>(data);
         }
 
@@ -63,13 +64,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Login(string UserName, string password)
         {
             var data = await _context.USER.Where(u => u.UserName.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
-         
+
             return _mapper.Map<User>(data);
         }
 
-        public Task<User> Register(User user)
+        public async Task<User> Register(User user)
         {
-            throw new NotImplementedException();
+            if (user is null) throw new ArgumentNullException(nameof(user));
+            USER userSQL = _mapper.Map<USER>(user);
+            await _context.AddAsync(userSQL);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<User>(userSQL);
         }
 
         public async Task<User> Update(User entity)

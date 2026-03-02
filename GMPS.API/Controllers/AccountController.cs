@@ -13,11 +13,11 @@ namespace GMPS.API.Controllers
     [Route("api/[controller]")]
     public class AccountController : ControllerBase
     {
-        private readonly IAccountRepositories _loginRepo;
+        private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
-        public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
+        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration)
         {
-            _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
+            _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
             _configuration = configuration;
         }
 
@@ -29,7 +29,7 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {   
-                    var user = await _loginRepo.Login(input.UserName!, input.Password!);
+                    var user = await _accountRepo.Login(input.UserName!, input.Password!);
                     if (user is null) return NotFound("Invalid Login attempt.");
                     else
                     {
@@ -84,23 +84,23 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    
                     var newUser = new User();
+                    newUser.UserName = input.UserName;
                     newUser.UserName = input.FullName;
                     newUser.PasswordHash = input.Password;
-                    newUser.PhoneNumber = input.PhoneNumber;
-                    //Gia tri thu 2 truyen vao CreateAsync la Password goc chu khong phai HashPassword
-                    //      var result = await _userManager.CreateAsync(newUser, input.Password);
 
-                    //  if (result.Succeeded)
-                    //  {
-                    ////      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
-                    //      return StatusCode(201, $"User '{newUser.UserName}' has been created");
-                    //  }
-                    //  else
-                    //  {
-                    //      throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors.Select(e => e.Description))));
-                    //  }
+                    var result = await _accountRepo.Register(newUser);
 
+                    if (result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Success)
+                    {
+                        //      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
+                        return StatusCode(201, $"User '{newUser.UserName}' has been created");
+                    } else if(result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Failed) {
+                        throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors)));
+
+                    }
+                  
                     return Ok();
                 }
                 else

@@ -15,7 +15,6 @@ namespace GPMS.APPLICATION.ContextRepo
         Task<User> Login(string UserName, string password);
         Task<User> Register(User user);
         Task<User> FindUserByUserName(string username);
-        Task<User> FindUserByPhoneNumber(string phoneNumber);
 
     }
 }
