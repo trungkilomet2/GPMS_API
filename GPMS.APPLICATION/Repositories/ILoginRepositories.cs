@@ -10,7 +10,7 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface IAccountRepositories
     {
-        Task<LoginDTO> Login(string username, string password);
+        Task<LoginDTO> Login(string UserName, string password);
 
         Task<User> Register(User user);
 

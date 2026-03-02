@@ -36,7 +36,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public Task<User> Login(string username, string password)
+        public Task<User> Login(string UserName, string password)
         {
             throw new NotImplementedException();
         }

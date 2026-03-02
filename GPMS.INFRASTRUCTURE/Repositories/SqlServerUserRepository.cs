@@ -32,7 +32,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             throw new NotImplementedException();
         }
-
       
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
@@ -47,10 +46,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<User> Login(string username, string password)
+        public async Task<User> Login(string UserName, string password)
         {
-            var data = await _context.USER.Where(u => u.USERNAME.Equals(username) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
-            
+            var data = await _context.USER.Where(u => u.UserName.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+         
             return _mapper.Map<User>(data);
         }
 

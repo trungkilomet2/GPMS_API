@@ -26,9 +26,9 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        public async Task<LoginDTO> Login(string username, string password)
+        public async Task<LoginDTO> Login(string UserName, string password)
         {
-            var user = await _accountBaseRepo.Login(username, password);
+            var user = await _accountBaseRepo.Login(UserName, password);
                 
             var userRole = await _roleBaseRepo.GetAll(user);
 

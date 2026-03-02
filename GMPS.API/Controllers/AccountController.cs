@@ -28,15 +28,16 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {   // Hased Pasword
-                    string hashedPassword = new PasswordHasher<User>().HashPassword(null, input.Password!); 
+                    string hashedPassword = new PasswordHasher<User>().HashPassword(null, input.Password!);
 
                     var user = await _loginRepo.Login(input.UserName!, input.Password!);
+
                     if (user is null) return NotFound("Invalid Login attempt.");
                     else
                     {
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
                         var claims = new List<Claim>();
-                        claims.Add(new Claim(ClaimTypes.Name, user.User.Username));
+                        claims.Add(new Claim(ClaimTypes.Name, user.User.UserName));
                         foreach (var role in user.UserRole.Select(r => r.Name))
                         {
                             claims.Add(new Claim(ClaimTypes.Role, role));
@@ -74,8 +75,58 @@ namespace GMPS.API.Controllers
                 StatusCodes.Status401Unauthorized,
                 exceptionDetails);
             }
+        
+        }
+
+        [HttpPost("register")]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> Register(RegisterDTO input)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var newUser = new User();
+                    newUser.UserName = input.FullName;
+                    newUser.PasswordHash = input.Password;
+                    newUser.PhoneNumber = input.PhoneNumber;
+                    //Gia tri thu 2 truyen vao CreateAsync la Password goc chu khong phai HashPassword
+              //      var result = await _userManager.CreateAsync(newUser, input.Password);
+
+
+                    if (result.Succeeded)
+                    {
+                  //      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
+                        return StatusCode(201, $"User '{newUser.UserName}' has been created");
+                    }
+                    else
+                    {
+                        throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors.Select(e => e.Description))));
+                    }
+                }
+                else
+                {
+                    var details = new ValidationProblemDetails(ModelState);
+                    details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    details.Status = StatusCodes.Status400BadRequest;
+                    return new BadRequestObjectResult(details);
+                }
+            }
+            catch (Exception e)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = e.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                exceptionDetails.Type =
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
 
         }
+
     }
 
 }
