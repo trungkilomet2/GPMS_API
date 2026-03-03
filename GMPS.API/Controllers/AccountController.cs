@@ -28,7 +28,7 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {   
+                {
                     var user = await _accountRepo.Login(input.UserName!, input.Password!);
                     if (user is null) return NotFound("Invalid Login attempt.");
                     else
@@ -73,7 +73,7 @@ namespace GMPS.API.Controllers
                 StatusCodes.Status401Unauthorized,
                 exceptionDetails);
             }
-        
+
         }
 
         [HttpPost("register")]
@@ -83,21 +83,19 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {   
-                    if(!input.RePassword.Equals(input.Password))
+                {
+                    if (!input.RePassword.Equals(input.Password))
                     {
-                        var details = new ValidationProblemDetails(ModelState);
+                        var details = new ValidationProblemDetails();
                         details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
                         details.Status = StatusCodes.Status400BadRequest;
-                        details.Detail = "Mật khẩu không khớp";
+                        details.Errors.Add("RePassword", new string[] { "Mật khẩu không khớp" });
                         return new BadRequestObjectResult(details);
                     }
-                    
                     var newUser = new User();
                     newUser.UserName = input.UserName;
                     newUser.FullName = input.FullName;
                     newUser.PasswordHash = input.Password;
-
 
                     var result = await _accountRepo.Register(newUser);
 
@@ -105,8 +103,15 @@ namespace GMPS.API.Controllers
                     {
                         //      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
                         return StatusCode(201, $"User '{newUser.UserName}' has been created");
-                    } else if(result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Failed) {
-                        throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors)));
+                    }
+                    else if (result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Failed)
+                    {
+                        var details = new ValidationProblemDetails();
+                        details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                        details.Status = StatusCodes.Status400BadRequest;
+                        //  details.Detail = string.Join(",", result.Errors);
+                        details.Errors = result.Errors;
+                        return new BadRequestObjectResult(details);
                     }
                     return Ok();
                 }

@@ -27,6 +27,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Create(User entity)
         {
             if (entity is null) throw new ArgumentNullException(nameof(entity));
+
+            User existUser = await FindUserByUserName(entity.UserName);
+
+            if(existUser is not null)
+            {
+                throw new Exception("Tên tài khoản đã tồn tài");
+            }
+
             USER userSQL = _mapper.Map<USER>(entity);
             await _context.AddAsync(userSQL);
             await _context.SaveChangesAsync();

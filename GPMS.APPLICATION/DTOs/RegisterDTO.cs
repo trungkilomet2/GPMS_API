@@ -13,8 +13,11 @@ namespace GPMS.APPLICATION.DTOs
         public User User { get; set; } = null!;
 
         public RegisterStatus Status { get; set; } = RegisterStatus.Failed;
-
-        public List<string> Errors { get; set; } = new List<string>();
-
+        
+        /// <summary>
+        /// Value1 : Field Error
+        /// Value2 : List of error messages related to that field
+        /// </summary>
+        public IDictionary<string, string[]> Errors { get; set; } = new Dictionary<string, string[]>();
     }
 }

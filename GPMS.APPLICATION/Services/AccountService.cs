@@ -34,13 +34,14 @@ namespace GPMS.APPLICATION.Services
            
             if (!ValidateUserName(user.UserName))
             {
-                registerDTO.Errors.Add("Tên người dùng phải từ 6 đến 50 ký tự");
+                registerDTO.Errors.Add("UserName", new string[] { "Tên đăng nhập phải từ 6 đến 50 ký tự" });
+                
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
 
             if(!ValidatePasswordLength(user.PasswordHash))
             {
-                registerDTO.Errors.Add("Mật khẩu phải từ 6 đến 50 ký tự");
+                registerDTO.Errors.Add("UserName", new string[] { "Tên đăng nhập phải từ 6 đến 50 ký tự 2" });
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
 
@@ -50,6 +51,7 @@ namespace GPMS.APPLICATION.Services
             await _accountBaseRepo.Register(user);  
             return registerDTO;
         }
+
 
         public bool ValidateUserName(string username)
         {
@@ -62,7 +64,6 @@ namespace GPMS.APPLICATION.Services
             if (password.Length >= 6 && password.Length <= 50) return true;
             return false;
         }
-
 
         public async Task<LoginDTO> Login(string username, string password)
         {
