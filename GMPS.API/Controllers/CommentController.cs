@@ -41,7 +41,7 @@ namespace GMPS.API.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<ActionResult> CreateComment(CreatedCommentDTO comment)
+        public async Task<ActionResult> CreateComment(CreatedCommentDTO? comment)
         {
             try
             {
@@ -59,7 +59,18 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    return BadRequest(ModelState);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    };
+                    errorDetails.Errors = ModelState
+                       .Where(kvp => kvp.Value.Errors.Count > 0)
+                       .ToDictionary(
+                           kvp => kvp.Key,
+                           kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+    );
+                    return StatusCode(StatusCodes.Status400BadRequest, string.Join("",$"{errorDetails.Errors}") );
                 }
             }
             catch (Exception ex)
@@ -70,19 +81,26 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
             }
 
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Comment>> Update(int id, Comment comment)
+        public async Task<ActionResult<Comment>> Update(int id, CreatedCommentDTO? comment)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    var updated = await _commentRepo.Update(comment);
+                    var newComment = new Comment
+                    {
+                        fromUserId = comment.FromUserId,
+                        toOrderId = comment.ToOrderId,
+                        Content = comment.Content,
+                        SendDateTime = DateTime.UtcNow
+                    };
+                    var updated = await _commentRepo.Update(newComment);
                     return StatusCode(StatusCodes.Status200OK, updated);
 
                 }
@@ -124,7 +142,6 @@ namespace GMPS.API.Controllers
                     var errorDetails = new ValidationProblemDetails(ModelState);
                     errorDetails.Status = StatusCodes.Status400BadRequest;
                     errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    errorDetails.Errors.Add("ModelValidation", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray());
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Errors);
                 }
             }
