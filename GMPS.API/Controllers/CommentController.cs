@@ -2,6 +2,7 @@
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +40,8 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Comment>> CreateComment(Comment comment)
+        [AllowAnonymous]
+        public async Task<ActionResult> CreateComment(CreatedCommentDTO comment)
         {
             try
             {
@@ -47,9 +49,8 @@ namespace GMPS.API.Controllers
                 {
                     var newComment = new Comment
                     {
-                        Id = comment.Id,
-                        fromUserId = comment.fromUserId,
-                        toOrderId = comment.toOrderId,
+                        fromUserId = comment.FromUserId,
+                        toOrderId = comment.ToOrderId,
                         Content = comment.Content,
                         SendDateTime = DateTime.UtcNow
                     };
@@ -58,11 +59,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var errorDetails = new ValidationProblemDetails(ModelState);
-                    errorDetails.Status = StatusCodes.Status400BadRequest;
-                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    errorDetails.Errors.Add("ModelValidation", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray());
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Errors);
+                    return BadRequest(ModelState);
                 }
             }
             catch (Exception ex)

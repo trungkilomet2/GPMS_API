@@ -25,15 +25,10 @@ namespace GPMS.APPLICATION.Services
                 throw new ArgumentNullException(nameof(entity));
             if (string.IsNullOrWhiteSpace(entity.Content))
                 throw new ArgumentException("Content cannot be empty");
-            if(entity.fromUserId <= 0)
+            if (entity.fromUserId <= 0)
                 throw new ArgumentException("Invalid fromUserId");
-            if(entity.toOrderId <= 0)
+            if (entity.toOrderId <= 0)
                 throw new ArgumentException("Invalid toOrderId");
-            if (!int.TryParse(entity.fromUserId.ToString(), out _))
-                throw new ArgumentException("FromUserId must be an integer");
-
-            if (!int.TryParse(entity.toOrderId.ToString(), out _))
-                throw new ArgumentException("ToOrderId must be an integer");
             entity.SendDateTime = DateTime.UtcNow;
             var data = _commentRepo.Create(entity);
             return data;
