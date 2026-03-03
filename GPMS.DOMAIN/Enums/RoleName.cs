@@ -5,7 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GPMS.DOMAIN.Enums
-{
+{   
+
+    /// <summary>
+    /// RoleName Equal ID in Role Table in database 
+    /// </summary>
     public enum RoleName
     {
         None = 0,

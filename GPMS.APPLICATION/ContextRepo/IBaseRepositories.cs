@@ -8,7 +8,7 @@ namespace GPMS.APPLICATION.ContextRepo
 {
     public interface IBaseRepositories<T>
     {
-        Task<IEnumerable<T>> GetAll();
+        Task<IEnumerable<T>> GetAll(object? obj);
         Task<T> GetById(object id);
         Task<T> Create(T entity);
         Task<T> Update(T entity);
