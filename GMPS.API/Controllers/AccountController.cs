@@ -3,6 +3,7 @@ using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -118,11 +119,19 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
+                    var details = new ValidationProblemDetails();
                     details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
                     details.Status = StatusCodes.Status400BadRequest;
+                    details.Errors.Add("RePassword", new string[] { "Mật khẩu không khớp" });
                     return new BadRequestObjectResult(details);
                 }
+            }
+            catch(DbUpdateException e)
+            {
+                var details = new ValidationProblemDetails(ModelState);
+                details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                details.Status = StatusCodes.Status400BadRequest;
+                return new BadRequestObjectResult(details);
             }
             catch (Exception e)
             {

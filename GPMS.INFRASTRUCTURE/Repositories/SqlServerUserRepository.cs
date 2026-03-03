@@ -39,6 +39,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             await _context.AddAsync(userSQL);
             await _context.SaveChangesAsync();
             return _mapper.Map<User>(userSQL);
+
         }
 
         public async Task Delete(object id)
@@ -79,6 +80,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Register(User user)
         {
             if (user is null) throw new ArgumentNullException(nameof(user));
+            User existUser = await FindUserByUserName(user.UserName);
+            if (existUser is not null)
+            {
+                throw new DbUpdateException("Tên tài khoản đã tồn tại");
+            }
             try
             {
                 USER userSQL = _mapper.Map<USER>(user);
