@@ -20,7 +20,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.UO_COMMENT, GPMS.DOMAIN.Entities.Comment>()
                 .ForMember(dest => dest.Id,opt => opt.MapFrom(src => src.OC_ID))
                 .ForMember(dest => dest.Content,opt => opt.MapFrom(src => src.CONTENT))
-                .ForMember(dest => dest.SendDateTime,opt => opt.MapFrom(src => src.SEND_DATETIME));
+                .ForMember(dest => dest.SendDateTime,opt => opt.MapFrom(src => src.SEND_DATETIME)).ReverseMap();
         }
     }
 }

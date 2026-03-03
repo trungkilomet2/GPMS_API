@@ -19,10 +19,27 @@ namespace GPMS.APPLICATION.Services
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
         }
 
+        public Task<Comment> Create(Comment entity)
+        {          
+            var data = _commentRepo.Create(entity);
+            return data;
+        }
+
+        public Task Delete(object id)
+        {
+            var data = _commentRepo.Delete(id);
+            return data;
+        }
+
         public async Task<IEnumerable<Comment>> GetCommentById(int orderId)
         {
-            var data = await _commentRepo.GetAll(orderId);
-           // var data = allComments.Where(o => o.ToOrder == orderId);
+            var data = await _commentRepo.GetAll(orderId);           
+            return data;
+        }
+
+        public Task<Comment> Update(Comment entity)
+        {
+            var data = _commentRepo.Update(entity);
             return data;
         }
     }

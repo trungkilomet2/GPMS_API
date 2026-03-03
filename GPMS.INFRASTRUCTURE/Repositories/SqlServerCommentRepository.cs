@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
@@ -21,14 +22,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
-        public Task<Comment> Create(Comment entity)
+        public async Task<Comment> Create(Comment entity)
         {
-            throw new NotImplementedException();
+            await _context.UO_COMMENT.AddAsync(entity);
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<Comment>(entity);
         }
 
-        public Task Delete(object id)
+        public async Task Delete(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.UO_COMMENT.FindAsync(id);
+            _context.UO_COMMENT.Remove(data);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<Comment>> GetAll(object? obj)
@@ -45,12 +51,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Comment> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.UO_COMMENT.FindAsync(id);
+            return _mapper.Map<Comment>(data);
         }
 
-        public Task<Comment> Update(Comment entity)
+        public async Task<Comment> Update(Comment entity)
         {
-            throw new NotImplementedException();
+            var data = await _context.UO_COMMENT.FindAsync(entity.Id);
+            if(data != null)
+            {
+                data.CONTENT = entity.Content;
+                data.SEND_DATETIME = DateTime.Parse(entity.SendDateTime);
+                await _context.SaveChangesAsync();
+            }
+            return _mapper.Map<Comment>(data);
+
         }
        
     }
