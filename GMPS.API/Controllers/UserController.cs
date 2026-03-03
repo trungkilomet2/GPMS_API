@@ -48,13 +48,22 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("{userId}")]
-        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] User user)
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO user)
         {
             try
             {
                 if(ModelState.IsValid)
                 {
-                    var updatedUser = await _userRepo.UpdateProfile(userId, user);
+                    var result = new User
+                    {
+                        UserName = user.UserName,
+                        PasswordHash = user.PasswordHash,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        AvartarUrl = user.AvartarUrl,
+                        Email = user.Email
+                    };
+                    var updatedUser = await _userRepo.UpdateProfile(userId, result);
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                     {
                         Data = updatedUser,
