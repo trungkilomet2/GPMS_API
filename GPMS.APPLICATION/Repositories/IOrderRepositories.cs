@@ -7,6 +7,7 @@ namespace GPMS.APPLICATION.Repositories
     public interface IOrderRepositories
     {
         Task<IEnumerable<Order>> GetAllOrders();
-        Task<Order?> GetOrderById(int id);
+        Task<IEnumerable<Order>> GetOrdersByUserId(int userId);
+        Task<Order> GetOrderDetail(int orderId);
     }
 }

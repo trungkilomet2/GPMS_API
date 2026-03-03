@@ -9,21 +9,20 @@ namespace GPMS.APPLICATION.Services
 {
     public class OrderService : IOrderRepositories
     {
-        private readonly IBaseOrderRepositories _orderBaseRepo;
+        private readonly IBaseRepositories<Order> _orderBaseRepo;
 
-        public OrderService(IBaseOrderRepositories orderBaseRepo)
+        public OrderService(IBaseRepositories<Order> orderBaseRepo)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
-        {
-            return await _orderBaseRepo.GetAllOrders();
-        }
+            => await _orderBaseRepo.GetAll(null);
 
-        public async Task<Order?> GetOrderById(int id)
-        {
-            return await _orderBaseRepo.GetOrderById(id);
-        }
+        public async Task<IEnumerable<Order>> GetOrdersByUserId(int userId)
+            => await _orderBaseRepo.GetAll(userId);
+
+        public async Task<Order> GetOrderDetail(int orderId)
+            => await _orderBaseRepo.GetById(orderId);
     }
 }
