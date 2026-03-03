@@ -1,4 +1,5 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.Common;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
@@ -33,13 +34,13 @@ namespace GPMS.APPLICATION.Services
 
             if (!ValidateUserName(user.UserName))
             {
-                AddError(registerDTO.Errors, "UserName", "Tên đăng nhập phải từ 6 đến 50 ký tự");
+                ValidationField.AddFieldError(registerDTO.Errors, "UserName", "Tên đăng nhập phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
             
             if(!ValidatePasswordLength(user.PasswordHash))
             {
-                AddError(registerDTO.Errors, "Password", "Mật khảu phải từ 6 đến 50 ký tự");
+                ValidationField.AddFieldError(registerDTO.Errors, "UserName", "Mật khảu phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
 
@@ -53,20 +54,6 @@ namespace GPMS.APPLICATION.Services
 
             await _accountBaseRepo.Register(user);  
             return registerDTO;
-        }
-
-        private void AddError(IDictionary<string, string[]> errors, string field, string message)
-        {
-            if (errors.ContainsKey(field))
-            {
-                var existingErrors = errors[field].ToList();
-                existingErrors.Add(message);
-                errors[field] = existingErrors.ToArray();
-            }
-            else
-            {
-                errors[field] = new string[] { message };
-            }
         }
 
         private bool ValidateUserName(string username)
