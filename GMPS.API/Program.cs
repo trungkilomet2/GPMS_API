@@ -70,7 +70,7 @@ builder.Services.AddScoped<IAccountRepositories, AccountService>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
 
-builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
+builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 
 //----------------------Identity-----------------------------
