@@ -42,13 +42,13 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        public async Task<User> UpdateProfile(int id, User user)
+        public async Task<User> UpdateProfile(int userId, User user)
         {
-            if (id != user.Id)
+            if (userId != user.Id)
             {
                 throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
             }
-            var updatedUser = await _userBaseRepo.GetById(id);
+            var updatedUser = await _userBaseRepo.GetById(userId);
             if (updatedUser == null)
             {
                 throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));

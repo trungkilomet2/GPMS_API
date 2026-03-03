@@ -47,14 +47,14 @@ namespace GMPS.API.Controllers
             };
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int id, [FromBody] User user)
+        [HttpPut("{userId}")]
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] User user)
         {
             try
             {
                 if(ModelState.IsValid)
                 {
-                    var updatedUser = await _userRepo.UpdateProfile(id, user);
+                    var updatedUser = await _userRepo.UpdateProfile(userId, user);
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                     {
                         Data = updatedUser,
