@@ -49,7 +49,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [ResponseCache(CacheProfileName = "NoCache")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         public async Task<ActionResult<RestDTO<User>>> ViewProfile(int id)
         {
             try
@@ -59,11 +59,7 @@ namespace GMPS.API.Controllers
                     var user = await _userRepo.ViewProfile(id);
                     if (user == null)
                     {
-                        var details = new ValidationProblemDetails(ModelState);
-                        details.Type =
-                        "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                        details.Status = StatusCodes.Status404NotFound;
-                        return new NotFoundObjectResult(details);
+                        return NotFound($"User with id {id} not found.");
                     }
                     var profile = new User
                     {
@@ -74,13 +70,13 @@ namespace GMPS.API.Controllers
                         AvartarUrl = user.AvartarUrl,
                         Email = user.Email
                     };
-                    return Ok(new RestDTO<User>
+                    return StatusCode(StatusCodes.Status200OK,new RestDTO<User>
                     {
                         Data = profile,
                         Links = new List<LinkDTO>
         {
             new LinkDTO(
-                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
+                Url.Action("ViewProfile", "User", new {id = profile.Id}, Request.Scheme)!,
                 "self",
                 "GET"
             )
