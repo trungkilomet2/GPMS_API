@@ -40,7 +40,7 @@ namespace GPMS.APPLICATION.Services
             
             if(!ValidatePasswordLength(user.PasswordHash))
             {
-                ValidationField.AddFieldError(registerDTO.Errors, "UserName", "Mật khảu phải từ 6 đến 50 ký tự");
+                ValidationField.AddFieldError(registerDTO.Errors, "Password", "Mật khảu phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
 

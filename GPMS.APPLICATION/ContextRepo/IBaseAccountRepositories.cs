@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 namespace GPMS.APPLICATION.ContextRepo
 {
 
-    // Customer dang nhap bang so dien thoai va password
-    // Nhan vien dang nhap bang username va password
+    
     public interface IBaseAccountRepositories
     {
         Task<User> Login(string UserName, string password);
