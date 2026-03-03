@@ -58,12 +58,11 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                    var errorDetails = new ValidationProblemDetails(ModelState);
+                    errorDetails.Status = StatusCodes.Status400BadRequest;
+                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    errorDetails.Errors.Add("ModelValidation", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray());
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Errors);
                 }
             }
             catch (Exception ex)
@@ -125,12 +124,11 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                    var errorDetails = new ValidationProblemDetails(ModelState);
+                    errorDetails.Status = StatusCodes.Status400BadRequest;
+                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    errorDetails.Errors.Add("ModelValidation", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray());
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Errors);
                 }
             }
             catch (Exception ex)
