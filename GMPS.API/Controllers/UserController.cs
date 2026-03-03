@@ -46,11 +46,4 @@ namespace GMPS.API.Controllers
             };
         }
     }
-
-
-
-
-
-
-
 }

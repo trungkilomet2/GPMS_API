@@ -9,8 +9,6 @@ namespace GPMS.DOMAIN.Entities
     public class Comment
     {
         public int Id { get; set; }
-        public string FromUser { get; set; }
-        public string ToOrder { get; set; }
         public string Content { get; set; }
         public string SendDateTime { get; set; }
 

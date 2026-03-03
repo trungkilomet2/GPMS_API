@@ -13,13 +13,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 {
     public class SqlServerCommentRepository : IBaseRepositories<Comment>
     {
-        private readonly GPMS_SYSTEMContext context;
-        private readonly IMapper mapper;
+        private readonly GPMS_SYSTEMContext _context;
+        private readonly IMapper _mapper;
 
         public SqlServerCommentRepository(GPMS_SYSTEMContext context, IMapper mapper)
         {
-            this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
         public Task<Comment> Create(Comment entity)
         {
@@ -31,10 +31,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<Comment>> GetAll()
+        public async Task<IEnumerable<Comment>> GetAll(object? obj)
         {
-            var data = await context.UO_COMMENT.ToListAsync();
-            return mapper.Map<IEnumerable<Comment>>(data);
+            List<UO_COMMENT> orderComments = new List<UO_COMMENT>();
+
+            if (obj is int orderId)
+            {
+                orderComments = await _context.UO_COMMENT.Where(u => u.TO_ORDER == orderId).ToListAsync();
+            }
+
+            return _mapper.Map<IEnumerable<Comment>>(orderComments);
         }
 
         public async Task<Comment> GetById(object id)

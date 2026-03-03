@@ -19,10 +19,10 @@ namespace GPMS.APPLICATION.Services
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
         }
 
-        public async Task<IEnumerable<Comment>> GetCommentById(string orderId)
+        public async Task<IEnumerable<Comment>> GetCommentById(int orderId)
         {
-            var allComments = await _commentRepo.GetAll();
-            var data = allComments.Where(o => o.ToOrder == orderId);
+            var data = await _commentRepo.GetAll(orderId);
+           // var data = allComments.Where(o => o.ToOrder == orderId);
             return data;
         }
     }

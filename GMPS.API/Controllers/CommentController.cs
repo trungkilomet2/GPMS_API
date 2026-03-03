@@ -21,7 +21,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<RestDTO<IEnumerable<Comment>>> GetCommentByOrderId(string id)
+        public async Task<RestDTO<IEnumerable<Comment>>> GetCommentByOrderId(int id)
         {
             var result = await _commentRepo.GetCommentById(id);
             return new RestDTO<IEnumerable<Comment>>

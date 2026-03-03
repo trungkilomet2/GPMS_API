@@ -9,6 +9,6 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface ICommentRepositories
     {
-        Task<IEnumerable<Comment>> GetCommentById(string orderId);        
+        Task<IEnumerable<Comment>> GetCommentById(int orderId);        
     }
 }
