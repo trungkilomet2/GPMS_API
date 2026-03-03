@@ -30,21 +30,24 @@ namespace GPMS.APPLICATION.Services
                 throw new ArgumentNullException(nameof(user));
             }
             RegisterDTO registerDTO = new RegisterDTO() { User = user , Status = Enum.RegisterStatus.Success};
-            // Hash password before save to database, using Microsoft.AspNetCore.Identity package for hashing password
-           
+
             if (!ValidateUserName(user.UserName))
             {
-                registerDTO.Errors.Add("UserName", new string[] { "Tên đăng nhập phải từ 6 đến 50 ký tự" });
-                
+                AddError(registerDTO.Errors, "UserName", "Tên đăng nhập phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
-
+            
             if(!ValidatePasswordLength(user.PasswordHash))
             {
-                registerDTO.Errors.Add("UserName", new string[] { "Tên đăng nhập phải từ 6 đến 50 ký tự 2" });
+                AddError(registerDTO.Errors, "Password", "Mật khảu phải từ 6 đến 50 ký tự");
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
 
+            if(Enum.RegisterStatus.Failed == registerDTO.Status)
+            {
+                return registerDTO;
+            }
+        
             var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
             user.PasswordHash = hashedPassword;
 
@@ -52,14 +55,27 @@ namespace GPMS.APPLICATION.Services
             return registerDTO;
         }
 
+        private void AddError(IDictionary<string, string[]> errors, string field, string message)
+        {
+            if (errors.ContainsKey(field))
+            {
+                var existingErrors = errors[field].ToList();
+                existingErrors.Add(message);
+                errors[field] = existingErrors.ToArray();
+            }
+            else
+            {
+                errors[field] = new string[] { message };
+            }
+        }
 
-        public bool ValidateUserName(string username)
+        private bool ValidateUserName(string username)
         {
             if (username.Length >= 6 && username.Length <= 50) return true;
             return false;
         }
 
-        public bool ValidatePasswordLength(string password)
+        private bool ValidatePasswordLength(string password)
         {
             if (password.Length >= 6 && password.Length <= 50) return true;
             return false;
