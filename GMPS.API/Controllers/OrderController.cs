@@ -63,6 +63,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("my-orders")]
         [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Owner")]
         
         public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
