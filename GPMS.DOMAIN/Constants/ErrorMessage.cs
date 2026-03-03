@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace GPMS.DOMAIN.Constants
 {
-    internal class Blank
+    public abstract class ErrorMessage
     {
+        private const string BaseMessage = "GPMS System Error: ";
+
+
     }
 }
