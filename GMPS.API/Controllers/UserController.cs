@@ -57,10 +57,6 @@ namespace GMPS.API.Controllers
                 if(ModelState.IsValid)
                 {
                     var user = await _userRepo.ViewProfile(id);
-                    if (user == null)
-                    {
-                        return NotFound($"User with id {id} not found.");
-                    }
                     var profile = new User
                     {
                         Id = user.Id,
