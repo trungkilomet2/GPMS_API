@@ -1,4 +1,5 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
@@ -14,9 +15,9 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
-    [Authorize(Roles = "Owner")]
-    [Authorize(Roles = "PM")]
+    //[Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Owner")]
+    //[Authorize(Roles = "PM")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;
@@ -49,22 +50,15 @@ namespace GMPS.API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser(int id, [FromBody] User user)
         {
-            if (id != user.Id)
+            try
             {
-                return BadRequest("ID mismatch");
-            }
-
-            var updatedUser = await _userRepo.UpdateProfile(user);
-
-            if (updatedUser == null)
-            {
-                return NotFound("User not found");
-            }
-
-            return Ok(new RestDTO<User>
-            {
-                Data = updatedUser,
-                Links = new List<LinkDTO>
+                if(ModelState.IsValid)
+                {
+                    var updatedUser = await _userRepo.UpdateProfile(id, user);
+                    return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
+                    {
+                        Data = updatedUser,
+                        Links = new List<LinkDTO>
         {
             new LinkDTO(
                 Url.Action(null, "User", new { id = updatedUser.Id }, Request.Scheme)!,
@@ -72,7 +66,28 @@ namespace GMPS.API.Controllers
                 "PUT"
             )
         }
-            });
+                    });
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState);
+                    errorDetails.Status = StatusCodes.Status400BadRequest;
+                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    return BadRequest(errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                exceptionDetails.Type =
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
         }
     }
 }

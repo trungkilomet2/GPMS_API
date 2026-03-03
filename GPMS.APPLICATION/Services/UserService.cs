@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
@@ -41,9 +42,18 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        public Task<User> UpdateProfile(User user)
+        public async Task<User> UpdateProfile(int id, User user)
         {
-            var data = _userBaseRepo.Update(user);
+            if (id != user.Id)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
+            }
+            var updatedUser = await _userBaseRepo.GetById(id);
+            if (updatedUser == null)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+            }
+            var data = await _userBaseRepo.Update(user);
             return data;
         }
     }
