@@ -1,9 +1,11 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace GMPS.API.Controllers
 {
@@ -21,10 +23,10 @@ namespace GMPS.API.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet("{id}")]
-        public async Task<RestDTO<IEnumerable<Comment>>> GetCommentByOrderId(int id)
+        [HttpGet("{orderId}")]
+        public async Task<RestDTO<IEnumerable<Comment>>> GetCommentByOrderId(int orderId)
         {
-            var result = await _commentRepo.GetCommentById(id);
+            var result = await _commentRepo.GetCommentById(orderId);
             return new RestDTO<IEnumerable<Comment>>
             {
                 Data = result,
@@ -37,22 +39,22 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateComment(Comment comment)
+        public async Task<ActionResult<Comment>> CreateComment(Comment comment)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    var result = await _commentRepo.Create(comment);
-                    var response = new RestDTO<Comment>
+                    var newComment = new Comment
                     {
-                        Data = result,
-                        Links = new List<LinkDTO>
-                        {
-                            new LinkDTO(Url.Action(null, "Comment", new { id = result.Id }, Request.Scheme)!, "self", "POST")
-                        }
+                        Id = comment.Id,
+                        fromUserId = comment.fromUserId,
+                        toOrderId = comment.toOrderId,
+                        Content = comment.Content,
+                        SendDateTime = DateTime.UtcNow
                     };
-                    return StatusCode(StatusCodes.Status200OK,response);
+                    var result = await _commentRepo.Create(newComment);
+                    return StatusCode(StatusCodes.Status201Created, $"Comment '{result.Id}' has been created");
                 }
                 else
                 {
@@ -80,19 +82,67 @@ namespace GMPS.API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<Comment>> Update(int id, Comment comment)
         {
-            if (id != comment.Id)
-                return BadRequest("Id mismatch");
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var updated = await _commentRepo.Update(comment);
+                    return StatusCode(StatusCodes.Status200OK, updated);
 
-            var updated = await _commentRepo.Update(comment);
+                }
+                else                 
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
 
-            return Ok(updated);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _commentRepo.Delete(id);
-            return NoContent();
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    await _commentRepo.Delete(id);
+                    return StatusCode(StatusCodes.Status200OK, $"Comment '{id}' has been deleted");
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
     }
 }

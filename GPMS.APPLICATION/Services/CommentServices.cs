@@ -20,15 +20,39 @@ namespace GPMS.APPLICATION.Services
         }
 
         public Task<Comment> Create(Comment entity)
-        {          
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+            if (string.IsNullOrWhiteSpace(entity.Content))
+                throw new ArgumentException("Content cannot be empty");
+            if(entity.fromUserId <= 0)
+                throw new ArgumentException("Invalid fromUserId");
+            if(entity.toOrderId <= 0)
+                throw new ArgumentException("Invalid toOrderId");
+            if (!int.TryParse(entity.fromUserId.ToString(), out _))
+                throw new ArgumentException("FromUserId must be an integer");
+
+            if (!int.TryParse(entity.toOrderId.ToString(), out _))
+                throw new ArgumentException("ToOrderId must be an integer");
+            entity.SendDateTime = DateTime.UtcNow;
             var data = _commentRepo.Create(entity);
             return data;
         }
 
-        public Task Delete(object id)
+        public async Task Delete(int id)
         {
-            var data = _commentRepo.Delete(id);
-            return data;
+            if (id <= 0)
+                throw new ArgumentException("Invalid comment id");
+
+            var comment = await _commentRepo.GetById(id);
+
+            if (comment == null)
+                throw new KeyNotFoundException($"Comment with id {id} does not exist");
+
+            if (string.IsNullOrWhiteSpace(comment.Content))
+                throw new InvalidOperationException("Cannot delete empty comment");
+
+            await _commentRepo.Delete(id);
         }
 
         public async Task<IEnumerable<Comment>> GetCommentById(int orderId)

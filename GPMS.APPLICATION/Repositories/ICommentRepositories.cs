@@ -12,6 +12,6 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<Comment>> GetCommentById(int orderId);  
         Task<Comment> Create(Comment entity);
         Task<Comment> Update(Comment entity);
-        Task Delete(object id);
+        Task Delete(int id);
     }
 }

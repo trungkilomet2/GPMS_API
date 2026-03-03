@@ -24,10 +24,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
         public async Task<Comment> Create(Comment entity)
         {
-            await _context.UO_COMMENT.AddAsync(entity);
+            var uoComment = _mapper.Map<UO_COMMENT>(entity);
+
+            await _context.UO_COMMENT.AddAsync(uoComment);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<Comment>(entity);
+            return _mapper.Map<Comment>(uoComment);
         }
 
         public async Task Delete(object id)
@@ -57,11 +59,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Comment> Update(Comment entity)
         {
-            var data = await _context.UO_COMMENT.FindAsync(entity.Id);
-            if(data != null)
+            var data = await _context.UO_COMMENT.FirstOrDefaultAsync(x => x.OC_ID == entity.Id);
+            if (data != null)
             {
                 data.CONTENT = entity.Content;
-                data.SEND_DATETIME = DateTime.Parse(entity.SendDateTime);
+                data.SEND_DATETIME = entity.SendDateTime;
                 await _context.SaveChangesAsync();
             }
             return _mapper.Map<Comment>(data);

@@ -4,15 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.DOMAIN.Entities
+namespace GPMS.APPLICATION.DTOs
 {
-    public class Comment
+    public class CreatedCommentDTO
     {
-        public int Id { get; set; }
+        public int commentId { get; set; }
         public int fromUserId { get; set; }
         public int toOrderId { get; set; }
         public string Content { get; set; }
         public DateTime SendDateTime { get; set; }
-
     }
 }
