@@ -58,7 +58,7 @@ namespace GMPS.API.Controllers
                     {
                         Id = userId,
                         UserName = user.UserName,
-                        PasswordHash = user.PasswordHash,
+                        PasswordHash = user.Password,
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,

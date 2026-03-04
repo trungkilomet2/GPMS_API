@@ -12,7 +12,7 @@ namespace GMPS.API.DTOs
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 6,
             ErrorMessage = "Password must be at least 6 characters")]
-        public string PasswordHash { get; set; }
+        public string Password { get; set; }
 
         [Required(ErrorMessage = "Full name is required")]
         [StringLength(100,
