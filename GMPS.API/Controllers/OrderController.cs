@@ -1,8 +1,9 @@
-using GMPS.API.DTOs;
+﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderRepositories _orderRepo;
@@ -22,8 +23,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Owner")]
-        
+        //[Authorize(Roles = "Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetOrders([FromQuery] RequestDTO<Order> input)
         {
             try
@@ -62,9 +62,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("my-orders")]
-        [Authorize(Roles = "Customer")]
-        [Authorize(Roles = "Owner")]
-        
+        //[Authorize(Roles = "Customer")]
         public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
@@ -96,6 +94,41 @@ namespace GMPS.API.Controllers
                     details.Status = StatusCodes.Status400BadRequest;
                     return new BadRequestObjectResult(details);
                 }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
+                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpGet("{id}")]
+        //[Authorize(Roles = "Customer, Owner")]
+        public async Task<ActionResult<RestDTO<Order>>> GetOrderDetail(int id)
+        {
+            try
+            {
+                var order = await _orderRepo.GetOrderDetail(id);
+
+                if (order is null)
+                    return NotFound(new ProblemDetails
+                    {
+                        Detail = $"Order with id {id} does not exist.",
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    });
+
+                return Ok(new RestDTO<Order>
+                {
+                    Data = order,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action("GetOrderDetail", "Order", new { id }, Request.Scheme)!, "self", "GET")
+                    }
+                });
             }
             catch (Exception ex)
             {

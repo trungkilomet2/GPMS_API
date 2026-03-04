@@ -8,5 +8,6 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<IEnumerable<Order>> GetAllOrders();
         Task<IEnumerable<Order>> GetOrdersByUserId(int userId);
+        Task<Order> GetOrderDetail(int orderId);
     }
 }

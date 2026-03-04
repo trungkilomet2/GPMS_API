@@ -17,13 +17,12 @@ namespace GPMS.APPLICATION.Services
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
-        {
-            return await _orderBaseRepo.GetAll(null);
-        }
+            => await _orderBaseRepo.GetAll(null);
 
         public async Task<IEnumerable<Order>> GetOrdersByUserId(int userId)
-        {
-            return await _orderBaseRepo.GetAll(userId);
-        }
+            => await _orderBaseRepo.GetAll(userId);
+
+        public async Task<Order> GetOrderDetail(int orderId)
+            => await _orderBaseRepo.GetById(orderId);
     }
 }
