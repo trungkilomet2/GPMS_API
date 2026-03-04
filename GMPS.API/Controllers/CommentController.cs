@@ -53,7 +53,7 @@ namespace GMPS.API.Controllers
                         Content = comment.Content,
                         SendDateTime = DateTime.UtcNow
                     };
-                    var result = await _commentRepo.Create(newComment);
+                    var result = await _commentRepo.CreateComment(newComment);
                     return StatusCode(StatusCodes.Status201Created, $"Comment '{result.Id}' has been created");
                 }
                 else
@@ -92,7 +92,7 @@ namespace GMPS.API.Controllers
                         Content = comment.Content,
                         SendDateTime = DateTime.UtcNow
                     };
-                    var updated = await _commentRepo.Update(newComment);
+                    var updated = await _commentRepo.UpdateComment(newComment);
                     return StatusCode(StatusCodes.Status200OK, updated);
 
                 }
@@ -126,7 +126,7 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    await _commentRepo.Delete(id);
+                    await _commentRepo.DeleteComment(id);
                     return StatusCode(StatusCodes.Status200OK, $"Comment '{id}' has been deleted");
                 }
                 else

@@ -19,7 +19,7 @@ namespace GPMS.APPLICATION.Services
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
         }
 
-        public Task<Comment> Create(Comment entity)
+        public Task<Comment> CreateComment(Comment entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -34,7 +34,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task Delete(int id)
+        public async Task DeleteComment(int id)
         {
             if (id <= 0)
                 throw new ArgumentException("Invalid comment id");
@@ -56,7 +56,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public Task<Comment> Update(Comment entity)
+        public Task<Comment> UpdateComment(Comment entity)
         {
             var data = _commentRepo.Update(entity);
             if (data == null)
