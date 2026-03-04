@@ -44,14 +44,14 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> UpdateProfile(int userId, User user)
         {
-            if (userId != user.Id)
-            {
-                throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
-            }
-            var updatedUser = await _userBaseRepo.GetById(userId);
-            if (updatedUser == null)
+            var result = await _userBaseRepo.GetById(userId);        
+            if (result == null)
             {
                 throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+            }
+            if (userId != result.Id)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
             }
             var data = await _userBaseRepo.Update(user);
             return data;

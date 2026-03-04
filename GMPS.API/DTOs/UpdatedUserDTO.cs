@@ -30,6 +30,11 @@ namespace GMPS.API.DTOs
             ErrorMessage = "Avatar URL is too long")]
         public string AvartarUrl { get; set; }
 
+        [Required(ErrorMessage = "Location is required")]
+        [StringLength(2048,
+    ErrorMessage = "Location is too long")]
+        public string Location { get; set; }
+
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(255,

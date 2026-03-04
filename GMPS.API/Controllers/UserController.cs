@@ -48,7 +48,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("{userId}")]
-        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO user)
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO? user)
         {
             try
             {
@@ -56,11 +56,13 @@ namespace GMPS.API.Controllers
                 {
                     var result = new User
                     {
+                        Id = userId,
                         UserName = user.UserName,
                         PasswordHash = user.PasswordHash,
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,
+                        Location = user.Location,
                         Email = user.Email
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
@@ -82,7 +84,7 @@ namespace GMPS.API.Controllers
                     var errorDetails = new ValidationProblemDetails(ModelState);
                     errorDetails.Status = StatusCodes.Status400BadRequest;
                     errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    return BadRequest(errorDetails);
+                    return BadRequest(errorDetails.Errors);
                 }
             }
             catch (Exception ex)
