@@ -40,7 +40,6 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<ActionResult> CreateComment(CreatedCommentDTO? comment)
         {
             try
