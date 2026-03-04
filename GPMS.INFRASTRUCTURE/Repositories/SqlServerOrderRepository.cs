@@ -45,7 +45,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Order> Create(Order entity)
         {
-            var orderEntity = _mapper.Map<ORDER>(entity);
+            var orderEntity =  _mapper.Map<ORDER>(entity);
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
             return _mapper.Map<Order>(orderEntity);
