@@ -63,12 +63,6 @@ namespace GMPS.API.Controllers
                         Status = StatusCodes.Status400BadRequest,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
                     };
-                    errorDetails.Errors = ModelState
-                       .Where(kvp => kvp.Value.Errors.Count > 0)
-                       .ToDictionary(
-                           kvp => kvp.Key,
-                           kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-    );
                     return StatusCode(StatusCodes.Status400BadRequest, string.Join("",$"{errorDetails.Errors}") );
                 }
             }
@@ -85,8 +79,8 @@ namespace GMPS.API.Controllers
 
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Comment>> Update(int id, CreatedCommentDTO? comment)
+        [HttpPut("{CommentId}")]
+        public async Task<ActionResult<Comment>> UpdateComment(int CommentId, [FromBody] UpdatedCommentDTO? comment)
         {
             try
             {
@@ -94,8 +88,7 @@ namespace GMPS.API.Controllers
                 {
                     var newComment = new Comment
                     {
-                        fromUserId = comment.FromUserId,
-                        toOrderId = comment.ToOrderId,
+                        Id = CommentId,
                         Content = comment.Content,
                         SendDateTime = DateTime.UtcNow
                     };
@@ -127,7 +120,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteComment(int id)
         {
             try
             {

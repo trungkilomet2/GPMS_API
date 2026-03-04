@@ -59,6 +59,10 @@ namespace GPMS.APPLICATION.Services
         public Task<Comment> Update(Comment entity)
         {
             var data = _commentRepo.Update(entity);
+            if (data == null)
+            {
+                throw new Exception("Comment not found");
+            }
             return data;
         }
     }

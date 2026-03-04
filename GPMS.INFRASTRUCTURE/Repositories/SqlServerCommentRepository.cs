@@ -60,12 +60,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<Comment> Update(Comment entity)
         {
             var data = await _context.UO_COMMENT.FirstOrDefaultAsync(x => x.OC_ID == entity.Id);
-            if (data != null)
-            {
                 data.CONTENT = entity.Content;
                 data.SEND_DATETIME = entity.SendDateTime;
-                await _context.SaveChangesAsync();
-            }
+                await _context.SaveChangesAsync();           
             return _mapper.Map<Comment>(data);
 
         }
