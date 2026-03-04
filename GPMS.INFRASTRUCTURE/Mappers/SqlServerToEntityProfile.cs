@@ -27,6 +27,13 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OM_ID))
                 .ForMember(dest => dest.Uom, opt => opt.MapFrom(src => src.UOM));
 
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_HISTORY_UPDATE, GPMS.DOMAIN.Entities.OHistoryUpdate>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OHU_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.FIELD_NAME))
+                .ForMember(dest => dest.OldValue, opt => opt.MapFrom(src => src.OLD_VALUE))
+                .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE));
+
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER, GPMS.DOMAIN.Entities.Order>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORDER_ID))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
@@ -42,7 +49,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS.NAME))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
-                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL));
+                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
+                .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE));
         }
     }
 }

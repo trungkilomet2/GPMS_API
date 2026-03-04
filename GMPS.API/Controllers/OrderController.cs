@@ -45,24 +45,35 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
-                    details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    details.Status = StatusCodes.Status400BadRequest;
-                    return new BadRequestObjectResult(details);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails();
-                exceptionDetails.Detail = ex.Message;
-                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
-                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
 
+        // Customer & Owner xem đơn theo userId
         [HttpGet("my-orders")]
-        //[Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
@@ -89,37 +100,68 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
-                    details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    details.Status = StatusCodes.Status400BadRequest;
-                    return new BadRequestObjectResult(details);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails();
-                exceptionDetails.Detail = ex.Message;
-                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
-                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
 
+        // Order Detail
         [HttpGet("{id}")]
-        //[Authorize(Roles = "Customer, Owner")]
+        //[Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<Order>>> GetOrderDetail(int id)
         {
             try
             {
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
                 var order = await _orderRepo.GetOrderDetail(id);
 
                 if (order is null)
-                    return NotFound(new ProblemDetails
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
                     {
-                        Detail = $"Order with id {id} does not exist.",
                         Status = StatusCodes.Status404NotFound,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                    });
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
 
                 return Ok(new RestDTO<Order>
                 {
@@ -132,10 +174,72 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails();
-                exceptionDetails.Detail = ex.Message;
-                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
-                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // View History Update of Order
+        [HttpGet("{id}/history")]
+        //[Authorize(Roles = "Customer,Owner")]
+        public async Task<ActionResult<RestDTO<IEnumerable<OHistoryUpdate>>>> GetOrderHistory(int id)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var order = await _orderRepo.GetOrderDetail(id);
+
+                // PRE-2: Order phải tồn tại
+                if (order is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                return Ok(new RestDTO<IEnumerable<OHistoryUpdate>>
+                {
+                    Data = order.Histories,
+                    RecordCount = order.Histories.Count(),
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action("GetOrderHistory", "Order", new { id }, Request.Scheme)!, "self", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
