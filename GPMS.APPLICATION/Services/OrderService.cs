@@ -16,9 +16,9 @@ namespace GPMS.APPLICATION.Services
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
         }
 
-        public async Task<Order> CreateOrder(Order order)
+        public  Task<Order> CreateOrder(Order order)
         {
-            var data = await _orderBaseRepo.Create(order);
+            var data =  _orderBaseRepo.Create(order);
             return data;
         }
 
