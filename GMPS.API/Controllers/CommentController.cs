@@ -40,7 +40,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateComment(CreatedCommentDTO? comment)
+        public async Task<ActionResult> CreateComment([FromBody] CreatedCommentDTO? comment)
         {
             try
             {
