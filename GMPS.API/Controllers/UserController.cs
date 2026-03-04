@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
@@ -16,9 +17,9 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
-    [Authorize(Roles = "Owner")]
-    [Authorize(Roles = "PM")]
+    //[Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Owner")]
+    //[Authorize(Roles = "PM")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;
@@ -46,6 +47,60 @@ namespace GMPS.API.Controllers
                     new LinkDTO (Url.Action(null,"User", new { input.PageIndex, input.PageSize }, Request.Scheme)!,"self","GET")
                 }
             };
+        }
+
+        [HttpPut("{userId}")]
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO? user)
+        {
+            try
+            {
+                if(ModelState.IsValid)
+                {
+                    var result = new User
+                    {
+                        Id = userId,
+                        UserName = user.UserName,
+                        PasswordHash = user.Password,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        AvartarUrl = user.AvartarUrl,
+                        Location = user.Location,
+                        Email = user.Email
+                    };
+                    var updatedUser = await _userRepo.UpdateProfile(userId, result);
+                    return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
+                    {
+                        Data = updatedUser,
+                        Links = new List<LinkDTO>
+        {
+            new LinkDTO(
+                Url.Action(null, "User", new { id = updatedUser.Id }, Request.Scheme)!,
+                "self",
+                "PUT"
+            )
+        }
+                    });
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState);
+                    errorDetails.Status = StatusCodes.Status400BadRequest;
+                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    return BadRequest(errorDetails.Errors);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                exceptionDetails.Type =
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
         }
 
         [HttpGet("{id}")]
@@ -79,11 +134,4 @@ namespace GMPS.API.Controllers
             });
         }
     }
-
-
-
-
-
-
-
 }

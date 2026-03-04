@@ -23,9 +23,23 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        //Create User in SQL
         public async Task<User> Create(User entity)
         {
-            throw new NotImplementedException();
+            if (entity is null) throw new ArgumentNullException(nameof(entity));
+
+            User existUser = await FindUserByUserName(entity.UserName);
+
+            if(existUser is not null)
+            {
+                throw new Exception("Tên tài khoản đã tồn tài");
+            }
+
+            USER userSQL = _mapper.Map<USER>(entity);
+            await _context.AddAsync(userSQL);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<User>(userSQL);
+
         }
 
         public async Task Delete(object id)
@@ -33,17 +47,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<User> FindUserByPhoneNumber(string phoneNumber)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task<User> FindUserByUserName(string username)
         {
             var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();
-            
-            if(data is null) return null;
-         
+
+            if (data is null) return null;
+
             return _mapper.Map<User>(data);
         }
 
@@ -64,18 +74,50 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Login(string UserName, string password)
         {
             var data = await _context.USER.Where(u => u.UserName.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
-         
+
             return _mapper.Map<User>(data);
         }
 
-        public Task<User> Register(User user)
+        public async Task<User> Register(User user)
         {
-            throw new NotImplementedException();
+            if (user is null) throw new ArgumentNullException(nameof(user));
+            User existUser = await FindUserByUserName(user.UserName);
+            if (existUser is not null)
+            {
+                throw new DbUpdateException("Tên tài khoản đã tồn tại");
+            }
+            try
+            {
+                USER userSQL = _mapper.Map<USER>(user);
+                userSQL.US_ID = 1; // 1 equal Active status in User
+                await _context.AddAsync(userSQL);
+                await _context.SaveChangesAsync();
+                return _mapper.Map<User>(userSQL);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public async Task<User> Update(User entity)
         {
-            throw new NotImplementedException();
+            var existingUser = await _context.USER.FindAsync(entity.Id);
+            if (existingUser == null)
+            {
+                throw new KeyNotFoundException($"User with ID {entity.Id} not found");
+            }
+                existingUser.UserName = entity.UserName;
+                existingUser.PASSWORDHASH = entity.PasswordHash;
+                existingUser.FULLNAME = entity.FullName;
+                existingUser.PHONE_NUMBER = entity.PhoneNumber;
+                existingUser.LOCATION = entity.Location;
+                existingUser.AVATAR = entity.AvartarUrl;
+                existingUser.EMAIL = entity.Email;
+            
+                _context.USER.Update(existingUser);
+                await _context.SaveChangesAsync();
+                return _mapper.Map<User>(existingUser);       
         }
     }
 }
