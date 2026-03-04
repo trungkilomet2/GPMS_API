@@ -1,7 +1,9 @@
-﻿using GMPS.API.DTOs;
+﻿using AutoMapper;
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
+using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -44,6 +46,37 @@ namespace GMPS.API.Controllers
                     new LinkDTO (Url.Action(null,"User", new { input.PageIndex, input.PageSize }, Request.Scheme)!,"self","GET")
                 }
             };
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<RestDTO<User>>> ViewProfile(int id)
+        {
+            var user = await _userRepo.ViewProfile(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            var profile = new User
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                AvartarUrl = user.AvartarUrl,
+                Email = user.Email
+            };
+            return Ok(new RestDTO<User>
+            {
+                Data = profile,
+                Links = new List<LinkDTO>
+        {
+            new LinkDTO(
+                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
+                "self",
+                "GET"
+            )
+        }
+            });
         }
     }
 
