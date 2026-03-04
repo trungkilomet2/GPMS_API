@@ -1,4 +1,4 @@
-using GMPS.API.DTOs;
+﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -45,26 +45,35 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
-                    details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    details.Status = StatusCodes.Status400BadRequest;
-                    return new BadRequestObjectResult(details);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails();
-                exceptionDetails.Detail = ex.Message;
-                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
-                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
 
+        // Customer & Owner xem đơn theo userId
         [HttpGet("my-orders")]
-        [Authorize(Roles = "Customer")]
-        [Authorize(Roles = "Owner")]
-        
+        [Authorize(Roles = "Customer,Owner")]  
         public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
@@ -91,18 +100,28 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
-                    details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    details.Status = StatusCodes.Status400BadRequest;
-                    return new BadRequestObjectResult(details);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails();
-                exceptionDetails.Detail = ex.Message;
-                exceptionDetails.Status = StatusCodes.Status500InternalServerError;
-                exceptionDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
