@@ -41,9 +41,9 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        public Task<User> ViewProfile(int id)
+        public async Task<User> ViewProfile(int id)
         {
-            var data = _userBaseRepo.GetById(id);
+            var data = await _userBaseRepo.GetById(id);
             if(data == null)
             {
                 throw new Exception("User not found");

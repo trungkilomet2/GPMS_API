@@ -64,6 +64,7 @@ namespace GMPS.API.Controllers
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,
+                        Location = user.Location,
                         Email = user.Email
                     };
                     return StatusCode(StatusCodes.Status200OK,new RestDTO<User>
