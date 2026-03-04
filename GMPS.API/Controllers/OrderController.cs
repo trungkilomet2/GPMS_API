@@ -127,6 +127,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         public async Task<ActionResult<RestDTO<Order>>> CreateOrder([FromBody] CreateOrderDTO input)
         {
             try
