@@ -128,7 +128,7 @@ namespace GMPS.API.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<ActionResult<RestDTO<Order>>> CreateOrder([FromBody] CreateOrderDTO? input)
+        public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
             try
             {
@@ -136,6 +136,7 @@ namespace GMPS.API.Controllers
                 {
                     var newOrder = new Order
                     {
+                        UserId = input.UserId,
                         Image = input.Image,
                         OrderName = input.OrderName,
                         Type = input.Type,
@@ -146,17 +147,10 @@ namespace GMPS.API.Controllers
                         Quantity = input.Quantity,
                         Cpu = input.Cpu,
                         Note = input.Note,
-                        Status = input.Status
+                        Status = "Process"
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);
-                    return Ok(new RestDTO<Order>
-                    {
-                        Data = result,
-                        Links = new List<LinkDTO>
-                        {
-                            new LinkDTO(Url.Action(null, "Order", new { id = result.Id }, Request.Scheme)!, "self", "POST")
-                        }
-                    });
+                    return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
                 }
                 else
                 {
@@ -176,6 +170,7 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
+                Console.WriteLine(ex.Message + "dsadasdas");
                 return StatusCode(StatusCodes.Status500InternalServerError,exceptionDetails.Detail);
             }
 

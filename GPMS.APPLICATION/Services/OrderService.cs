@@ -16,9 +16,17 @@ namespace GPMS.APPLICATION.Services
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
         }
 
-        public  Task<Order> CreateOrder(Order order)
+        public async Task<Order> CreateOrder(Order order)
         {
-            var data =  _orderBaseRepo.Create(order);
+            if (order == null)
+            {
+                throw new Exception("Failed to create order.");
+            }
+            if (order.UserId == null)
+            {
+                throw new Exception("User not found.");
+            }
+            var data = await _orderBaseRepo.Create(order);
             return data;
         }
 
