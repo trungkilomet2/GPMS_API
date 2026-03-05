@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace GMPS.API.Controllers
 {
@@ -23,19 +24,35 @@ namespace GMPS.API.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
                     var result = await _orderRepo.GetAllOrders();
-                    return Ok(new RestDTO<IEnumerable<Order>>
+
+                    var data = result.Select(o => new OrderListDTO
                     {
-                        Data = result,
+                        Id = o.Id,
+                        OrderName = o.OrderName,
+                        Type = o.Type,
+                        Size = o.Size,
+                        Color = o.Color,
+                        Quantity = o.Quantity,
+                        Cpu = o.Cpu,
+                        StartDate = o.StartDate,
+                        EndDate = o.EndDate,
+                        Image = o.Image,
+                        Status = o.Status
+                    });
+
+                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
+                    {
+                        Data = data,
                         PageIndex = input.PageIndex,
                         PageSize = input.PageSize,
-                        RecordCount = result.Count(),
+                        RecordCount = data.Count(),
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
@@ -73,7 +90,7 @@ namespace GMPS.API.Controllers
         // Customer & Owner xem đơn theo userId
         [HttpGet("my-orders")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
             {
@@ -85,12 +102,27 @@ namespace GMPS.API.Controllers
                     var userId = int.Parse(userIdClaim);
                     var result = await _orderRepo.GetOrdersByUserId(userId);
 
-                    return Ok(new RestDTO<IEnumerable<Order>>
+                    var data = result.Select(o => new OrderListDTO
                     {
-                        Data = result,
+                        Id = o.Id,
+                        OrderName = o.OrderName,
+                        Type = o.Type,
+                        Size = o.Size,
+                        Color = o.Color,
+                        Quantity = o.Quantity,
+                        Cpu = o.Cpu,
+                        StartDate = o.StartDate,
+                        EndDate = o.EndDate,
+                        Image = o.Image,
+                        Status = o.Status
+                    });
+
+                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
+                    {
+                        Data = data,
                         PageIndex = input.PageIndex,
                         PageSize = input.PageSize,
-                        RecordCount = result.Count(),
+                        RecordCount = data.Count(),
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
@@ -125,10 +157,10 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Customer & Owner xem chi tiết 1 đơn
+        // Order Detail
         [HttpGet("{id}")]
-        //[Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<Order>>> GetOrderDetail(int id)
+        [Authorize(Roles = "Customer,Owner")]
+        public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
         {
             try
             {
@@ -162,12 +194,32 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
-                return Ok(new RestDTO<Order>
+
+                var data = new OrderDetailDTO
                 {
-                    Data = order,
+                    Id = order.Id,
+                    OrderName = order.OrderName,
+                    Type = order.Type,
+                    Size = order.Size,
+                    Color = order.Color,
+                    Quantity = order.Quantity,
+                    Cpu = order.Cpu,
+                    StartDate = order.StartDate,
+                    EndDate = order.EndDate,
+                    Image = order.Image,
+                    Note = order.Note,
+                    Status = order.Status,
+                    Templates = order.Templates,
+                    Materials = order.Materials
+                };
+
+                return Ok(new RestDTO<OrderDetailDTO>
+                {
+                    Data = data,
                     Links = new List<LinkDTO>
                     {
-                        new LinkDTO(Url.Action("GetOrderDetail", "Order", new { id }, Request.Scheme)!, "self", "GET")
+                        new LinkDTO(Url.Action("GetOrderDetail", "Order", new { id }, Request.Scheme)!, "self", "GET"),
+                        new LinkDTO(Url.Action("GetOrderHistory", "Order", new { id }, Request.Scheme)!, "history", "GET")
                     }
                 });
             }
@@ -181,6 +233,6 @@ namespace GMPS.API.Controllers
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
-        }
+        }    
     }
 }
