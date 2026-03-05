@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GMPS.API.Controllers
 {
@@ -31,12 +32,28 @@ namespace GMPS.API.Controllers
                 if (ModelState.IsValid)
                 {
                     var result = await _orderRepo.GetAllOrders();
-                    return Ok(new RestDTO<IEnumerable<Order>>
+
+                    var data = result.Select(o => new OrderListDTO
                     {
-                        Data = result,
+                        Id = o.Id,
+                        OrderName = o.OrderName,
+                        Type = o.Type,
+                        Size = o.Size,
+                        Color = o.Color,
+                        Quantity = o.Quantity,
+                        Cpu = o.Cpu,
+                        StartDate = o.StartDate,
+                        EndDate = o.EndDate,
+                        Image = o.Image,
+                        Status = o.Status
+                    });
+
+                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
+                    {
+                        Data = data,
                         PageIndex = input.PageIndex,
                         PageSize = input.PageSize,
-                        RecordCount = result.Count(),
+                        RecordCount = data.Count(),
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
@@ -73,8 +90,8 @@ namespace GMPS.API.Controllers
 
         // Customer & Owner xem đơn theo userId
         [HttpGet("my-orders")]
-        [Authorize(Roles = "Customer,Owner")]  
-        public async Task<ActionResult<RestDTO<IEnumerable<Order>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
+        [Authorize(Roles = "Customer,Owner")]
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
             {
@@ -86,12 +103,27 @@ namespace GMPS.API.Controllers
                     var userId = int.Parse(userIdClaim);
                     var result = await _orderRepo.GetOrdersByUserId(userId);
 
-                    return Ok(new RestDTO<IEnumerable<Order>>
+                    var data = result.Select(o => new OrderListDTO
                     {
-                        Data = result,
+                        Id = o.Id,
+                        OrderName = o.OrderName,
+                        Type = o.Type,
+                        Size = o.Size,
+                        Color = o.Color,
+                        Quantity = o.Quantity,
+                        Cpu = o.Cpu,
+                        StartDate = o.StartDate,
+                        EndDate = o.EndDate,
+                        Image = o.Image,
+                        Status = o.Status
+                    });
+
+                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
+                    {
+                        Data = data,
                         PageIndex = input.PageIndex,
                         PageSize = input.PageSize,
-                        RecordCount = result.Count(),
+                        RecordCount = data.Count(),
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
