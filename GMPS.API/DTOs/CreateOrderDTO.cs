@@ -35,17 +35,16 @@ namespace GMPS.API.DTOs
         public DateOnly EndDate { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
+        [Range(1, 1000, ErrorMessage = "Quantity must be greater than 0")]
         public int Quantity { get; set; }
 
         [Range(0, double.MaxValue, ErrorMessage = "Cpu must be greater than or equal to 0")]
         public decimal? Cpu { get; set; }
 
-        [StringLength(500, ErrorMessage = "Note cannot exceed 500 characters")]
+        [StringLength(200, ErrorMessage = "Note cannot exceed 200 characters")]
         public string? Note { get; set; }
 
         [Required(ErrorMessage = "Status is required")]
-        [StringLength(20, ErrorMessage = "Status cannot exceed 20 characters")]
         public string Status { get; set; }
     }
 }
