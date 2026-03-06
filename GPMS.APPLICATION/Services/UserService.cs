@@ -31,20 +31,20 @@ namespace GPMS.APPLICATION.Services
         }
 
         public async Task<IEnumerable<User>> GetAllUser()
-        {   
+        {
             var data = await _userBaseRepo.GetAll(null);
-            
             return data;
         }
 
-        public Task<User> Login(string UserName, string password)
+        public Task<User> ViewProfile(int id)
         {
-            throw new NotImplementedException();
+            var data = _userBaseRepo.GetById(id);
+            return data;
         }
 
         public async Task<User> UpdateProfile(int userId, User user)
         {
-            var result = await _userBaseRepo.GetById(userId);        
+            var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
                 throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
