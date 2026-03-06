@@ -22,7 +22,8 @@ namespace GMPS.API.Controllers
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
         }
 
-        [HttpGet]
+        // api/order/order-list
+        [HttpGet("order-list")]
         [Authorize(Roles = "Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
         {
@@ -87,7 +88,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Customer & Owner xem đơn theo userId
+        // api/order/my-orders
         [HttpGet("my-orders")]
         [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
@@ -157,9 +158,9 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Order Detail
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Customer,Owner")]
+        // api/order/order-detail,{id}
+        [HttpGet("order-detail,{id}")]
+        //[Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
         {
             try
@@ -193,7 +194,6 @@ namespace GMPS.API.Controllers
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
-
 
                 var data = new OrderDetailDTO
                 {
@@ -235,6 +235,66 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // api/order/{id}/history
+        [HttpGet("{id}/history")]
+        //[Authorize(Roles = "Customer,Owner")]
+        public async Task<ActionResult<RestDTO<IEnumerable<OHistoryUpdate>>>> GetOrderHistory(int id)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var order = await _orderRepo.GetOrderDetail(id);
+
+                if (order is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                return Ok(new RestDTO<IEnumerable<OHistoryUpdate>>
+                {
+                    Data = order.Histories,
+                    RecordCount = order.Histories.Count(),
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action("GetOrderHistory", "Order", new { id }, Request.Scheme)!, "self", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // api/order
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
@@ -279,10 +339,8 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
-                Console.WriteLine(ex.Message + "dsadasdas");
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
-
         }
     }
 }
