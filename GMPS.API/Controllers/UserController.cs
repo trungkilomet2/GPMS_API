@@ -49,7 +49,7 @@ namespace GMPS.API.Controllers
             };
         }
 
-        [HttpPut("{userId}")]
+        [HttpPut("update-profile/{userId}")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO? user)
         {
             try
@@ -59,8 +59,6 @@ namespace GMPS.API.Controllers
                     var result = new User
                     {
                         Id = userId,
-                        UserName = user.UserName,
-                        PasswordHash = user.Password,
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,
@@ -103,32 +101,30 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("view-profile/{id}")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
-        public async Task<ActionResult<RestDTO<User>>> ViewProfile(int id)
+        public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile(int id)
         {
             try
             {
                 if(ModelState.IsValid)
                 {
                     var user = await _userRepo.ViewProfile(id);
-                    var profile = new User
-                    {
-                        Id = user.Id,
-                        UserName = user.UserName,
+                    var profile = new ViewProfileDTO
+                    {                       
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,
                         Location = user.Location,
                         Email = user.Email
                     };
-                    return StatusCode(StatusCodes.Status200OK,new RestDTO<User>
+                    return StatusCode(StatusCodes.Status200OK,new RestDTO<ViewProfileDTO>
                     {
                         Data = profile,
                         Links = new List<LinkDTO>
         {
             new LinkDTO(
-                Url.Action("ViewProfile", "User", new {id = profile.Id}, Request.Scheme)!,
+                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
                 "self",
                 "GET"
             )
