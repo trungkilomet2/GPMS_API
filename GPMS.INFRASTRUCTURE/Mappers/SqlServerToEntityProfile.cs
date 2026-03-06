@@ -38,7 +38,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.FIELD_NAME))
                 .ForMember(dest => dest.OldValue, opt => opt.MapFrom(src => src.OLD_VALUE))
                 .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE));
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL)).ReverseMap();
+               // .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.em)).ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
 

@@ -233,6 +233,56 @@ namespace GMPS.API.Controllers
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
-        }    
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var newOrder = new Order
+                    {
+                        UserId = input.UserId,
+                        Image = input.Image,
+                        OrderName = input.OrderName,
+                        Type = input.Type,
+                        Size = input.Size,
+                        Color = input.Color,
+                        StartDate = input.StartDate,
+                        EndDate = input.EndDate,
+                        Quantity = input.Quantity,
+                        Cpu = input.Cpu,
+                        Note = input.Note,
+                        Status = "Process"
+                    };
+                    var result = await _orderRepo.CreateOrder(newOrder);
+                    return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                Console.WriteLine(ex.Message + "dsadasdas");
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
+            }
+
+        }
     }
 }
