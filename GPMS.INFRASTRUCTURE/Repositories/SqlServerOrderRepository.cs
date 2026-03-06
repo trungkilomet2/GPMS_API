@@ -41,6 +41,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .Include(o => o.OS)
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
+                .Include(o => o.O_HISTORY_UPDATE)
                 .Where(o => o.ORDER_ID == (int)id)
                 .FirstOrDefaultAsync();
             return _mapper.Map<Order>(data);

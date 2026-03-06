@@ -12,7 +12,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class OrderController : ControllerBase
     {
         private readonly IOrderRepositories _orderRepo;
@@ -233,6 +233,6 @@ namespace GMPS.API.Controllers
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
-        }
+        }    
     }
 }

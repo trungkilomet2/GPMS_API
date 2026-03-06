@@ -34,5 +34,6 @@ namespace GPMS.DOMAIN.Entities
         public string Status { get; set; }
         public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
         public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
+        public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
     }
 }

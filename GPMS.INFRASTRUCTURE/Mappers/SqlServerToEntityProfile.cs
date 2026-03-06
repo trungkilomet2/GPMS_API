@@ -22,7 +22,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
                 .ReverseMap();
 
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>()
+                .ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OTemplate>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OT_ID));
