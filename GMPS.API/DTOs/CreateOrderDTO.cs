@@ -46,5 +46,8 @@ namespace GMPS.API.DTOs
 
         [Required(ErrorMessage = "Status is required")]
         public string Status { get; set; }
+        public List<CreateMaterialDTO>? Materials { get; set; }
+
+        public List<CreateTemplateDTO>? Templates { get; set; }
     }
 }

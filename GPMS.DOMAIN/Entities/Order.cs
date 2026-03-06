@@ -21,5 +21,8 @@ namespace GPMS.DOMAIN.Entities
         public decimal? Cpu { get; set; }
         public string? Note { get; set; }
         public string Status { get; set; }
+        public List<OrderMaterial>? Materials { get; set; }
+
+        public List<OrderTemplate>? Templates { get; set; }
     }
 }

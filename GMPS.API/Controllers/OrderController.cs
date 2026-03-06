@@ -126,7 +126,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("create-order")]
         [AllowAnonymous]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
@@ -147,7 +147,18 @@ namespace GMPS.API.Controllers
                         Quantity = input.Quantity,
                         Cpu = input.Cpu,
                         Note = input.Note,
-                        Status = "Process"
+                        Status = "Process",
+                        Materials = input.Materials?.Select(m => new OrderMaterial
+                        {
+                            MaterialName = m.MaterialName,
+                            Quantity = m.Quantity,
+                            Uom = m.Uom
+                        }).ToList(),
+
+                        Templates = input.Templates?.Select(t => new OrderTemplate
+                        {
+                            TemplateName = t.TemplateName
+                        }).ToList(),
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);
                     return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
