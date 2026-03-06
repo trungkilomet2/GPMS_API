@@ -24,5 +24,23 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<Order> GetOrderDetail(int orderId)
             => await _orderBaseRepo.GetById(orderId);
+        public async Task<Order> CreateOrder(Order order)
+        {
+            if (order == null)
+            {
+                throw new Exception("Failed to create order.");
+            }
+            if (order.UserId == null)
+            {
+                throw new Exception("User not found.");
+            }
+            if(order.EndDate < order.StartDate)
+            {
+                throw new Exception("End date must be greater than start date.");
+            }
+            var data = await _orderBaseRepo.Create(order);
+            return data;
+        }
+
     }
 }

@@ -47,7 +47,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<Order>(data);
         }
 
-        public Task<Order> Create(Order entity) => throw new NotImplementedException();
+        public async Task<Order> Create(Order entity)
+        {
+            var orderEntity =  _mapper.Map<ORDER>(entity);
+
+            await _context.ORDER.AddAsync(orderEntity);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(orderEntity);
+        }
         public Task<Order> Update(Order entity) => throw new NotImplementedException();
         public Task Delete(object id) => throw new NotImplementedException();
     }

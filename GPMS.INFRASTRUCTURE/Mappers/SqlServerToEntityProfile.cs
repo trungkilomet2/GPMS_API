@@ -13,8 +13,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
         {
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.USER_ID))
-                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.PASSWORDHASH))
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
@@ -38,6 +38,9 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.FIELD_NAME))
                 .ForMember(dest => dest.OldValue, opt => opt.MapFrom(src => src.OLD_VALUE))
                 .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE));
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL)).ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER, GPMS.DOMAIN.Entities.Order>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORDER_ID))
