@@ -37,7 +37,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Order> GetById(object id)
         {
-            var data = await _context.ORDER.Include(o => o.OS)
+            var data = await _context.ORDER
+                .Include(o => o.OS)
+                .Include(o => o.O_TEMPLATE)
+                .Include(o => o.O_MATERIAL)
                 .Where(o => o.ORDER_ID == (int)id)
                 .FirstOrDefaultAsync();
             return _mapper.Map<Order>(data);
