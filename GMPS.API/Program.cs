@@ -73,6 +73,8 @@ builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 
+builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialRepository>();
+
 builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
 //----------------------Identity-----------------------------
