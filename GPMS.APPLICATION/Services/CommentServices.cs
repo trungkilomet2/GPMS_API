@@ -13,14 +13,21 @@ namespace GPMS.APPLICATION.Services
     public class CommentServices : ICommentRepositories
     {
         private readonly IBaseRepositories<Comment> _commentRepo;
+        private readonly IBaseRepositories<User> _userRepo;
 
-        public CommentServices(IBaseRepositories<Comment> commentRepo)
+        public CommentServices(IBaseRepositories<Comment> commentRepo, IBaseRepositories<User> userRepo)
         {
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
-        public Task<Comment> CreateComment(Comment entity)
+        public async Task<Comment> CreateComment(Comment entity)
         {
+            var result = await _userRepo.GetById(entity.fromUserId);
+            if (result == null) 
+            { 
+                throw new Exception($"User with id {entity.fromUserId} does not exist");
+            }
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
             if (string.IsNullOrWhiteSpace(entity.Content))
@@ -30,7 +37,7 @@ namespace GPMS.APPLICATION.Services
             if (entity.toOrderId <= 0)
                 throw new ArgumentException("Invalid toOrderId");
             entity.SendDateTime = DateTime.UtcNow;
-            var data = _commentRepo.Create(entity);
+            var data = await _commentRepo.Create(entity);
             return data;
         }
 

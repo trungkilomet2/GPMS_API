@@ -13,7 +13,7 @@ namespace GMPS.API.DTOs
         public int ToOrderId { get; set; }
 
         [Required(ErrorMessage = "Content is required")]
-        [StringLength(500, ErrorMessage = "Content cannot exceed 500 characters")]
+        [StringLength(200, ErrorMessage = "Content cannot exceed 200 characters")]
         public string Content { get; set; }
 
         [Required(ErrorMessage = "SendDateTime is required")]

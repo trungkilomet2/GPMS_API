@@ -39,7 +39,7 @@ namespace GMPS.API.Controllers
             };
         }
 
-        [HttpPost]
+        [HttpPost("create-comment")]
         public async Task<ActionResult> CreateComment([FromBody] CreatedCommentDTO? comment)
         {
             try
@@ -79,7 +79,7 @@ namespace GMPS.API.Controllers
 
         }
 
-        [HttpPut("{CommentId}")]
+        [HttpPut("update-comment/{CommentId}")]
         public async Task<ActionResult<Comment>> UpdateComment(int CommentId, [FromBody] UpdatedCommentDTO? comment)
         {
             try
@@ -119,7 +119,7 @@ namespace GMPS.API.Controllers
 
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-comment/{id}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
             try

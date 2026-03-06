@@ -57,7 +57,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.USER.FindAsync(id);
+            return _mapper.Map<User>(data);
         }
 
         public async Task<User> Login(string UserName, string password)
