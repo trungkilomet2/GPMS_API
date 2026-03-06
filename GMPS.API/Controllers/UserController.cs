@@ -104,34 +104,58 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         public async Task<ActionResult<RestDTO<User>>> ViewProfile(int id)
         {
-            var user = await _userRepo.ViewProfile(id);
-            if (user == null)
+            try
             {
-                return NotFound();
-            }
-            var profile = new User
-            {
-                Id = user.Id,
-                UserName = user.UserName,
-                FullName = user.FullName,
-                PhoneNumber = user.PhoneNumber,
-                AvartarUrl = user.AvartarUrl,
-                Email = user.Email
-            };
-            return Ok(new RestDTO<User>
-            {
-                Data = profile,
-                Links = new List<LinkDTO>
+                if(ModelState.IsValid)
+                {
+                    var user = await _userRepo.ViewProfile(id);
+                    var profile = new User
+                    {
+                        Id = user.Id,
+                        UserName = user.UserName,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        AvartarUrl = user.AvartarUrl,
+                        Location = user.Location,
+                        Email = user.Email
+                    };
+                    return StatusCode(StatusCodes.Status200OK,new RestDTO<User>
+                    {
+                        Data = profile,
+                        Links = new List<LinkDTO>
         {
             new LinkDTO(
-                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
+                Url.Action("ViewProfile", "User", new {id = profile.Id}, Request.Scheme)!,
                 "self",
                 "GET"
             )
         }
-            });
+                    });
+                }
+                else
+                {
+                    var details = new ValidationProblemDetails(ModelState);
+                    details.Type =
+                    "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    details.Status = StatusCodes.Status400BadRequest;
+                    return new BadRequestObjectResult(details);
+                }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                exceptionDetails.Type =
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
         }
     }
 }
