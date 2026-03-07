@@ -13,9 +13,9 @@ namespace GPMS.INFRASTRUCTURE.Mappers
         {
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>()
                 .ForMember(dest => dest.Id,opt => opt.MapFrom(src => src.USER_ID))
-                .ForMember(dest => dest.PhoneNumber,opt => opt.MapFrom(src => src.PHONE_NUMBER));
+                .ForMember(dest => dest.PhoneNumber,opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName,opt => opt.MapFrom(src => src.FULLNAME)).ReverseMap();
                 
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>().ReverseMap();
         }
     }
 }

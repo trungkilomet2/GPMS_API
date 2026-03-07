@@ -1,8 +1,10 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,13 +13,14 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("AnyOrigin")]
     public class AccountController : ControllerBase
     {
-        private readonly IAccountRepositories _loginRepo;
+        private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
-        public AccountController(IAccountRepositories loginRepo, IConfiguration configuration)
+        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration)
         {
-            _loginRepo = loginRepo ?? throw new ArgumentNullException(nameof(loginRepo));
+            _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
             _configuration = configuration;
         }
 
@@ -28,8 +31,9 @@ namespace GMPS.API.Controllers
             try
             {
                 if (ModelState.IsValid)
-                {   
-                    var user = await _loginRepo.Login(input.UserName!, input.Password!);
+                {
+
+                    var user = await _accountRepo.Login(input.UserName!, input.Password!);
                     if (user is null) return NotFound("Invalid Login attempt.");
                     else
                     {
@@ -73,7 +77,7 @@ namespace GMPS.API.Controllers
                 StatusCodes.Status401Unauthorized,
                 exceptionDetails);
             }
-        
+
         }
 
         [HttpPost("register")]
@@ -84,32 +88,52 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    if (!input.RePassword.Equals(input.Password))
+                    {
+                        var details = new ValidationProblemDetails();
+                        details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                        details.Status = StatusCodes.Status400BadRequest;
+                        details.Errors.Add("RePassword", new string[] { "Mật khẩu không khớp" });
+                        return new BadRequestObjectResult(details);
+                    }
                     var newUser = new User();
-                    newUser.UserName = input.FullName;
+                    newUser.UserName = input.UserName;
+                    newUser.FullName = input.FullName;
                     newUser.PasswordHash = input.Password;
-                    newUser.PhoneNumber = input.PhoneNumber;
-                    //Gia tri thu 2 truyen vao CreateAsync la Password goc chu khong phai HashPassword
-                    //      var result = await _userManager.CreateAsync(newUser, input.Password);
 
-                    //  if (result.Succeeded)
-                    //  {
-                    ////      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
-                    //      return StatusCode(201, $"User '{newUser.UserName}' has been created");
-                    //  }
-                    //  else
-                    //  {
-                    //      throw new Exception(string.Format("Error: {0}", string.Join(" ", result.Errors.Select(e => e.Description))));
-                    //  }
+                    var result = await _accountRepo.Register(newUser);
 
+                    if (result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Success)
+                    {
+                        //      _logger.LogInformation("User {UserName} ({email}) has been created.", newUser.UserName, newUser.Email);
+                        return StatusCode(201, $"User '{newUser.UserName}' has been created");
+                    }
+                    else if (result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Failed)
+                    {
+                        var details = new ValidationProblemDetails();
+                        details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                        details.Status = StatusCodes.Status400BadRequest;
+                        //  details.Detail = string.Join(",", result.Errors);
+                        details.Errors = result.Errors;
+                        return new BadRequestObjectResult(details);
+                    }
                     return Ok();
                 }
                 else
                 {
-                    var details = new ValidationProblemDetails(ModelState);
+                    var details = new ValidationProblemDetails();
                     details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
                     details.Status = StatusCodes.Status400BadRequest;
+                    details.Errors.Add("RePassword", new string[] { "Mật khẩu không khớp" });
                     return new BadRequestObjectResult(details);
                 }
+            }
+            catch(DbUpdateException e)
+            {
+                var details = new ValidationProblemDetails(ModelState);
+                details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                details.Status = StatusCodes.Status400BadRequest;
+                return new BadRequestObjectResult(details);
             }
             catch (Exception e)
             {
