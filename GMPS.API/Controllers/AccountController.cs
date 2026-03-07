@@ -1,6 +1,7 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("AnyOrigin")]
     public class AccountController : ControllerBase
     {
         private readonly IAccountRepositories _accountRepo;
