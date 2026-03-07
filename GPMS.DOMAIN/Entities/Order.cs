@@ -26,5 +26,8 @@ namespace GPMS.DOMAIN.Entities
         public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
         public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
         public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
+        public List<OrderMaterial>? Materials { get; set; }
+
+        public List<OrderTemplate>? Templates { get; set; }
     }
 }
