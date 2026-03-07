@@ -296,6 +296,7 @@ namespace GMPS.API.Controllers
 
         // api/order
         [HttpPost]
+        [HttpPost("create-order")]
         [AllowAnonymous]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
@@ -316,7 +317,18 @@ namespace GMPS.API.Controllers
                         Quantity = input.Quantity,
                         Cpu = input.Cpu,
                         Note = input.Note,
-                        Status = "Process"
+                        Status = "Process",
+                        Material = input.Materials?.Select(m => new OrderMaterial
+                        {
+                            MaterialName = m.MaterialName,
+                            Quantity = m.Quantity,
+                            Uom = m.Uom
+                        }).ToList(),
+
+                        Template = input.Templates?.Select(t => new OrderTemplate
+                        {
+                            TemplateName = t.TemplateName
+                        }).ToList(),
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);
                     return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
@@ -339,7 +351,7 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                return StatusCode(StatusCodes.Status500InternalServerError,exceptionDetails.Detail);
             }
         }
 

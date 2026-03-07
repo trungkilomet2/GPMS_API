@@ -53,6 +53,33 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
+            if (entity.Material != null)
+            {
+                foreach (var m in entity.Material)
+                {
+                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
+                    {
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        NAME = m.MaterialName,
+                        VALUE = m.Quantity,
+                        UOM = m.Uom,
+                    });
+                }
+            }
+
+            if (entity.Template != null)
+            {
+                foreach (var t in entity.Template)
+                {
+                    await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
+                    {
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        NAME = t.TemplateName
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
             return _mapper.Map<Order>(orderEntity);
         }
         public Task<Order> Update(Order entity) => throw new NotImplementedException();
