@@ -37,13 +37,24 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Order> GetById(object id)
         {
-            var data = await _context.ORDER.Include(o => o.OS)
+            var data = await _context.ORDER
+                .Include(o => o.OS)
+                .Include(o => o.O_TEMPLATE)
+                .Include(o => o.O_MATERIAL)
+                .Include(o => o.O_HISTORY_UPDATE)
                 .Where(o => o.ORDER_ID == (int)id)
                 .FirstOrDefaultAsync();
             return _mapper.Map<Order>(data);
         }
 
-        public Task<Order> Create(Order entity) => throw new NotImplementedException();
+        public async Task<Order> Create(Order entity)
+        {
+            var orderEntity =  _mapper.Map<ORDER>(entity);
+
+            await _context.ORDER.AddAsync(orderEntity);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(orderEntity);
+        }
         public Task<Order> Update(Order entity) => throw new NotImplementedException();
         public Task Delete(object id) => throw new NotImplementedException();
     }

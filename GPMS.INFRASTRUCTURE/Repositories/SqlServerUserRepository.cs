@@ -107,8 +107,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 throw new KeyNotFoundException($"User with ID {entity.Id} not found");
             }
-                existingUser.UserName = entity.UserName;
-                existingUser.PASSWORDHASH = entity.PasswordHash;
                 existingUser.FULLNAME = entity.FullName;
                 existingUser.PHONE_NUMBER = entity.PhoneNumber;
                 existingUser.LOCATION = entity.Location;
