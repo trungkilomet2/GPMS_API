@@ -53,9 +53,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
-            if (entity.Materials != null)
+            if (entity.Material != null)
             {
-                foreach (var m in entity.Materials)
+                foreach (var m in entity.Material)
                 {
                     await _context.O_MATERIAL.AddAsync(new O_MATERIAL
                     {
@@ -67,9 +67,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 }
             }
 
-            if (entity.Templates != null)
+            if (entity.Template != null)
             {
-                foreach (var t in entity.Templates)
+                foreach (var t in entity.Template)
                 {
                     await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
                     {

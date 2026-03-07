@@ -318,14 +318,14 @@ namespace GMPS.API.Controllers
                         Cpu = input.Cpu,
                         Note = input.Note,
                         Status = "Process",
-                        Materials = input.Materials?.Select(m => new OrderMaterial
+                        Material = input.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
                             Quantity = m.Quantity,
                             Uom = m.Uom
                         }).ToList(),
 
-                        Templates = input.Templates?.Select(t => new OrderTemplate
+                        Template = input.Templates?.Select(t => new OrderTemplate
                         {
                             TemplateName = t.TemplateName
                         }).ToList(),
