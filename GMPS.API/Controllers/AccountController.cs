@@ -1,5 +1,6 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
@@ -18,10 +19,12 @@ namespace GMPS.API.Controllers
     {
         private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
-        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration)
+        private readonly ILogger<AccountController> _logger;    
+        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger)
         {
             _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
             _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -53,6 +56,8 @@ namespace GMPS.API.Controllers
                             signingCredentials: signingCredentials);
                         // Ky token cuoi cung va gui tra ve cho user
                         var jwtString = new JwtSecurityTokenHandler().WriteToken(jwtObject);
+                        //Logging thông tin đăng nhập thành công
+                        _logger.LogInformation(CustomLogEvents.AccountController_Post, $"Tài khoản {user.User.UserName} đã đăng nhập thành công");
                         return StatusCode(StatusCodes.Status200OK, jwtString);
                     }
                 }
