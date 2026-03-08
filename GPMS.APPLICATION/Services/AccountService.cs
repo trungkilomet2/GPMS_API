@@ -50,7 +50,13 @@ namespace GPMS.APPLICATION.Services
                 {
                     var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
                     user.PasswordHash = hashedPassword;
+                    // Gán role mặc định cho user mới đăng ký (ví dụ: "Customer")s
+                    var defaultRole = await _roleBaseRepo.GetAll(null);
+
+                    // Đăng ký tài khoản mới cho customer
                     await _accountBaseRepo.Register(user);
+                    
+                    
                     registerDTO.Status = Enum.RegisterStatus.Success;
                 }
             }
