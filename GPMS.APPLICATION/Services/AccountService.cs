@@ -2,6 +2,7 @@
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
 using Microsoft.AspNetCore.Identity;
@@ -19,11 +20,13 @@ namespace GPMS.APPLICATION.Services
     {
         private readonly IBaseAccountRepositories _accountBaseRepo;
         private readonly IBaseRepositories<Role> _roleBaseRepo;
+        private readonly IBaseUserRoleRepo _userRoleRepo;
 
-        public AccountService(IBaseAccountRepositories accountBaseRepo, IBaseRepositories<Role> roleBaseRepo)
+        public AccountService(IBaseAccountRepositories accountBaseRepo, IBaseRepositories<Role> roleBaseRepo, IBaseUserRoleRepo userRoleRepo)
         {
             _accountBaseRepo = accountBaseRepo ?? throw new ArgumentNullException(nameof(accountBaseRepo));
             _roleBaseRepo = roleBaseRepo ?? throw new ArgumentNullException(nameof(roleBaseRepo));
+            _userRoleRepo = userRoleRepo;
         }
 
         public async Task<RegisterDTO> Register(User user)
@@ -57,11 +60,9 @@ namespace GPMS.APPLICATION.Services
                     
                     //if(customerRole is null) throw new Exception("Role not found");
 
-
                     // Đăng ký tài khoản mới cho customer
                     await _accountBaseRepo.Register(user);
-
-                    
+                    await _userRoleRepo.AddUserRole(user, Roles_Constants.Customer);
                     registerDTO.Status = Enum.RegisterStatus.Success;
                 }
             }

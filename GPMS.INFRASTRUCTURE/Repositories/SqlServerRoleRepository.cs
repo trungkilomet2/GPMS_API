@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerRoleRepository : IBaseRepositories<Role>,IBaseUserRoleRepo
+    public class SqlServerRoleRepository : IBaseRepositories<Role>
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -23,10 +23,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public Task AddUserRole(string roleName)
-        {
-            throw new NotImplementedException();
-        }
 
         public Task<Role> Create(Role entity)
         {
@@ -64,11 +60,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             }
             return null;
         }
-
-        public Task RemoveUserRole(string roleName)
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public Task<Role> Update(Role entity)
         {

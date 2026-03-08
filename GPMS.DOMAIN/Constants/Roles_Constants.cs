@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.DOMAIN.Constants
 {
-    public class Roles
+    public class Roles_Constants
     {
         public const string Admin = "Admin";
         public const string Owner = "Owner";

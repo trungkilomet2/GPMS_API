@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GPMS.DOMAIN.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace GPMS.APPLICATION.ContextRepo
 {
     public interface IBaseUserRoleRepo
     {
-        Task AddUserRole(string roleName);
-        Task RemoveUserRole(string roleName);
+        Task AddUserRole(User user,string roleName);
+        Task RemoveUserRole(User user,string roleName);
     }
 }
