@@ -320,13 +320,19 @@ namespace GMPS.API.Controllers
                         Material = input.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
-                            Quantity = m.Quantity,
-                            Uom = m.Uom
+                            Image = m.Image,
+                            Value = m.Value,
+                            Uom = m.Uom,
+                            Note = m.Note
                         }).ToList(),
 
                         Template = input.Templates?.Select(t => new OrderTemplate
                         {
-                            TemplateName = t.TemplateName
+                            TemplateName = t.TemplateName,
+                            Type = t.Type,
+                            File = t.File,
+                            Quantity = t.Quantity,
+                            Note = t.Note
                         }).ToList(),
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);

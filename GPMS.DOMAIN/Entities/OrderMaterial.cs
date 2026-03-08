@@ -9,7 +9,9 @@ namespace GPMS.DOMAIN.Entities
     public class OrderMaterial
     {
         public string MaterialName { get; set; }
-        public decimal Quantity { get; set; }
+        public string? Image { get; set; }
+        public decimal Value { get; set; }
+        public string? Note { get; set; }
         public string Uom { get; set; }
     }
 }
