@@ -159,7 +159,7 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/order-detail,{id}
-        [HttpGet("order-detail,{id}", Name = "Get order detail by id")]
+        [HttpGet("order-detail/{id}", Name = "Get order detail by id")]
         [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
         {
@@ -294,8 +294,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // api/order/create-order
-        [HttpPost("create-order", Name = "Create new order")]
+        // api/order
+        [HttpPost("create-order")]
         [AllowAnonymous]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
