@@ -21,12 +21,14 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseAccountRepositories _accountBaseRepo;
         private readonly IBaseRepositories<Role> _roleBaseRepo;
         private readonly IBaseUserRoleRepo _userRoleRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AccountService(IBaseAccountRepositories accountBaseRepo, IBaseRepositories<Role> roleBaseRepo, IBaseUserRoleRepo userRoleRepo)
+        public AccountService(IBaseAccountRepositories accountBaseRepo, IBaseRepositories<Role> roleBaseRepo, IBaseUserRoleRepo userRoleRepo, IUnitOfWork unitOfWork)
         {
             _accountBaseRepo = accountBaseRepo ?? throw new ArgumentNullException(nameof(accountBaseRepo));
             _roleBaseRepo = roleBaseRepo ?? throw new ArgumentNullException(nameof(roleBaseRepo));
             _userRoleRepo = userRoleRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<RegisterDTO> Register(User user)
@@ -43,26 +45,27 @@ namespace GPMS.APPLICATION.Services
                     ValidationField.AddFieldError(registerDTO.Errors, "UserName", "Tên đăng nhập phải từ 6 đến 50 ký tự");
                     registerDTO.Status = Enum.RegisterStatus.Failed;
                 }
-
                 if (!ValidatePasswordLength(user.PasswordHash))
                 {
                     ValidationField.AddFieldError(registerDTO.Errors, "Password", "Mật khảu phải từ 6 đến 50 ký tự");
                     registerDTO.Status = Enum.RegisterStatus.Failed;
                 }
-
                 if (Enum.RegisterStatus.Creating == registerDTO.Status)
                 {
                     var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
                     user.PasswordHash = hashedPassword;
-                    // Gán role mặc định cho user mới đăng ký (ví dụ: "Customer")s
-
-                    //var customerRole = _roleBaseRepo.GetById(int.Parse(RoleName.Customer.ToString()));   
-                    
-                    //if(customerRole is null) throw new Exception("Role not found");
-
-                    // Đăng ký tài khoản mới cho customer
-                    await _accountBaseRepo.Register(user);
-                    await _userRoleRepo.AddUserRole(user, Roles_Constants.Customer);
+                    await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                    {
+                        await _accountBaseRepo.Register(user);
+                        await _unitOfWork.SaveChangesAsync();
+                        User createdUser = await _accountBaseRepo.FindUserByUserName(user.UserName);
+                        if (createdUser is null)
+                        {
+                            throw new Exception("Không tìm thấy tài khoản vừa tạo");
+                        }
+                        await _userRoleRepo.AddUserRole(createdUser, Roles_Constants.Customer);
+                        await _unitOfWork.SaveChangesAsync();
+                    });
                     registerDTO.Status = Enum.RegisterStatus.Success;
                 }
             }

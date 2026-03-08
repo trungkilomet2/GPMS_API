@@ -78,6 +78,8 @@ builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialReposi
 
 builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
+
+builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 
