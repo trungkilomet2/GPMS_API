@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
@@ -30,15 +31,34 @@ namespace GPMS.APPLICATION.Services
         }
 
         public async Task<IEnumerable<User>> GetAllUser()
-        {   
+        {
             var data = await _userBaseRepo.GetAll(null);
-            
             return data;
         }
 
-        public Task<User> Login(string UserName, string password)
+        public async Task<User> ViewProfile(int id)
         {
-            throw new NotImplementedException();
+            var data = await _userBaseRepo.GetById(id);
+            if(data == null)
+            {
+                throw new Exception("User not found");
+            }
+            return data;
+        }
+
+        public async Task<User> UpdateProfile(int userId, User user)
+        {
+            var result = await _userBaseRepo.GetById(userId);
+            if (result == null)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+            }
+            if (userId != result.Id)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
+            }
+            var data = await _userBaseRepo.Update(user);
+            return data;
         }
     }
 }

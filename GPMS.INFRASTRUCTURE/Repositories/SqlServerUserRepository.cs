@@ -67,7 +67,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.USER.Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
+            return _mapper.Map<User>(data);
         }
 
         public async Task<User> Login(string UserName, string password)
@@ -101,7 +102,20 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> Update(User entity)
         {
-            throw new NotImplementedException();
+            var existingUser = await _context.USER.FindAsync(entity.Id);
+            if (existingUser == null)
+            {
+                throw new KeyNotFoundException($"User with ID {entity.Id} not found");
+            }
+                existingUser.FULLNAME = entity.FullName;
+                existingUser.PHONE_NUMBER = entity.PhoneNumber;
+                existingUser.LOCATION = entity.Location;
+                existingUser.AVATAR = entity.AvartarUrl;
+                existingUser.EMAIL = entity.Email;
+            
+                _context.USER.Update(existingUser);
+                await _context.SaveChangesAsync();
+                return _mapper.Map<User>(existingUser);       
         }
     }
 }

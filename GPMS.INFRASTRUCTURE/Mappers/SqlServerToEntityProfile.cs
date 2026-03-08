@@ -12,10 +12,67 @@ namespace GPMS.INFRASTRUCTURE.Mappers
         public SqlServerToEntityProfile()
         {
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>()
-                .ForMember(dest => dest.Id,opt => opt.MapFrom(src => src.USER_ID))
-                .ForMember(dest => dest.PhoneNumber,opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName,opt => opt.MapFrom(src => src.FULLNAME)).ReverseMap();
-                
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>().ReverseMap();
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.PASSWORDHASH))
+                .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
+                .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.LOCATION))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
+                .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>()
+                .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OTemplate>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OT_ID));
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_MATERIAL, GPMS.DOMAIN.Entities.OMaterial>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OM_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.Uom, opt => opt.MapFrom(src => src.UOM))
+                .ReverseMap()
+                .ForMember(dest => dest.OM_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.OrderId))
+                .ForMember(dest => dest.UOM, opt => opt.MapFrom(src => src.Uom));
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_HISTORY_UPDATE, GPMS.DOMAIN.Entities.OHistoryUpdate>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OHU_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.FIELD_NAME))
+                .ForMember(dest => dest.OldValue, opt => opt.MapFrom(src => src.OLD_VALUE))
+                .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE));
+               // .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.em)).ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER, GPMS.DOMAIN.Entities.Order>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.OrderName, opt => opt.MapFrom(src => src.ORDER_NAME))
+                .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.IMAGE))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.TYPE))
+                .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.SIZE))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
+                .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS.NAME))
+                .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
+                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
+                .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
+                .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.UO_COMMENT, GPMS.DOMAIN.Entities.Comment>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OC_ID))
+                .ForMember(dest => dest.fromUserId, opt => opt.MapFrom(src => src.FROM_USER))
+                .ForMember(dest => dest.toOrderId, opt => opt.MapFrom(src => src.TO_ORDER))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
+                .ForMember(dest => dest.SendDateTime, opt => opt.MapFrom(src => src.SEND_DATETIME))
+                .ReverseMap();
         }
     }
 }
