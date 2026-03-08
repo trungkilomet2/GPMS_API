@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -14,7 +15,6 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [EnableCors("AnyOrigin")]
     public class AccountController : ControllerBase
     {
         private readonly IAccountRepositories _accountRepo;
@@ -26,6 +26,11 @@ namespace GMPS.API.Controllers
             _configuration = configuration;
             _logger = logger;
         }
+
+        //Information
+        // Warning
+        // Error
+        // Critical
 
         [HttpPost("login")]
         [ResponseCache(CacheProfileName = "NoCache")]
@@ -67,6 +72,7 @@ namespace GMPS.API.Controllers
                     details.Type =
                     "https://tools.ietf.org/html/rfc7231#section-6.5.1";
                     details.Status = StatusCodes.Status400BadRequest;
+                    _logger.LogWarning(CustomLogEvents.AccountController_Post, ModelState.ToString());
                     return new BadRequestObjectResult(details);
                 }
             }
