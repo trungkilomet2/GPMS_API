@@ -3,6 +3,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerRoleRepository : IBaseRepositories<Role>
+    public class SqlServerRoleRepository : IBaseRepositories<Role>,IBaseUserRoleRepo
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -22,6 +23,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Task AddUserRole(string roleName)
+        {
+            throw new NotImplementedException();
+        }
 
         public Task<Role> Create(Role entity)
         {
@@ -47,7 +52,20 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         // Get Role By User Id
-        public Task<Role> GetById(object id)
+        public async Task<Role> GetById(object id)
+        {
+            if(id is int roleId)
+            {
+                var role = _context.ROLE.FirstOrDefault(r => r.ROLE_ID == roleId);
+                if (role != null)
+                {
+                    return await Task.FromResult(_mapper.Map<Role>(role));
+                }
+            }
+            return null;
+        }
+
+        public Task RemoveUserRole(string roleName)
         {
             throw new NotImplementedException();
         }

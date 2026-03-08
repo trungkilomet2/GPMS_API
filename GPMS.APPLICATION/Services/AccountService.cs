@@ -3,6 +3,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -51,16 +52,25 @@ namespace GPMS.APPLICATION.Services
                     var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
                     user.PasswordHash = hashedPassword;
                     // Gán role mặc định cho user mới đăng ký (ví dụ: "Customer")s
-                    var defaultRole = await _roleBaseRepo.GetAll(null);
+
+                    //var customerRole = _roleBaseRepo.GetById(int.Parse(RoleName.Customer.ToString()));   
+                    
+                    //if(customerRole is null) throw new Exception("Role not found");
+
 
                     // Đăng ký tài khoản mới cho customer
                     await _accountBaseRepo.Register(user);
-                    
+
                     
                     registerDTO.Status = Enum.RegisterStatus.Success;
                 }
             }
             catch (DbUpdateException ex)
+            {
+                ValidationField.AddFieldError(registerDTO.Errors, "Exception", ex.Message);
+                registerDTO.Status = Enum.RegisterStatus.Failed;
+            }
+            catch (Exception ex)
             {
                 ValidationField.AddFieldError(registerDTO.Errors, "Exception", ex.Message);
                 registerDTO.Status = Enum.RegisterStatus.Failed;
