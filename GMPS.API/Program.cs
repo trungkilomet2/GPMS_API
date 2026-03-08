@@ -14,6 +14,8 @@ using GPMS.APPLICATION.ContextRepo;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders().AddSimpleConsole().AddDebug();
+
 //--------------------------- Controller Config ---------------------------
 builder.Services.AddControllers(
     options =>
