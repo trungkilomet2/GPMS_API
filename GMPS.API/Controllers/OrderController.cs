@@ -1,12 +1,13 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace GMPS.API.Controllers
 {
@@ -16,10 +17,12 @@ namespace GMPS.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderRepositories _orderRepo;
+        private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderRepositories orderRepo)
+        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger)
         {
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
+            _logger = logger;
         }
 
         // api/order/order-list
@@ -301,6 +304,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,"Creating new order for UserId {UserId}", input?.UserId);
                 if (ModelState.IsValid)
                 {
                     var newOrder = new Order
@@ -336,10 +340,14 @@ namespace GMPS.API.Controllers
                         }).ToList(),
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post,"Order {OrderId} created successfully for UserId {UserId}",result.Id, input.UserId);
+
                     return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
                 }
                 else
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,"Invalid model state while creating order for UserId {UserId}",input?.UserId);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -350,6 +358,8 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,"Error occurred while creating order for UserId {UserId}",input?.UserId);
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,

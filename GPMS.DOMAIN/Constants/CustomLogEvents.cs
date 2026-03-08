@@ -21,5 +21,17 @@ namespace GPMS.DOMAIN.Constants
         public const int UserController_Put = 50230;
         public const int UserController_Delete = 50240;
 
+        //COMMENT CONTROLLER
+        public const int CommentController_Get = 50310;
+        public const int CommentController_Post = 50320;
+        public const int CommentController_Put = 50330;
+        public const int CommentController_Delete = 50340;
+
+        //ORDER CONTROLLER
+        public const int OrderController_Get = 50410;
+        public const int OrderController_Post = 50420;
+        public const int OrderController_Put = 50430;
+        public const int OrderController_Delete = 50440;
+
     }
 }
