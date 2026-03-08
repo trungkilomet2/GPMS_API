@@ -53,7 +53,23 @@ namespace GPMS.TEST
                 Cpu = 100,
                 StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
                 EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
-                Note = "Test note"
+                Note = "Test note",
+                Materials = new List<CreateMaterialDTO>
+                {
+                    new CreateMaterialDTO
+                    {
+                        MaterialName = "vải",
+                        Uom = "Cái"
+                    }
+                },
+                Templates = new List<CreateTemplateDTO>
+                {
+                    new CreateTemplateDTO
+                    {
+                        TemplateName = "Áo thun",
+                        File = "Cái"
+                    }
+                }
             };
 
             var createdOrder = new Order
