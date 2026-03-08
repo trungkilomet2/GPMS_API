@@ -92,11 +92,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {   
                 USER userSQL = _mapper.Map<USER>(user);
                 userSQL.US_ID = 1; // 1 equal Active status in User
-
-                var roleName = await _context.ROLE.FindAsync(int.Parse(RoleName.Customer.ToString()));
-
                 await _context.AddAsync(userSQL);
-                //await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
                 return _mapper.Map<User>(userSQL);
             }
             catch (Exception ex)
