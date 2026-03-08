@@ -23,7 +23,7 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/order-list
-        [HttpGet("order-list")]
+        [HttpGet("order-list", Name = "Get all order list")]
         [Authorize(Roles = "Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
         {
@@ -89,7 +89,7 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/my-orders
-        [HttpGet("my-orders")]
+        [HttpGet("my-orders", Name = "Get order list by customer")]
         [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
@@ -159,8 +159,8 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/order-detail,{id}
-        [HttpGet("order-detail,{id}")]
-        //[Authorize(Roles = "Customer,Owner")]
+        [HttpGet("order-detail,{id}", Name = "Get order detail by id")]
+        [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
         {
             try
@@ -236,8 +236,8 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/{id}/history
-        [HttpGet("{id}/history")]
-        //[Authorize(Roles = "Customer,Owner")]
+        [HttpGet("{id}/history", Name = "Get order update history by id")]
+        [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<IEnumerable<OHistoryUpdate>>>> GetOrderHistory(int id)
         {
             try
@@ -294,8 +294,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // api/order
-        [HttpPost("create-order")]
+        // api/order/create-order
+        [HttpPost("create-order", Name = "Create new order")]
         [AllowAnonymous]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
@@ -355,8 +355,8 @@ namespace GMPS.API.Controllers
         }
 
         // api/order/{orderId}/materials
-        [HttpPost("{orderId}/materials")]
-        //[Authorize(Roles = "Customer")]
+        [HttpPost("{orderId}/materials", Name = "Add material to order")]
+        [Authorize(Roles = "Customer")]
         public async Task<ActionResult> AddMaterial(int orderId, [FromBody] AddMaterialDTO? input)
         {
             try
@@ -389,6 +389,137 @@ namespace GMPS.API.Controllers
                         );
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // api/order/{id}/update
+        [HttpPut("{id}/update", Name = "Update order by customer")]
+        [Authorize(Roles = "Customer")]
+        public async Task<ActionResult> UpdateOrder(int id, [FromBody] UpdateOrderDTO? input)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null) return Unauthorized();
+                var userId = int.Parse(userIdClaim);
+
+                var existingOrder = await _orderRepo.GetOrderDetail(id);
+                if (existingOrder is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                if (existingOrder.Status != "Modification")
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status403Forbidden,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "Chỉ có thể chỉnh sửa order có trạng thái 'Modification'" } }
+                    };
+                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+                }
+
+                if (existingOrder.UserId != userId)
+                    return Forbid();
+
+                var histories = new List<OHistoryUpdate>();
+                void TrackChange(string field, string? oldVal, string? newVal)
+                {
+                    if (oldVal != newVal)
+                        histories.Add(new OHistoryUpdate
+                        {
+                            OrderId = id,
+                            FieldName = field,
+                            OldValue = oldVal ?? string.Empty,
+                            NewValue = newVal ?? string.Empty
+                        });
+                }
+
+                TrackChange("OrderName", existingOrder.OrderName, input!.OrderName);
+                TrackChange("Type", existingOrder.Type, input.Type);
+                TrackChange("Size", existingOrder.Size, input.Size);
+                TrackChange("Color", existingOrder.Color, input.Color);
+                TrackChange("StartDate", existingOrder.StartDate.ToString(), input.StartDate.ToString());
+                TrackChange("EndDate", existingOrder.EndDate.ToString(), input.EndDate.ToString());
+                TrackChange("Quantity", existingOrder.Quantity.ToString(), input.Quantity.ToString());
+                TrackChange("Image", existingOrder.Image, input.Image);
+                TrackChange("Note", existingOrder.Note, input.Note);
+
+                var updatedOrder = new Order
+                {
+                    Id = id,
+                    UserId = userId,
+                    OrderName = input.OrderName,
+                    Type = input.Type,
+                    Size = input.Size,
+                    Color = input.Color,
+                    StartDate = input.StartDate,
+                    EndDate = input.EndDate,
+                    Quantity = input.Quantity,
+                    Image = input.Image,
+                    Note = input.Note,
+                    Status = "Pending",
+                    Template = input.Templates?.Select(t => new OrderTemplate
+                    {
+                        TemplateName = t.TemplateName
+                    }).ToList()
+                };
+
+                await _orderRepo.UpdateOrder(id, updatedOrder, histories);
+                return Ok($"Order '{id}' đã được cập nhật thành công");
             }
             catch (Exception ex)
             {

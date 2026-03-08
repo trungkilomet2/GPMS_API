@@ -82,6 +82,61 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             await _context.SaveChangesAsync();
             return _mapper.Map<Order>(orderEntity);
         }
+
+        public async Task<Order> UpdateOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            var existing = await _context.ORDER
+                .Include(o => o.O_TEMPLATE)
+                .Include(o => o.OS)
+                .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
+
+            if (existing is null)
+                throw new KeyNotFoundException($"Order '{orderId}' not exist");
+
+            existing.ORDER_NAME = updatedOrder.OrderName;
+            existing.TYPE = updatedOrder.Type;
+            existing.SIZE = updatedOrder.Size;
+            existing.COLOR = updatedOrder.Color;
+            existing.START_DATE = updatedOrder.StartDate;
+            existing.END_DATE = updatedOrder.EndDate;
+            existing.QUANTITY = updatedOrder.Quantity;
+            existing.IMAGE = updatedOrder.Image;
+            existing.NOTE = updatedOrder.Note;
+
+            var pendingStatus = await _context.O_STATUS.FirstOrDefaultAsync(s => s.NAME == "Pending");
+            if (pendingStatus is null)
+                throw new InvalidOperationException("Status 'Pending' not exist in system");
+
+            existing.OS_ID = pendingStatus.OS_ID;
+
+            if (updatedOrder.Template is not null)
+            {
+                _context.O_TEMPLATE.RemoveRange(existing.O_TEMPLATE);
+                foreach (var t in updatedOrder.Template)
+                {
+                    await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
+                    {
+                        ORDER_ID = orderId,
+                        NAME = t.TemplateName
+                    });
+                }
+            }
+
+            foreach (var history in histories)
+            {
+                await _context.O_HISTORY_UPDATE.AddAsync(new O_HISTORY_UPDATE
+                {
+                    ORDER_ID = orderId,
+                    FIELD_NAME = history.FieldName,
+                    OLD_VALUE = history.OldValue,
+                    NEW_VALUE = history.NewValue
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(existing);
+        }
+
         public Task<Order> Update(Order entity) => throw new NotImplementedException();
         public Task Delete(object id) => throw new NotImplementedException();
     }
