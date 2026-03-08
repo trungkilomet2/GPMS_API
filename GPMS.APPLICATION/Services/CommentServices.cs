@@ -52,7 +52,11 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<Comment>> GetCommentById(int orderId)
         {
-            var data = await _commentRepo.GetAll(orderId);           
+            var data = await _commentRepo.GetAll(orderId);   
+            if(data == null)
+                {
+                throw new Exception("No comments found for this order");
+            }
             return data;
         }
 

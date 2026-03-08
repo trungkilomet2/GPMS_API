@@ -296,7 +296,7 @@ namespace GMPS.API.Controllers
 
         // api/order
         [HttpPost("create-order")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
             try

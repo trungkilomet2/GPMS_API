@@ -12,6 +12,7 @@ namespace GMPS.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Customer,Owner")]
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepositories _commentRepo;
@@ -24,13 +25,21 @@ namespace GMPS.API.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet("get-comment-by-orderId/{orderId}")]
-        public async Task<RestDTO<IEnumerable<Comment>>> GetCommentByOrderId(int orderId)
+        [HttpGet("get-comment-by-orderId/{orderId}")]        
+        public async Task<RestDTO<IEnumerable<CommentDTO>>> GetCommentByOrderId(int orderId)
         {
             var result = await _commentRepo.GetCommentById(orderId);
-            return new RestDTO<IEnumerable<Comment>>
+            var comment = result.Select(c => new CommentDTO
             {
-                Data = result,
+                Id = c.Id,
+                UserName = c.UserName,
+                ToOrderId = c.toOrderId,
+                Content = c.Content,
+                SendDateTime = c.SendDateTime
+            });
+            return new RestDTO<IEnumerable<CommentDTO>>
+            {
+                Data = comment,
                 RecordCount = result.Count(),
                 Links = new List<LinkDTO>
                 {

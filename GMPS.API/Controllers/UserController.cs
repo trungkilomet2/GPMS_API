@@ -17,9 +17,7 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize(Roles = "Admin")]
-    //[Authorize(Roles = "Owner")]
-    //[Authorize(Roles = "PM")]
+    [Authorize(Roles = "Admin,Owner,PM")]
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;
@@ -50,6 +48,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-profile/{userId}")]
+        [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO? user)
         {
             try
@@ -103,6 +102,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("view-profile/{id}")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+        [Authorize(Roles = "Admin,Customer,Owner,PM,Team_Leader,Worker,KCS")]
         public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile(int id)
         {
             try

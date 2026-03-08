@@ -45,7 +45,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             if (obj is int orderId)
             {
-                orderComments = await _context.UO_COMMENT.Where(u => u.TO_ORDER == orderId).ToListAsync();
+                orderComments = await _context.UO_COMMENT.Where(u => u.TO_ORDER == orderId).Include(u => u.FROM_USERNavigation).ToListAsync();
             }
 
             return _mapper.Map<IEnumerable<Comment>>(orderComments);
