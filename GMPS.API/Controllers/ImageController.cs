@@ -24,10 +24,14 @@ namespace GMPS.API.Controllers
                 return BadRequest("File is empty");
             }
             var result = await _cloudinaryService.UploadImageAsync(image.File);
-            return Ok();
+            return Ok(result);
         }
-
-
+        [HttpGet("url-images")]
+        public async Task<IActionResult> GetUrlImage(string publicId)
+        {
+            var url = _cloudinaryService.GetImageUrl(publicId);
+            return Ok(url);
+        }
 
 
     }

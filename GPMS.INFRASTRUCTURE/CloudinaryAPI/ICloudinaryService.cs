@@ -10,6 +10,7 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
     public interface ICloudinaryService
     {
         Task<UploadImageResponseDTO> UploadImageAsync(IFormFile file);
-    
+        string GetImageUrl(string publicId);
+
     }
 }
