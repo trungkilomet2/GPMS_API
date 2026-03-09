@@ -60,9 +60,9 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public Task<Comment> UpdateComment(Comment entity)
+        public async Task<Comment> UpdateComment(Comment entity)
         {
-            var data = _commentRepo.Update(entity);
+            var data = await _commentRepo.Update(entity);
             if (data == null)
             {
                 throw new Exception("Comment not found");
