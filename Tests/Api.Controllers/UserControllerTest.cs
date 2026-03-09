@@ -23,7 +23,7 @@ namespace GPMS.TEST.Api.Controllers
         public UserControllerTest()
         {
             _mockRepo = new Mock<IUserRepositories>();
-            _controller = new UserController(_mockRepo.Object, null);
+            _controller = new UserController(_mockRepo.Object,null, null);
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Scheme = "http";
             _controller.ControllerContext = new ControllerContext
