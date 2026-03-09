@@ -170,7 +170,7 @@ namespace GMPS.API.Controllers
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
 
-                if (recordCount > 0 && input.PageIndex >= totalPages)
+                if (input.PageIndex > 0 && (recordCount == 0 || input.PageIndex >= totalPages))
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Get,
                         "PageIndex {PageIndex} out of range for UserId {UserId}. Total pages: {TotalPages}",
