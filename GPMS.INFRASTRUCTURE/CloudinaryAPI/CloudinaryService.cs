@@ -33,9 +33,8 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
             _cloudinary.Api.Secure = false; // Sử dụng HTTPS cho URL trả về
         }
 
-        public async Task<UploadImageResponseDTO> UploadImageAsync(IFormFile file)
+        public async Task<UploadImageResponseDTO> UploadImageAsync(IFormFile file,string imageType)
         {
-
             if (file == null || file.Length == 0)
             {
                 throw new ArgumentException("File is null or empty.", nameof(file));
@@ -48,7 +47,7 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
                 UseFilename = true,
                 UniqueFilename = true,
                 Overwrite = false,
-                Folder = "order_image"
+                Folder = imageType
             };
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
             if (uploadResult.Error != null)

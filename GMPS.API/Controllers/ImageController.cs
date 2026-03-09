@@ -1,4 +1,5 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.DOMAIN.Constants;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.WebSockets;
@@ -23,7 +24,7 @@ namespace GMPS.API.Controllers
             {
                 return BadRequest("File is empty");
             }
-            var result = await _cloudinaryService.UploadImageAsync(image.File);
+            var result = await _cloudinaryService.UploadImageAsync(image.File,CloudinaryConstrants.Cloudinary_Order_Image_Folder);
             return Ok(result);
         }
         [HttpGet("url-images")]
