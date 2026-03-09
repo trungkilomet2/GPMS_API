@@ -32,6 +32,10 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Getting all orders - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    input.PageIndex, input.PageSize);
+
                 if (ModelState.IsValid)
                 {
                     var result = await _orderRepo.GetAllOrders();
@@ -51,6 +55,9 @@ namespace GMPS.API.Controllers
                         Status = o.Status
                     });
 
+                    _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                        "Returned {Count} orders successfully", data.Count());
+
                     return Ok(new RestDTO<IEnumerable<OrderListDTO>>
                     {
                         Data = data,
@@ -65,6 +72,9 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid model state while getting all orders");
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -81,6 +91,9 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Get, ex,
+                    "Error occurred while getting all orders");
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -98,12 +111,16 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null) return Unauthorized();
+                var userId = int.Parse(userIdClaim);
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    userId, input.PageIndex, input.PageSize);
+
                 if (ModelState.IsValid)
                 {
-                    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (userIdClaim is null) return Unauthorized();
-
-                    var userId = int.Parse(userIdClaim);
                     var result = await _orderRepo.GetOrdersByUserId(userId);
 
                     var data = result.Select(o => new OrderListDTO
@@ -121,6 +138,9 @@ namespace GMPS.API.Controllers
                         Status = o.Status
                     });
 
+                    _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                        "Returned {Count} orders for UserId {UserId}", data.Count(), userId);
+
                     return Ok(new RestDTO<IEnumerable<OrderListDTO>>
                     {
                         Data = data,
@@ -135,6 +155,9 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid model state while getting orders for UserId {UserId}", userId);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -151,6 +174,10 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Get, ex,
+                    "Error occurred while getting orders for UserId {UserId}",
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -168,8 +195,14 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Getting order detail for OrderId {OrderId}", id);
+
                 if (id <= 0)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid OrderId {OrderId} - must be greater than 0", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -186,6 +219,9 @@ namespace GMPS.API.Controllers
 
                 if (order is null)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Order {OrderId} not found", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status404NotFound,
@@ -216,6 +252,9 @@ namespace GMPS.API.Controllers
                     Materials = order.Materials
                 };
 
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Returned detail for OrderId {OrderId} successfully", id);
+
                 return Ok(new RestDTO<OrderDetailDTO>
                 {
                     Data = data,
@@ -228,6 +267,9 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Get, ex,
+                    "Error occurred while getting detail for OrderId {OrderId}", id);
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -245,8 +287,14 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Getting update history for OrderId {OrderId}", id);
+
                 if (id <= 0)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid OrderId {OrderId} - must be greater than 0", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -263,6 +311,9 @@ namespace GMPS.API.Controllers
 
                 if (order is null)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Order {OrderId} not found when getting history", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status404NotFound,
@@ -274,6 +325,10 @@ namespace GMPS.API.Controllers
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Returned {Count} history records for OrderId {OrderId}",
+                    order.Histories.Count(), id);
 
                 return Ok(new RestDTO<IEnumerable<OHistoryUpdate>>
                 {
@@ -287,6 +342,9 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Get, ex,
+                    "Error occurred while getting history for OrderId {OrderId}", id);
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -377,6 +435,9 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Adding material to OrderId {OrderId}", orderId);
+
                 if (ModelState.IsValid)
                 {
                     var material = new OMaterial
@@ -388,10 +449,17 @@ namespace GMPS.API.Controllers
                         Note = input.Note
                     };
                     var result = await _orderRepo.AddMaterial(orderId, material);
+
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                        "Material {MaterialId} added successfully to OrderId {OrderId}", result.Id, orderId);
+
                     return StatusCode(StatusCodes.Status201Created, $"Material '{result.Id}' has been added to order '{orderId}'");
                 }
                 else
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Invalid model state while adding material to OrderId {OrderId}", orderId);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -425,8 +493,14 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                _logger.LogInformation(CustomLogEvents.OrderController_Put,
+                    "Updating OrderId {OrderId}", id);
+
                 if (id <= 0)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Invalid OrderId {OrderId} - must be greater than 0", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -441,6 +515,9 @@ namespace GMPS.API.Controllers
 
                 if (!ModelState.IsValid)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Invalid model state while updating OrderId {OrderId}", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -462,6 +539,9 @@ namespace GMPS.API.Controllers
                 var existingOrder = await _orderRepo.GetOrderDetail(id);
                 if (existingOrder is null)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Order {OrderId} not found", id);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status404NotFound,
@@ -476,6 +556,10 @@ namespace GMPS.API.Controllers
 
                 if (existingOrder.Status != "Modification")
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Order {OrderId} cannot be updated - current status is '{Status}', required 'Modification'",
+                        id, existingOrder.Status);
+
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status403Forbidden,
@@ -489,7 +573,12 @@ namespace GMPS.API.Controllers
                 }
 
                 if (existingOrder.UserId != userId)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "UserId {UserId} is not the owner of OrderId {OrderId}", userId, id);
+
                     return Forbid();
+                }
 
                 var histories = new List<OHistoryUpdate>();
                 void TrackChange(string field, string? oldVal, string? newVal)
@@ -514,6 +603,9 @@ namespace GMPS.API.Controllers
                 TrackChange("Image", existingOrder.Image, input.Image);
                 TrackChange("Note", existingOrder.Note, input.Note);
 
+                _logger.LogInformation(CustomLogEvents.OrderController_Put,
+                    "Tracked {Count} field change(s) for OrderId {OrderId}", histories.Count, id);
+
                 var updatedOrder = new Order
                 {
                     Id = id,
@@ -531,14 +623,29 @@ namespace GMPS.API.Controllers
                     Template = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName
+                    }).ToList(),
+                    Material = input.Materials?.Select(m => new OrderMaterial  
+                    {
+                        MaterialName = m.MaterialName,
+                        Image = m.Image,
+                        Value = m.Value,
+                        Uom = m.Uom,
+                        Note = m.Note
                     }).ToList()
                 };
 
                 await _orderRepo.UpdateOrder(id, updatedOrder, histories);
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Put,
+                    "Order {OrderId} updated successfully by UserId {UserId}", id, userId);
+
                 return Ok($"Order '{id}' đã được cập nhật thành công");
             }
             catch (Exception ex)
             {
+                _logger.LogError(CustomLogEvents.OrderController_Put, ex,
+                    "Error occurred while updating OrderId {OrderId}", id);
+
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,

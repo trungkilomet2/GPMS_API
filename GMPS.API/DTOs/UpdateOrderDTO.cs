@@ -39,5 +39,7 @@ namespace GMPS.API.DTOs
         public string? Note { get; set; }
 
         public List<CreateTemplateDTO>? Templates { get; set; }
+
+        public List<CreateMaterialDTO>? Materials { get; set; }  
     }
 }
