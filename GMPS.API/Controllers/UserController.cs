@@ -5,6 +5,7 @@ using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,14 +24,16 @@ namespace GMPS.API.Controllers
         private readonly IUserRepositories _userRepo;
 
         private readonly IConfiguration _configuration;
+        private readonly ICloudinaryService _cloudinaryService;
 
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserRepositories userInterface, IConfiguration configuration, ILogger<UserController> logger)
+        public UserController(IUserRepositories userInterface, IConfiguration configuration, ILogger<UserController> logger, ICloudinaryService cloudinaryService)
         {
             _userRepo = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
             _configuration = configuration;
             _logger = logger;
+            _cloudinaryService = cloudinaryService;
         }
 
         [HttpGet]
@@ -51,21 +54,30 @@ namespace GMPS.API.Controllers
             };
         }
 
-        [HttpPut("update-profile/{userId}")]
+        [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
-        public async Task<ActionResult<RestDTO<User>>> UpdateUser(int userId, [FromBody] UpdatedUserDTO? user)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<RestDTO<User>>> UpdateUser( [FromForm] UpdatedUserDTO? user)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 _logger.LogInformation(CustomLogEvents.UserController_Put,"Updating profile for UserId {UserId}", userId);
                 if (ModelState.IsValid)
                 {
+                    string? imageUrl = null;
+
+                    if (user.AvartarUrl != null)
+                    {
+                        var uploadResult = await _cloudinaryService.UploadImageAsync(user.AvartarUrl, CloudinaryConstrants.Cloudinary_Order_Image_Folder);
+                        imageUrl = uploadResult.Url;
+                    }
                     var result = new User
                     {
                         Id = userId,
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
-                        AvartarUrl = user.AvartarUrl,
+                        AvartarUrl = imageUrl,
                         Location = user.Location,
                         Email = user.Email
                     };
