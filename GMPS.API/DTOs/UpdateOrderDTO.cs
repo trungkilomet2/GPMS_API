@@ -1,0 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace GMPS.API.DTOs
+{
+    public class UpdateOrderDTO
+    {
+        [Required(ErrorMessage = "Order name is required")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Order name must be between 3 and 100 characters")]
+        public string OrderName { get; set; } = null!;
+
+        [Required(ErrorMessage = "Type is required")]
+        [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
+        public string Type { get; set; } = null!;
+
+        [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
+        public string? Size { get; set; }
+
+        [Required(ErrorMessage = "Color is required")]
+        [StringLength(30, ErrorMessage = "Color cannot exceed 30 characters")]
+        public string Color { get; set; } = null!;
+
+        [Required(ErrorMessage = "StartDate is required")]
+        public DateOnly StartDate { get; set; }
+
+        [Required(ErrorMessage = "EndDate is required")]
+        public DateOnly EndDate { get; set; }
+
+        [Required(ErrorMessage = "Quantity is required")]
+        [Range(1, 1000, ErrorMessage = "Quantity must be between 1 and 1000")]
+        public int Quantity { get; set; }
+
+        [Url(ErrorMessage = "Image must be a valid URL")]
+        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        public string? Image { get; set; }
+
+        [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters")]
+        public string? Note { get; set; }
+
+        public List<CreateTemplateDTO>? Templates { get; set; }
+    }
+}
