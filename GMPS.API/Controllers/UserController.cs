@@ -57,7 +57,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Put,"Updating profile for UserId {UserId}", userId);
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Updating profile for UserId {UserId}", userId);
                 if (ModelState.IsValid)
                 {
                     var result = new User
@@ -71,7 +71,7 @@ namespace GMPS.API.Controllers
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Put,"Profile updated successfully for UserId {UserId}", userId);
+                    _logger.LogInformation(CustomLogEvents.UserController_Put, "Profile updated successfully for UserId {UserId}", userId);
 
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                     {
@@ -88,7 +88,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Put,"Invalid model state when updating profile for UserId {UserId}", userId);
+                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid model state when updating profile for UserId {UserId}", userId);
                     var errorDetails = new ValidationProblemDetails(ModelState);
                     errorDetails.Status = StatusCodes.Status400BadRequest;
                     errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
@@ -97,7 +97,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Put, ex,"Error occurred while updating profile for UserId {UserId}", userId);
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while updating profile for UserId {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -115,13 +115,13 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Get,"Viewing profile for UserId {UserId}", id);
+                _logger.LogInformation(CustomLogEvents.UserController_Get, "Viewing profile for UserId {UserId}", id);
                 if (ModelState.IsValid)
                 {
                     var user = await _userRepo.ViewProfile(id);
                     if (user == null)
                     {
-                        _logger.LogWarning(CustomLogEvents.UserController_Get,"User profile not found for UserId {UserId}", id);
+                        _logger.LogWarning(CustomLogEvents.UserController_Get, "User profile not found for UserId {UserId}", id);
                         return NotFound(new ProblemDetails
                         {
                             Detail = $"User with ID {id} not found.",
@@ -130,7 +130,7 @@ namespace GMPS.API.Controllers
                         });
                     }
                     var profile = new ViewProfileDTO
-                    {                       
+                    {
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = user.AvartarUrl,
@@ -138,23 +138,23 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Get,"Profile retrieved successfully for UserId {UserId}", id);
-                    return StatusCode(StatusCodes.Status200OK,new RestDTO<ViewProfileDTO>
+                    _logger.LogInformation(CustomLogEvents.UserController_Get, "Profile retrieved successfully for UserId {UserId}", id);
+                    return StatusCode(StatusCodes.Status200OK, new RestDTO<ViewProfileDTO>
                     {
                         Data = profile,
                         Links = new List<LinkDTO>
-        {
-            new LinkDTO(
-                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
-                "self",
-                "GET"
-            )
-        }
+                        {
+                            new LinkDTO(
+                                Url.Action("ViewProfile", "User", null, Request.Scheme)!,
+                                "self",
+                                "GET"
+                            )
+                        }
                     });
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Get,"Invalid model state when viewing profile for UserId {UserId}", id);
+                    _logger.LogWarning(CustomLogEvents.UserController_Get, "Invalid model state when viewing profile for UserId {UserId}", id);
 
                     var details = new ValidationProblemDetails(ModelState);
                     details.Type =
