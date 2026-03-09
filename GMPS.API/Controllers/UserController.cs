@@ -34,7 +34,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Owner,PM")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
             var result = await _userRepo.GetAllUser();
