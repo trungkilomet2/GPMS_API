@@ -108,23 +108,24 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpGet("view-profile/{id}")]
+        [HttpGet("view-profile")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         [Authorize(Roles = "Admin,Customer,Owner,PM,Team_Leader,Worker,KCS")]
-        public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile(int id)
+        public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile()
         {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
-            {
-                _logger.LogInformation(CustomLogEvents.UserController_Get,"Viewing profile for UserId {UserId}", id);
+            {               
+                _logger.LogInformation(CustomLogEvents.UserController_Get,"Viewing profile for UserId {UserId}", userId);
                 if (ModelState.IsValid)
                 {
-                    var user = await _userRepo.ViewProfile(id);
+                    var user = await _userRepo.ViewProfile(userId);
                     if (user == null)
                     {
-                        _logger.LogWarning(CustomLogEvents.UserController_Get,"User profile not found for UserId {UserId}", id);
+                        _logger.LogWarning(CustomLogEvents.UserController_Get,"User profile not found for UserId {UserId}", userId);
                         return NotFound(new ProblemDetails
                         {
-                            Detail = $"User with ID {id} not found.",
+                            Detail = $"User with ID {userId} not found.",
                             Status = StatusCodes.Status404NotFound,
                             Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                         });
@@ -138,7 +139,7 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Get,"Profile retrieved successfully for UserId {UserId}", id);
+                    _logger.LogInformation(CustomLogEvents.UserController_Get,"Profile retrieved successfully for UserId {UserId}", userId);
                     return StatusCode(StatusCodes.Status200OK,new RestDTO<ViewProfileDTO>
                     {
                         Data = profile,
@@ -154,7 +155,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Get,"Invalid model state when viewing profile for UserId {UserId}", id);
+                    _logger.LogWarning(CustomLogEvents.UserController_Get,"Invalid model state when viewing profile for UserId {UserId}", userId);
 
                     var details = new ValidationProblemDetails(ModelState);
                     details.Type =
@@ -166,7 +167,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Get, ex,
-                    "Error occurred while viewing profile for UserId {UserId}", id);
+                    "Error occurred while viewing profile for UserId {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
