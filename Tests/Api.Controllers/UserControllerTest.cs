@@ -117,8 +117,6 @@ namespace GPMS.TEST.Api.Controllers
             Assert.Equal(1, response.Data.Id);
             Assert.Equal(input.Email, response.Data.Email);
         }
-
-
     }
 
 }
