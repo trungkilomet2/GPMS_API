@@ -6,7 +6,7 @@ using System.Net.WebSockets;
 namespace GMPS.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Cloudinary")]
     public class ImageController : ControllerBase
     {
         private readonly ICloudinaryService _cloudinaryService;
@@ -15,7 +15,7 @@ namespace GMPS.API.Controllers
             _cloudinaryService = cloudinaryService;
         }
 
-        [HttpPost("upload")]
+        [HttpPost("image-upload")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadImage([FromForm] UploadInputImage image)
         {

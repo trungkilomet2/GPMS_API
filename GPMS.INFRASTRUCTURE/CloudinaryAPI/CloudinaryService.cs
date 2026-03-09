@@ -29,8 +29,8 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
                 throw new InvalidOperationException("Cloudinary configuration is missing. Please set Cloudinary:CloudName, Cloudinary:ApiKey, and Cloudinary:ApiSecret.");
             }
 
-            Cloudinary cloudinary = new Cloudinary(account);
-            cloudinary.Api.Secure = true; // Sử dụng HTTPS cho URL trả về
+            _cloudinary = new Cloudinary(account);
+            _cloudinary.Api.Secure = false; // Sử dụng HTTPS cho URL trả về
         }
 
         public async Task<UploadImageResponseDTO> UploadImageAsync(IFormFile file)
@@ -50,9 +50,7 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
                 Overwrite = false,
                 Folder = "order_image"
             };
-
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-
             if (uploadResult.Error != null)
             {
                 throw new InvalidOperationException($"Cloudinary upload failed: {uploadResult.Error.Message}");
