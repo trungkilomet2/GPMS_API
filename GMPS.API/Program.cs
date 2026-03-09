@@ -11,6 +11,8 @@ using GPMS.APPLICATION.Services;
 using GPMS.INFRASTRUCTURE.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.APPLICATION.ContextRepo;
+using CloudinaryDotNet;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +84,8 @@ builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepositor
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
 
 builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
+
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 
