@@ -199,6 +199,31 @@ namespace GPMS.TEST
             Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
         }
 
+        [Fact]
+        public async Task GetOrders_ReturnsNotFound_WhenPageIndexOutOfRange()
+        {
+            var fakeOrders = new List<Order> { BuildFakeOrder(1), BuildFakeOrder(2) };
+            _mockRepo.Setup(x => x.GetAllOrders()).ReturnsAsync(fakeOrders);
+
+            var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
+
+            var result = await _controller.GetOrders(input);
+
+            var objectResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetOrders_ReturnsOk_WhenDataIsEmpty()
+        {
+            _mockRepo.Setup(x => x.GetAllOrders()).ReturnsAsync(new List<Order>());
+
+            var result = await _controller.GetOrders(new RequestDTO<Order>());
+
+            var objectResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
+        }
+
         // GetMyOrders — GET my-orders
         [Fact]
         public async Task GetMyOrders_ReturnsOk_WhenSuccessful()
@@ -249,6 +274,21 @@ namespace GPMS.TEST
 
             var objectResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetMyOrders_ReturnsNotFound_WhenPageIndexOutOfRange()
+        {
+            SetUserClaims(userId: 1);
+            var fakeOrders = new List<Order> { BuildFakeOrder(1, userId: 1) };
+            _mockRepo.Setup(x => x.GetOrdersByUserId(1)).ReturnsAsync(fakeOrders);
+
+            var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
+
+            var result = await _controller.GetMyOrders(input);
+
+            var objectResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
         }
 
         // GetOrderDetail — GET order-detail/{id}

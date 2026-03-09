@@ -259,7 +259,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                        { "id", new[] { "Order Id must be greater than 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -278,7 +278,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                        { "id", new[] { $"Order with id '{id}' not found" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -351,7 +351,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                        { "id", new[] { "Order Id must be greater than 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -370,7 +370,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                        { "id", new[] { $"Order with id '{id}' not found" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -557,7 +557,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Order Id phải lớn hơn 0" } }
+                        { "id", new[] { "Order Id must be greater than 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -598,7 +598,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { $"Order với id '{id}' không tồn tại trong hệ thống" } }
+                        { "id", new[] { $"Order with id ' {id} ' not found" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -616,7 +616,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "status", new[] { "Chỉ có thể chỉnh sửa order có trạng thái 'Modification'" } }
+                        { "status", new[] { "Only modify order with status 'Modification'" } }
                     };
                     return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
                 }
@@ -688,7 +688,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
                     "Order {OrderId} updated successfully by UserId {UserId}", id, userId);
 
-                return Ok($"Order '{id}' đã được cập nhật thành công");
+                return Ok($"Order '{id}' updated successfully");
             }
             catch (Exception ex)
             {
