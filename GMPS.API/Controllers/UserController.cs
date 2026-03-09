@@ -17,8 +17,7 @@ using System.Security.Claims;
 namespace GMPS.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,Owner,PM")]
+    [Route("api/[controller]")]   
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;
@@ -35,6 +34,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Owner,PM")]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
             var result = await _userRepo.GetAllUser();
