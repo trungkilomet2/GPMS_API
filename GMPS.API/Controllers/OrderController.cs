@@ -128,20 +128,33 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // api/order/my-orders
-        [HttpGet("my-orders", Name = "Get order list by customer")]
+        // api/order/my-orders/{userId}
+        [HttpGet("my-orders/{userId}", Name = "Get order list by customer")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders(int userId, [FromQuery] RequestDTO<Order> input)
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userIdClaim is null) return Unauthorized();
-                var userId = int.Parse(userIdClaim);
-
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
                     "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     userId, input.PageIndex, input.PageSize);
+
+                if (userId <= 0)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid UserId {UserId} - must be greater than 0", userId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "userId", new[] { "User Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -217,15 +230,14 @@ namespace GMPS.API.Controllers
                     RecordCount = recordCount,
                     Links = new List<LinkDTO>
                     {
-                        new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                        new LinkDTO(Url.Action(null, "Order", new { userId, input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
                     }
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Get, ex,
-                    "Error occurred while getting orders for UserId {UserId}",
-                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                    "Error occurred while getting orders for UserId {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
