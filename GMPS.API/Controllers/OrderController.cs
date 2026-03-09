@@ -36,11 +36,54 @@ namespace GMPS.API.Controllers
                     "Getting all orders - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     input.PageIndex, input.PageSize);
 
-                if (ModelState.IsValid)
+                if (!ModelState.IsValid)
                 {
-                    var result = await _orderRepo.GetAllOrders();
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid model state while getting all orders");
 
-                    var data = result.Select(o => new OrderListDTO
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var result = await _orderRepo.GetAllOrders();
+
+                if (!string.IsNullOrEmpty(input.FilterQuery))
+                    result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+                var recordCount = result.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
+
+                if (recordCount > 0 && input.PageIndex >= totalPages)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "PageIndex {PageIndex} out of range. Total pages: {TotalPages}", input.PageIndex, totalPages);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(o => new OrderListDTO
                     {
                         Id = o.Id,
                         OrderName = o.OrderName,
@@ -55,39 +98,20 @@ namespace GMPS.API.Controllers
                         Status = o.Status
                     });
 
-                    _logger.LogInformation(CustomLogEvents.OrderController_Get,
-                        "Returned {Count} orders successfully", data.Count());
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Returned {Count} orders successfully", data.Count());
 
-                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
-                    {
-                        Data = data,
-                        PageIndex = input.PageIndex,
-                        PageSize = input.PageSize,
-                        RecordCount = data.Count(),
-                        Links = new List<LinkDTO>
-                        {
-                            new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
-                        }
-                    });
-                }
-                else
+                return Ok(new RestDTO<IEnumerable<OrderListDTO>>
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "Invalid model state while getting all orders");
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
+                    Links = new List<LinkDTO>
                     {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                        new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -119,11 +143,55 @@ namespace GMPS.API.Controllers
                     "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     userId, input.PageIndex, input.PageSize);
 
-                if (ModelState.IsValid)
+                if (!ModelState.IsValid)
                 {
-                    var result = await _orderRepo.GetOrdersByUserId(userId);
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid model state while getting orders for UserId {UserId}", userId);
 
-                    var data = result.Select(o => new OrderListDTO
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var result = await _orderRepo.GetOrdersByUserId(userId);
+
+                if (!string.IsNullOrEmpty(input.FilterQuery))
+                    result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+                var recordCount = result.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
+
+                if (recordCount > 0 && input.PageIndex >= totalPages)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "PageIndex {PageIndex} out of range for UserId {UserId}. Total pages: {TotalPages}",
+                        input.PageIndex, userId, totalPages);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(o => new OrderListDTO
                     {
                         Id = o.Id,
                         OrderName = o.OrderName,
@@ -138,39 +206,20 @@ namespace GMPS.API.Controllers
                         Status = o.Status
                     });
 
-                    _logger.LogInformation(CustomLogEvents.OrderController_Get,
-                        "Returned {Count} orders for UserId {UserId}", data.Count(), userId);
+                _logger.LogInformation(CustomLogEvents.OrderController_Get,
+                    "Returned {Count} orders for UserId {UserId}", data.Count(), userId);
 
-                    return Ok(new RestDTO<IEnumerable<OrderListDTO>>
-                    {
-                        Data = data,
-                        PageIndex = input.PageIndex,
-                        PageSize = input.PageSize,
-                        RecordCount = data.Count(),
-                        Links = new List<LinkDTO>
-                        {
-                            new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
-                        }
-                    });
-                }
-                else
+                return Ok(new RestDTO<IEnumerable<OrderListDTO>>
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "Invalid model state while getting orders for UserId {UserId}", userId);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
+                    Links = new List<LinkDTO>
                     {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                        new LinkDTO(Url.Action(null, "Order", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                    }
+                });
             }
             catch (Exception ex)
             {
