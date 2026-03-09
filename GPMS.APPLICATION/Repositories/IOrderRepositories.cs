@@ -10,6 +10,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<Order>> GetOrdersByUserId(int userId);
         Task<Order> GetOrderDetail(int orderId);
         Task<Order> CreateOrder(Order order);
-        Task<OMaterial> AddMaterial(int orderId, OMaterial material);  
+        Task<OMaterial> AddMaterial(int orderId, OMaterial material);
+        Task<Order> UpdateOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
     }
 }
