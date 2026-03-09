@@ -623,6 +623,14 @@ namespace GMPS.API.Controllers
                     Template = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName
+                    }).ToList(),
+                    Material = input.Materials?.Select(m => new OrderMaterial  
+                    {
+                        MaterialName = m.MaterialName,
+                        Image = m.Image,
+                        Value = m.Value,
+                        Uom = m.Uom,
+                        Note = m.Note
                     }).ToList()
                 };
 

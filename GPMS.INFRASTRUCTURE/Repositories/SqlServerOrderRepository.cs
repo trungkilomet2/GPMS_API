@@ -93,6 +93,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var existing = await _context.ORDER
                 .Include(o => o.O_TEMPLATE)
+                .Include(o => o.O_MATERIAL)
                 .Include(o => o.OS)
                 .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
 
@@ -124,6 +125,24 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     {
                         ORDER_ID = orderId,
                         NAME = t.TemplateName
+                    });
+                }
+            }
+
+            // delete old add new
+            if (updatedOrder.Material is not null)
+            {
+                _context.O_MATERIAL.RemoveRange(existing.O_MATERIAL);
+                foreach (var m in updatedOrder.Material)
+                {
+                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
+                    {
+                        ORDER_ID = orderId,
+                        NAME = m.MaterialName,
+                        IMAGE = m.Image,
+                        VALUE = m.Value,
+                        UOM = m.Uom,
+                        NOTE = m.Note
                     });
                 }
             }
