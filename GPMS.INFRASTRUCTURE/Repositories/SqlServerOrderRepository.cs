@@ -61,8 +61,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     {
                         ORDER_ID = orderEntity.ORDER_ID,
                         NAME = m.MaterialName,
-                        VALUE = m.Quantity,
+                        IMAGE = m.Image,
+                        VALUE = m.Value,
                         UOM = m.Uom,
+                        NOTE = m.Note
                     });
                 }
             }
@@ -74,7 +76,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
                     {
                         ORDER_ID = orderEntity.ORDER_ID,
-                        NAME = t.TemplateName
+                        NAME = t.TemplateName,
+                        TYPE = t.Type,
+                        FILE = t.File,
+                        QUANTITY = t.Quantity,
+                        NOTE = t.Note
                     });
                 }
             }
