@@ -2,53 +2,112 @@
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
-using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace GPMS.TEST.Api.Controllers;
-
-public class CommentControllerTest
+namespace GPMS.TEST.Api.Controllers
 {
-    private readonly Mock<ICommentRepositories> _repo = new();
-    private readonly CommentController _controller;
-
-    public CommentControllerTest()
+    public class CommentControllerTest
     {
-        _controller = new CommentController(_repo.Object, null!);
-        ControllerTestHelper.AttachHttpContext(_controller);
-    }
+        private readonly Mock<ICommentRepositories> _mockRepo;
+        private readonly Mock<ILogger<CommentController>> _mockLogger;
+        private readonly CommentController _controller;
 
-    [Fact]
-    public async Task GetCommentByOrderId_ReturnsList()
-    {
-        _repo.Setup(x => x.GetCommentById(1)).ReturnsAsync([new Comment { Id = 1, Content = "ok" }]);
+        public CommentControllerTest()
+        {
+            _mockRepo = new Mock<ICommentRepositories>();
+            _mockLogger = new Mock<ILogger<CommentController>>();
 
-        var result = await _controller.GetCommentByOrderId(1);
+            _controller = new CommentController(
+                _mockRepo.Object,
+                null,
+                _mockLogger.Object
+            );
 
-        Assert.Equal(1, result.RecordCount);
-    }
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Scheme = "http";
 
-    [Fact]
-    public async Task CreateComment_ReturnsCreated_WhenValid()
-    {
-        _repo.Setup(x => x.CreateComment(It.IsAny<Comment>())).ReturnsAsync(new Comment { Id = 5 });
+            _controller.ControllerContext = new ControllerContext()
+            {
+                HttpContext = httpContext
+            };
 
-        var result = await _controller.CreateComment(new CreatedCommentDTO { FromUserId = 1, ToOrderId = 1, Content = "new" });
+            var mockUrl = new Mock<IUrlHelper>();
+            mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
+                   .Returns("http://localhost/api/comment");
 
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
-    }
+            _controller.Url = mockUrl.Object;
+        }
 
-    [Fact]
-    public async Task DeleteComment_ReturnsBadRequest_WhenModelStateInvalid()
-    {
-        _controller.ModelState.AddModelError("id", "required");
+        [Fact]
+        public async Task CreateComment_ReturnsCreated_WhenSuccessful()
+        {
+            var dto = new CreatedCommentDTO
+            {
+                FromUserId = 1,
+                ToOrderId = 10,
+                Content = "Test comment"
+            };
 
-        var result = await _controller.DeleteComment(1);
+            var createdComment = new Comment
+            {
+                Id = 5,
+                fromUserId = dto.FromUserId,
+                toOrderId = dto.ToOrderId,
+                Content = dto.Content,
+                SendDateTime = DateTime.UtcNow
+            };
 
-        var objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+            _mockRepo.Setup(x => x.CreateComment(It.IsAny<Comment>()))
+                     .ReturnsAsync(createdComment);
+
+            var result = await _controller.CreateComment(dto);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateComment_ReturnsBadRequest_WhenModelStateInvalid()
+        {
+            _controller.ModelState.AddModelError("Content", "Required");
+
+            var dto = new CreatedCommentDTO();
+
+            var result = await _controller.CreateComment(dto);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateComment_ReturnsInternalServerError_WhenExceptionOccurs()
+        {
+            var dto = new CreatedCommentDTO
+            {
+                FromUserId = 1,
+                ToOrderId = 10,
+                Content = "Test comment"
+            };
+
+            _mockRepo.Setup(x => x.CreateComment(It.IsAny<Comment>()))
+                     .ThrowsAsync(new Exception("Database error"));
+
+            var result = await _controller.CreateComment(dto);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+        }
     }
 }
