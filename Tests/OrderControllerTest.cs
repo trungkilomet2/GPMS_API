@@ -46,16 +46,6 @@ namespace GPMS.TEST
             _controller.Url = mockUrl.Object;
         }
 
-        private void SetUserClaims(int userId)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            };
-            var identity = new ClaimsIdentity(claims, "TestAuth");
-            _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
-        }
-
         private static Order BuildFakeOrder(int id = 1, int userId = 1, string status = "Pending") => new Order
         {
             Id = id,
@@ -74,7 +64,17 @@ namespace GPMS.TEST
             Histories = new List<OHistoryUpdate>()
         };
 
-        // CreateOrder 
+        private void SetUserClaims(int userId)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
+        }
+
+        // CreateOrder
         [Fact]
         public async Task CreateOrder_ReturnsCreated_WhenSuccessful()
         {
@@ -224,15 +224,14 @@ namespace GPMS.TEST
             Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
         }
 
-        // GetMyOrders — GET my-orders
+        // GetMyOrders — GET my-orders/{userId}
         [Fact]
         public async Task GetMyOrders_ReturnsOk_WhenSuccessful()
         {
-            SetUserClaims(userId: 1);
             var fakeOrders = new List<Order> { BuildFakeOrder(1, userId: 1) };
             _mockRepo.Setup(x => x.GetOrdersByUserId(1)).ReturnsAsync(fakeOrders);
 
-            var result = await _controller.GetMyOrders(new RequestDTO<Order>());
+            var result = await _controller.GetMyOrders(1, new RequestDTO<Order>());
 
             var objectResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
@@ -242,22 +241,29 @@ namespace GPMS.TEST
         }
 
         [Fact]
-        public async Task GetMyOrders_ReturnsUnauthorized_WhenNoUserClaim()
+        public async Task GetMyOrders_ReturnsBadRequest_WhenUserIdIsZero()
         {
-            _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal();
+            var result = await _controller.GetMyOrders(0, new RequestDTO<Order>());
 
-            var result = await _controller.GetMyOrders(new RequestDTO<Order>());
+            var objectResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        }
 
-            Assert.IsType<UnauthorizedResult>(result.Result);
+        [Fact]
+        public async Task GetMyOrders_ReturnsBadRequest_WhenUserIdIsNegative()
+        {
+            var result = await _controller.GetMyOrders(-1, new RequestDTO<Order>());
+
+            var objectResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
         }
 
         [Fact]
         public async Task GetMyOrders_ReturnsBadRequest_WhenModelStateInvalid()
         {
-            SetUserClaims(userId: 1);
             _controller.ModelState.AddModelError("PageSize", "Invalid");
 
-            var result = await _controller.GetMyOrders(new RequestDTO<Order>());
+            var result = await _controller.GetMyOrders(1, new RequestDTO<Order>());
 
             var objectResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
@@ -266,11 +272,9 @@ namespace GPMS.TEST
         [Fact]
         public async Task GetMyOrders_ReturnsInternalServerError_WhenExceptionOccurs()
         {
-            SetUserClaims(userId: 1);
-            _mockRepo.Setup(x => x.GetOrdersByUserId(1))
-                     .ThrowsAsync(new Exception("Database error"));
+            _mockRepo.Setup(x => x.GetOrdersByUserId(1)).ThrowsAsync(new Exception("Database error"));
 
-            var result = await _controller.GetMyOrders(new RequestDTO<Order>());
+            var result = await _controller.GetMyOrders(1, new RequestDTO<Order>());
 
             var objectResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
@@ -279,16 +283,24 @@ namespace GPMS.TEST
         [Fact]
         public async Task GetMyOrders_ReturnsNotFound_WhenPageIndexOutOfRange()
         {
-            SetUserClaims(userId: 1);
             var fakeOrders = new List<Order> { BuildFakeOrder(1, userId: 1) };
             _mockRepo.Setup(x => x.GetOrdersByUserId(1)).ReturnsAsync(fakeOrders);
 
-            var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
-
-            var result = await _controller.GetMyOrders(input);
+            var result = await _controller.GetMyOrders(1, new RequestDTO<Order> { PageIndex = 99, PageSize = 10 });
 
             var objectResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetMyOrders_ReturnsOk_WhenDataIsEmpty()
+        {
+            _mockRepo.Setup(x => x.GetOrdersByUserId(1)).ReturnsAsync(new List<Order>());
+
+            var result = await _controller.GetMyOrders(1, new RequestDTO<Order>());
+
+            var objectResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status200OK, objectResult.StatusCode);
         }
 
         // GetOrderDetail — GET order-detail/{id}
@@ -415,8 +427,8 @@ namespace GPMS.TEST
         [Fact]
         public async Task AddMaterial_ReturnsCreated_WhenSuccessful()
         {
-            var dto = new AddMaterialDTO { Name = "Vải cotton", Value = 10, Uom = "Mét", Note = "Loại tốt" };
-            var fakeMaterial = new OMaterial { Id = 1, Name = dto.Name, Value = dto.Value, Uom = dto.Uom };
+            var dto = new CreateMaterialDTO { MaterialName = "Vải cotton", Value = 10, Uom = "Mét", Note = "Loại tốt" };
+            var fakeMaterial = new OMaterial { Id = 1, Name = dto.MaterialName, Value = dto.Value, Uom = dto.Uom };
             _mockRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>())).ReturnsAsync(fakeMaterial);
 
             var result = await _controller.AddMaterial(1, dto);
@@ -428,9 +440,9 @@ namespace GPMS.TEST
         [Fact]
         public async Task AddMaterial_ReturnsBadRequest_WhenModelStateInvalid()
         {
-            _controller.ModelState.AddModelError("Name", "Required");
+            _controller.ModelState.AddModelError("MaterialName", "Required");
 
-            var result = await _controller.AddMaterial(1, new AddMaterialDTO());
+            var result = await _controller.AddMaterial(1, new CreateMaterialDTO());
 
             var objectResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
@@ -439,7 +451,7 @@ namespace GPMS.TEST
         [Fact]
         public async Task AddMaterial_ReturnsInternalServerError_WhenExceptionOccurs()
         {
-            var dto = new AddMaterialDTO { Name = "Vải", Value = 5, Uom = "Mét" };
+            var dto = new CreateMaterialDTO { MaterialName = "Vải", Value = 5, Uom = "Mét" };
             _mockRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
                      .ThrowsAsync(new Exception("Database error"));
 

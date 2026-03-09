@@ -492,7 +492,7 @@ namespace GMPS.API.Controllers
         // api/order/{orderId}/materials
         [HttpPost("{orderId}/materials", Name = "Add material to order")]
         [Authorize(Roles = "Customer")]
-        public async Task<ActionResult> AddMaterial(int orderId, [FromBody] AddMaterialDTO? input)
+        public async Task<ActionResult> AddMaterial(int orderId, [FromBody] CreateMaterialDTO? input)
         {
             try
             {
@@ -503,7 +503,7 @@ namespace GMPS.API.Controllers
                 {
                     var material = new OMaterial
                     {
-                        Name = input.Name,
+                        Name = input.MaterialName,
                         Image = input.Image,
                         Value = input.Value,
                         Uom = input.Uom,
