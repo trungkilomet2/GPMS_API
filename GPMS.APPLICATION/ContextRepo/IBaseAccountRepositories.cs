@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace GPMS.APPLICATION.ContextRepo
 {
-
-    
     public interface IBaseAccountRepositories
     {
         Task<User> Login(string UserName, string password);
