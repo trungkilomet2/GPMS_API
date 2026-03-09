@@ -48,6 +48,7 @@ namespace GMPS.API.Controllers
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
                         var claims = new List<Claim>();
                         claims.Add(new Claim(ClaimTypes.Name, user.User.UserName));
+                        claims.Add(new Claim(ClaimTypes.NameIdentifier, user.User.Id.ToString())); // Unique
                         foreach (var role in user.UserRole.Select(r => r.Name))
                         {
                             claims.Add(new Claim(ClaimTypes.Role, role));
