@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace GMPS.API.Controllers
@@ -17,20 +18,23 @@ namespace GMPS.API.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepositories _commentRepo;
-
+        private readonly IUserRepositories _userRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger)
+        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger, IUserRepositories userRepo)
         {
             _commentRepo = commentInterface ?? throw new ArgumentNullException(nameof(commentInterface));
             _configuration = configuration;
             _logger = logger;
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
         public async Task<IActionResult> GetCommentByOrderId(int orderId)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var user = await _userRepo.GetUserById(userId);
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
@@ -41,7 +45,7 @@ namespace GMPS.API.Controllers
                 var comment = result.Select(c => new CommentDTO
                 {
                     Id = c.Id,
-                    UserName = c.UserName,
+                    UserName = user.UserName,
                     ToOrderId = c.toOrderId,
                     Content = c.Content,
                     SendDateTime = c.SendDateTime
