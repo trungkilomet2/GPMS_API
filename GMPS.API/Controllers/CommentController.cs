@@ -140,6 +140,7 @@ namespace GMPS.API.Controllers
         [HttpPut("update-comment/{CommentId}")]
         public async Task<ActionResult<Comment>> UpdateComment(int CommentId, [FromBody] UpdatedCommentDTO? comment)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 if (ModelState.IsValid)
@@ -154,7 +155,7 @@ namespace GMPS.API.Controllers
                         SendDateTime = DateTime.UtcNow
                     };
 
-                    var updated = await _commentRepo.UpdateComment(newComment);
+                    var updated = await _commentRepo.UpdateComment(newComment, userId);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Put,
                         "Comment {CommentId} updated successfully", CommentId);
@@ -183,7 +184,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
@@ -193,12 +195,13 @@ namespace GMPS.API.Controllers
         [HttpDelete("delete-comment/{id}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
                     "Deleting comment {CommentId}", id);
 
-                await _commentRepo.DeleteComment(id);
+                await _commentRepo.DeleteComment(id, userId);
 
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
                     "Comment {CommentId} deleted successfully", id);
