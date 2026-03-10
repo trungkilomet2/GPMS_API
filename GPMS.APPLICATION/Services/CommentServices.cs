@@ -13,10 +13,12 @@ namespace GPMS.APPLICATION.Services
     public class CommentServices : ICommentRepositories
     {
         private readonly IBaseRepositories<Comment> _commentRepo;
+        private readonly IBaseRepositories<Order> _orderRepo;
 
-        public CommentServices(IBaseRepositories<Comment> commentRepo)
+        public CommentServices(IBaseRepositories<Comment> commentRepo, IBaseRepositories<Order> orderRepo)
         {
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
+            _orderRepo = orderRepo;
         }
 
         public Task<Comment> CreateComment(Comment entity)
@@ -52,6 +54,13 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<Comment>> GetCommentById(int orderId)
         {
+            if (orderId <= 0)
+                throw new ArgumentException("Invalid order id");
+
+            var order = await _orderRepo.GetById(orderId);
+
+            if (order == null)
+                throw new Exception($"Order with id {orderId} does not exist");
             var data = await _commentRepo.GetAll(orderId);   
             if(!data.Any())
                 {
