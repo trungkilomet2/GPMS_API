@@ -22,6 +22,8 @@ namespace GMPS.API.DTOs
         public string Type { get; set; }
 
         [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
+        [RegularExpression("^(XS|S|M|L|XL|XXL|XXXL)$",
+    ErrorMessage = "Size must be XS, S, M, L, XL, XXL, or XXXL")]
         public string? Size { get; set; }
 
         [Required(ErrorMessage = "Color is required")]
