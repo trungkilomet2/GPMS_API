@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.Design;
 using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -41,7 +42,12 @@ namespace GMPS.API.Controllers
                     "Getting comments for OrderId {OrderId}", orderId);
 
                 var result = await _commentRepo.GetCommentById(orderId);
-
+                if (!result.Any())
+                    {
+                    _logger.LogInformation(CustomLogEvents.CommentController_Get,
+                        "No comments found for OrderId {OrderId}", orderId);
+                    return StatusCode(StatusCodes.Status404NotFound, $"No comments found for OrderId '{orderId}'");
+                }
                 var comment = result.Select(c => new CommentDTO
                 {
                     Id = c.Id,
@@ -145,6 +151,13 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    var commentExists = await _commentRepo.GetCommentById(CommentId);
+                    if(!commentExists.Any())
+                    {
+                        _logger.LogWarning(CustomLogEvents.CommentController_Put,
+                            "Comment {CommentId} not found for update", CommentId);
+                        return StatusCode(StatusCodes.Status404NotFound, $"Comment '{CommentId}' not found");
+                    }
                     _logger.LogInformation(CustomLogEvents.CommentController_Put,
                         "Updating comment {CommentId}", CommentId);
 
@@ -192,26 +205,33 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpDelete("delete-comment/{id}")]
-        public async Task<IActionResult> DeleteComment(int id)
+        [HttpDelete("delete-comment/{CommentId}")]
+        public async Task<IActionResult> DeleteComment(int CommentId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
+                var commentExists = await _commentRepo.GetCommentById(CommentId);
+                if (!commentExists.Any())
+                {
+                    _logger.LogWarning(CustomLogEvents.CommentController_Put,
+                        "Comment {CommentId} not found for update", CommentId);
+                    return StatusCode(StatusCodes.Status404NotFound, $"Comment '{CommentId}' not found");
+                }
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
-                    "Deleting comment {CommentId}", id);
+                    "Deleting comment {CommentId}", CommentId);
 
-                await _commentRepo.DeleteComment(id, userId);
+                await _commentRepo.DeleteComment(CommentId, userId);
 
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
-                    "Comment {CommentId} deleted successfully", id);
+                    "Comment {CommentId} deleted successfully", CommentId);
 
-                return StatusCode(StatusCodes.Status200OK, $"Comment '{id}' has been deleted");
+                return StatusCode(StatusCodes.Status200OK, $"Comment '{CommentId}' has been deleted");
             }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.CommentController_Delete, ex,
-                    "Error deleting comment {CommentId}", id);
+                    "Error deleting comment {CommentId}", CommentId);
 
                 var exceptionDetails = new ProblemDetails
                 {

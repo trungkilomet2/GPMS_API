@@ -68,10 +68,6 @@ namespace GPMS.APPLICATION.Services
             if (order == null)
                 throw new Exception($"Order with id {orderId} does not exist");
             var data = await _commentRepo.GetAll(orderId);   
-            if(!data.Any())
-                {
-                throw new Exception("No comments found for this order");
-            }
             return data;
         }
 
