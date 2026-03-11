@@ -255,7 +255,7 @@ public class OrderServiceTest
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(99, material));
 
-        Assert.Equal("Order với id '99' không tồn tại trong hệ thống.", ex.Message);
+        Assert.Equal("Order with id '99' not found.", ex.Message);
     }
 
     [Fact]

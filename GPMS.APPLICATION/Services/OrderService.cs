@@ -64,7 +64,7 @@ namespace GPMS.APPLICATION.Services
         {
             var order = await _orderBaseRepo.GetById(orderId);
             if (order is null)
-                throw new Exception($"Order với id '{orderId}' không tồn tại trong hệ thống.");
+                throw new Exception($"Order with id '{orderId}' not found.");
 
             if (material.Value <= 0)
                 throw new Exception("Quantity must be greater than zero.");
