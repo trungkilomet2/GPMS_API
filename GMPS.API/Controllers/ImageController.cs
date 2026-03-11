@@ -34,6 +34,22 @@ namespace GMPS.API.Controllers
             return Ok(url);
         }
 
+        //Test API TEMPLATE
+        [HttpPost("template-file-upload")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadTemplateFile([FromForm] UploadInputImage fileInput)
+        {
+            if (fileInput == null || fileInput.File == null || fileInput.File.Length == 0)
+            {
+                return BadRequest("File is empty");
+            }
+
+            var result = await _cloudinaryService.UploadTemplateFileAsync(
+                fileInput.File,
+                CloudinaryConstrants.Cloudinary_Template_File_Folder);
+            return Ok(result);
+        }
+
 
     }
 }
