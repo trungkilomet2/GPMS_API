@@ -38,8 +38,8 @@ namespace GMPS.API.DTOs
         [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters")]
         public string? Note { get; set; }
 
-        public List<CreateTemplateDTO>? Templates { get; set; }
+        public List<UpdateTemplateDTO>? Templates { get; set; }
 
-        public List<CreateMaterialDTO>? Materials { get; set; }  
+        public List<UpdateMaterialDTO>? Materials { get; set; }
     }
 }

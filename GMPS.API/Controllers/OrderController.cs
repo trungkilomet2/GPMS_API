@@ -2,6 +2,7 @@
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -18,11 +19,13 @@ namespace GMPS.API.Controllers
     {
         private readonly IOrderRepositories _orderRepo;
         private readonly ILogger<OrderController> _logger;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger)
+        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger, ICloudinaryService cloudinaryService)
         {
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
             _logger = logger;
+            _cloudinaryService = cloudinaryService;
         }
 
         // api/order/order-list
@@ -249,7 +252,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // api/order/order-detail,{id}
+        // api/order/order-detail/{id}
         [HttpGet("order-detail/{id}", Name = "Get order detail by id")]
         [Authorize(Roles = "Customer,Owner")]
         public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
@@ -678,14 +681,18 @@ namespace GMPS.API.Controllers
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
-                    Image = input.Image,
+                    Image = input.Image ?? existingOrder.Image,
                     Note = input.Note,
                     Status = "Pending",
                     Template = input.Templates?.Select(t => new OrderTemplate
                     {
-                        TemplateName = t.TemplateName
+                        TemplateName = t.TemplateName,
+                        Type = t.Type,
+                        File = t.File,
+                        Quantity = t.Quantity,
+                        Note = t.Note
                     }).ToList(),
-                    Material = input.Materials?.Select(m => new OrderMaterial  
+                    Material = input.Materials?.Select(m => new OrderMaterial
                     {
                         MaterialName = m.MaterialName,
                         Image = m.Image,

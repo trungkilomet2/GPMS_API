@@ -124,7 +124,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
                     {
                         ORDER_ID = orderId,
-                        NAME = t.TemplateName
+                        NAME = t.TemplateName,
+                        TYPE = t.Type,
+                        FILE = t.File,       
+                        QUANTITY = t.Quantity,
+                        NOTE = t.Note
                     });
                 }
             }
