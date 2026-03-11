@@ -19,17 +19,18 @@ namespace GPMS.TEST.Api.Controllers
     {
         private readonly Mock<ICommentRepositories> _mockRepo;
         private readonly Mock<ILogger<CommentController>> _mockLogger;
+        private readonly Mock<IUserRepositories> _mockUser;
         private readonly CommentController _controller;
 
         public CommentControllerTest()
         {
             _mockRepo = new Mock<ICommentRepositories>();
             _mockLogger = new Mock<ILogger<CommentController>>();
-
+            _mockUser = new Mock<IUserRepositories>();
             _controller = new CommentController(
                 _mockRepo.Object,
                 null,
-                _mockLogger.Object
+                _mockLogger.Object, _mockUser.Object
             );
 
             var httpContext = new DefaultHttpContext();
@@ -46,7 +47,6 @@ namespace GPMS.TEST.Api.Controllers
 
             _controller.Url = mockUrl.Object;
         }
-
         [Fact]
         public async Task CreateComment_ReturnsCreated_WhenSuccessful()
         {
@@ -111,3 +111,4 @@ namespace GPMS.TEST.Api.Controllers
         }
     }
 }
+    
