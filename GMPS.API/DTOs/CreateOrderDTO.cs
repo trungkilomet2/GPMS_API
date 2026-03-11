@@ -22,6 +22,8 @@ namespace GMPS.API.DTOs
         public string Type { get; set; }
 
         [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
+        [RegularExpression("^(XS|S|M|L|XL|XXL|XXXL)$",
+    ErrorMessage = "Size must be XS, S, M, L, XL, XXL, or XXXL")]
         public string? Size { get; set; }
 
         [Required(ErrorMessage = "Color is required")]
@@ -38,7 +40,7 @@ namespace GMPS.API.DTOs
         [Range(1, 1000, ErrorMessage = "Quantity must be greater than 0")]
         public int Quantity { get; set; }
 
-        [Range(0, double.MaxValue, ErrorMessage = "Cpu must be greater than or equal to 0")]
+        [Range(10, double.MaxValue, ErrorMessage = "Cpu must be greater than or equal to 0")]
         public decimal? Cpu { get; set; }
 
         [StringLength(200, ErrorMessage = "Note cannot exceed 200 characters")]

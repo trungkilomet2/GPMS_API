@@ -41,7 +41,8 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
                 throw new Exception("End date must be greater than start date.");
-
+            if(order.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new Exception("Start date must be greater than current date.");
             return await _orderBaseRepo.Create(order);
         }
 
