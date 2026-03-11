@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 
 namespace GPMS.APPLICATION.ContextRepo
 {
-    public interface IBaseAccountRepositories
+    public interface IBaseUserRoleRepo
     {
-        Task<User> Login(string UserName, string password);
-        Task<User> Register(User user);
-        Task<User> FindUserByUserName(string username);
-
+        Task AddUserRole(User user,string roleName);
+        Task RemoveUserRole(User user,string roleName);
     }
 }

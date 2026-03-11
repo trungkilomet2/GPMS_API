@@ -3,6 +3,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,10 +48,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         // Get Role By User Id
-        public Task<Role> GetById(object id)
+        public async Task<Role> GetById(object id)
         {
-            throw new NotImplementedException();
+            if(id is int roleId)
+            {
+                var role = _context.ROLE.FirstOrDefault(r => r.ROLE_ID == roleId);
+                if (role != null)
+                {
+                    return await Task.FromResult(_mapper.Map<Role>(role));
+                }
+            }
+            return null;
         }
+        
 
         public Task<Role> Update(Role entity)
         {

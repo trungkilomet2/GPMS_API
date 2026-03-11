@@ -1,18 +1,17 @@
-﻿using GPMS.DOMAIN.Constants;
 using System.ComponentModel.DataAnnotations;
 
 namespace GMPS.API.DTOs
 {
-    public class CreateTemplateDTO
+    public class UpdateTemplateDTO
     {
-        //[Required(ErrorMessage = "TemplateName is required")]
         [StringLength(100, ErrorMessage = "TemplateName cannot exceed 100 characters")]
         public string TemplateName { get; set; }
 
         [StringLength(5, ErrorMessage = "Type cannot exceed 5 characters")]
         public string? Type { get; set; }
 
-        [StringLength(255, ErrorMessage = "File path cannot exceed 255 characters")]
+        [Url(ErrorMessage = "File must be a valid URL")]
+        [StringLength(2048, ErrorMessage = "File URL is too long")]
         public string? File { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]

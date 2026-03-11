@@ -14,11 +14,7 @@ namespace GMPS.API.DTOs
         [StringLength(15,
             ErrorMessage = "Phone number cannot exceed 15 digits")]
         public string PhoneNumber { get; set; }
-
-        [Url(ErrorMessage = "Avatar URL must be a valid URL")]
-        [StringLength(2048,
-            ErrorMessage = "Avatar URL is too long")]
-        public string AvartarUrl { get; set; }
+        public IFormFile AvartarUrl { get; set; }
 
         [Required(ErrorMessage = "Location is required")]
         [StringLength(2048,

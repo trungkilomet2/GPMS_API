@@ -1,4 +1,4 @@
-using GPMS.INFRASTRUCTURE.DataContext;
+﻿using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.Mappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +11,12 @@ using GPMS.APPLICATION.Services;
 using GPMS.INFRASTRUCTURE.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.APPLICATION.ContextRepo;
+using CloudinaryDotNet;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders().AddSimpleConsole().AddDebug();
 
 //--------------------------- Controller Config ---------------------------
 builder.Services.AddControllers(
@@ -67,9 +71,11 @@ builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();
 builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
+builder.Services.AddScoped<IBaseUserRoleRepo, SqlServerUserRoleRepository>();   
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
 
+builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 
@@ -77,6 +83,10 @@ builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialReposi
 
 builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
+
+builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
+
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 

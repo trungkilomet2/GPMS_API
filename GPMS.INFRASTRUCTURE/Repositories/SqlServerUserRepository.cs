@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Enums;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Server;
@@ -87,7 +89,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new DbUpdateException("Tên tài khoản đã tồn tại");
             }
             try
-            {
+            {   
                 USER userSQL = _mapper.Map<USER>(user);
                 userSQL.US_ID = 1; // 1 equal Active status in User
                 await _context.AddAsync(userSQL);

@@ -1,10 +1,12 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,16 +15,22 @@ namespace GMPS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [EnableCors("AnyOrigin")]
     public class AccountController : ControllerBase
     {
         private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
-        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration)
+        private readonly ILogger<AccountController> _logger;    
+        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger)
         {
             _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
             _configuration = configuration;
+            _logger = logger;
         }
+
+        //Information
+        // Warning
+        // Error
+        // Critical
 
         [HttpPost("login")]
         [ResponseCache(CacheProfileName = "NoCache")]
@@ -40,6 +48,7 @@ namespace GMPS.API.Controllers
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
                         var claims = new List<Claim>();
                         claims.Add(new Claim(ClaimTypes.Name, user.User.UserName));
+                        claims.Add(new Claim(ClaimTypes.NameIdentifier, user.User.Id.ToString())); // Unique
                         foreach (var role in user.UserRole.Select(r => r.Name))
                         {
                             claims.Add(new Claim(ClaimTypes.Role, role));
@@ -53,6 +62,8 @@ namespace GMPS.API.Controllers
                             signingCredentials: signingCredentials);
                         // Ky token cuoi cung va gui tra ve cho user
                         var jwtString = new JwtSecurityTokenHandler().WriteToken(jwtObject);
+                        //Logging thông tin đăng nhập thành công
+                        _logger.LogInformation(CustomLogEvents.AccountController_Post, $"Tài khoản {user.User.UserName} đã đăng nhập thành công");
                         return StatusCode(StatusCodes.Status200OK, jwtString);
                     }
                 }
@@ -62,6 +73,7 @@ namespace GMPS.API.Controllers
                     details.Type =
                     "https://tools.ietf.org/html/rfc7231#section-6.5.1";
                     details.Status = StatusCodes.Status400BadRequest;
+                    _logger.LogWarning(CustomLogEvents.AccountController_Post, ModelState.ToString());
                     return new BadRequestObjectResult(details);
                 }
             }
