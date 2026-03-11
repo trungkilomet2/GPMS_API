@@ -40,7 +40,7 @@ namespace GMPS.API.DTOs
         [Range(1, 1000, ErrorMessage = "Quantity must be greater than 0")]
         public int Quantity { get; set; }
 
-        [Range(0, double.MaxValue, ErrorMessage = "Cpu must be greater than or equal to 0")]
+        [Range(10, double.MaxValue, ErrorMessage = "Cpu must be greater than or equal to 0")]
         public decimal? Cpu { get; set; }
 
         [StringLength(200, ErrorMessage = "Note cannot exceed 200 characters")]
