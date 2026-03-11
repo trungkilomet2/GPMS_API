@@ -31,13 +31,15 @@ namespace GMPS.API.DTOs
         [Range(1, 1000, ErrorMessage = "Quantity must be between 1 and 1000")]
         public int Quantity { get; set; }
 
-        public IFormFile? Image { get; set; }
+        [Url(ErrorMessage = "Image must be a valid URL")]
+        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        public string? Image { get; set; }
 
         [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters")]
         public string? Note { get; set; }
 
-        public List<CreateTemplateDTO>? Templates { get; set; }
+        public List<UpdateTemplateDTO>? Templates { get; set; }
 
-        public List<CreateMaterialDTO>? Materials { get; set; }  
+        public List<UpdateMaterialDTO>? Materials { get; set; }
     }
 }

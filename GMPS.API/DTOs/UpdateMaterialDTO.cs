@@ -8,7 +8,8 @@ namespace GMPS.API.DTOs
         [StringLength(100, ErrorMessage = "MaterialName cannot exceed 100 characters")]
         public string MaterialName { get; set; }
 
-        public IFormFile? Image { get; set; }
+        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        public string? Image { get; set; }
 
         [Required(ErrorMessage = "Value is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Value must be greater than 0")]

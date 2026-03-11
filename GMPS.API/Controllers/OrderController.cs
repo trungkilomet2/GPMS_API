@@ -553,8 +553,7 @@ namespace GMPS.API.Controllers
         // api/order/{id}/update
         [HttpPut("{id}/update", Name = "Update order by customer")]
         [Authorize(Roles = "Customer")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult> UpdateOrder(int id, [FromForm] UpdateOrderDTO? input)
+        public async Task<ActionResult> UpdateOrder(int id, [FromBody] UpdateOrderDTO? input)
         {
             try
             {
@@ -645,51 +644,6 @@ namespace GMPS.API.Controllers
                     return Forbid();
                 }
 
-                string? orderImageUrl = null;
-                if (input!.Image != null)
-                {
-                    _logger.LogInformation(CustomLogEvents.OrderController_Put,
-                        "Uploading order image to Cloudinary for OrderId {OrderId}", id);
-                    var uploadResult = await _cloudinaryService.UploadImageAsync(input.Image, CloudinaryConstrants.Cloudinary_Order_Image_Folder);
-                    orderImageUrl = uploadResult.Url;
-                }
-
-                List<(string MaterialName, string? ImageUrl, decimal Value, string Uom, string? Note)>? materialUploads = null;
-                if (input.Materials != null)
-                {
-                    materialUploads = new List<(string, string?, decimal, string, string?)>();
-                    foreach (var m in input.Materials)
-                    {
-                        string? materialImageUrl = null;
-                        if (m.Image != null)
-                        {
-                            _logger.LogInformation(CustomLogEvents.OrderController_Put,
-                                "Uploading material image to Cloudinary for OrderId {OrderId}", id);
-                            var uploadResult = await _cloudinaryService.UploadImageAsync(m.Image, CloudinaryConstrants.Cloudinary_Order_Image_Folder);
-                            materialImageUrl = uploadResult.Url;
-                        }
-                        materialUploads.Add((m.MaterialName, materialImageUrl, m.Value, m.Uom, m.Note));
-                    }
-                }
-
-                List<(string TemplateName, string? Type, string? FileUrl, int? Quantity, string? Note)>? templateUploads = null;
-                if (input.Templates != null)
-                {
-                    templateUploads = new List<(string, string?, string?, int?, string?)>();
-                    foreach (var t in input.Templates)
-                    {
-                        string? templateFileUrl = null;
-                        if (t.File != null)
-                        {
-                            _logger.LogInformation(CustomLogEvents.OrderController_Put,
-                                "Uploading template file to Cloudinary for OrderId {OrderId}", id);
-                            var uploadResult = await _cloudinaryService.UploadTemplateFileAsync(t.File, CloudinaryConstrants.Cloudinary_Template_File_Folder);
-                            templateFileUrl = uploadResult.Url;
-                        }
-                        templateUploads.Add((t.TemplateName, t.Type, templateFileUrl, t.Quantity, t.Note));
-                    }
-                }
-
                 var histories = new List<OHistoryUpdate>();
                 void TrackChange(string field, string? oldVal, string? newVal)
                 {
@@ -703,14 +657,14 @@ namespace GMPS.API.Controllers
                         });
                 }
 
-                TrackChange("OrderName", existingOrder.OrderName, input.OrderName);
+                TrackChange("OrderName", existingOrder.OrderName, input!.OrderName);
                 TrackChange("Type", existingOrder.Type, input.Type);
                 TrackChange("Size", existingOrder.Size, input.Size);
                 TrackChange("Color", existingOrder.Color, input.Color);
                 TrackChange("StartDate", existingOrder.StartDate.ToString(), input.StartDate.ToString());
                 TrackChange("EndDate", existingOrder.EndDate.ToString(), input.EndDate.ToString());
                 TrackChange("Quantity", existingOrder.Quantity.ToString(), input.Quantity.ToString());
-                TrackChange("Image", existingOrder.Image, orderImageUrl);
+                TrackChange("Image", existingOrder.Image, input.Image);
                 TrackChange("Note", existingOrder.Note, input.Note);
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
@@ -727,21 +681,21 @@ namespace GMPS.API.Controllers
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
-                    Image = orderImageUrl ?? existingOrder.Image,
+                    Image = input.Image ?? existingOrder.Image,
                     Note = input.Note,
                     Status = "Pending",
-                    Template = templateUploads?.Select(t => new OrderTemplate
+                    Template = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName,
                         Type = t.Type,
-                        File = t.FileUrl,
+                        File = t.File,
                         Quantity = t.Quantity,
                         Note = t.Note
                     }).ToList(),
-                    Material = materialUploads?.Select(m => new OrderMaterial
+                    Material = input.Materials?.Select(m => new OrderMaterial
                     {
                         MaterialName = m.MaterialName,
-                        Image = m.ImageUrl,
+                        Image = m.Image,
                         Value = m.Value,
                         Uom = m.Uom,
                         Note = m.Note
