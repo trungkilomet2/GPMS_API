@@ -12,5 +12,6 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
         Task<UploadImageResponseDTO> UploadImageAsync(IFormFile file,string imageType);
         string GetImageUrl(string publicId);
 
+
     }
 }
