@@ -35,6 +35,7 @@ namespace GMPS.API.Controllers
         }
 
         //Test API TEMPLATE
+        // Require File Folder <= 10MB
         [HttpPost("template-file-upload")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadTemplateFile([FromForm] UploadInputImage fileInput)
