@@ -9,10 +9,11 @@ namespace GPMS.TEST.Application.Services
     public class CommentServiceTest
     {
         private readonly Mock<IBaseRepositories<Comment>> _commentRepo = new();
+        private readonly Mock<IBaseRepositories<Order>> _orderRepo = new();
 
         private CommentServices BuildService()
         {
-            return new CommentServices(_commentRepo.Object);
+            return new CommentServices(_commentRepo.Object, null);
         }
 
         [Fact]
@@ -72,7 +73,7 @@ namespace GPMS.TEST.Application.Services
         {
             var service = BuildService();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteComment(0));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteComment(0,1));
         }
 
         [Fact]
@@ -83,7 +84,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteComment(1));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteComment(1,1));
         }
 
         [Fact]
@@ -100,7 +101,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await service.DeleteComment(1);
+            await service.DeleteComment(1,1);
 
             _commentRepo.Verify(x => x.Delete(1), Times.Once);
         }
@@ -149,7 +150,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            var result = await service.UpdateComment(comment);
+            var result = await service.UpdateComment(comment, 1);
 
             Assert.NotNull(result);
             Assert.Equal("Updated comment", result.Content);
@@ -169,7 +170,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() => service.UpdateComment(comment));
+            await Assert.ThrowsAsync<Exception>(() => service.UpdateComment(comment,1));
         }
     }
 }
