@@ -10,7 +10,7 @@ namespace GPMS.DOMAIN.Constants
     {
         public const string Cloudinary_Order_Image_Folder = "order_image";
         public const string Cloudinary_Supplied_Image_Folder = "supplied_image";
-        //public const string Cloudinary_Order_Image_Folder = "order_image";
+        public const string Cloudinary_Profile_Image_Folder = "avatar_image";
 
     }
 }

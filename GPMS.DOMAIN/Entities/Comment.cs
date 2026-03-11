@@ -10,7 +10,6 @@ namespace GPMS.DOMAIN.Entities
     {
         public int Id { get; set; }
         public int fromUserId { get; set; }
-        public string UserName { get; set; }
         public int toOrderId { get; set; }
         public string Content { get; set; }
         public DateTime SendDateTime { get; set; }
