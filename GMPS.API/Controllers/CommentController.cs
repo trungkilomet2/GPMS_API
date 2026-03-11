@@ -41,7 +41,12 @@ namespace GMPS.API.Controllers
                     "Getting comments for OrderId {OrderId}", orderId);
 
                 var result = await _commentRepo.GetCommentById(orderId);
-
+                if (!result.Any())
+                    {
+                    _logger.LogInformation(CustomLogEvents.CommentController_Get,
+                        "No comments found for OrderId {OrderId}", orderId);
+                    return StatusCode(StatusCodes.Status404NotFound, $"No comments found for OrderId '{orderId}'");
+                }
                 var comment = result.Select(c => new CommentDTO
                 {
                     Id = c.Id,
