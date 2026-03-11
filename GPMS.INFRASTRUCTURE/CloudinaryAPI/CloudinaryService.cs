@@ -71,5 +71,58 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
             var imageUrl = _cloudinary.Api.UrlImgUp.BuildUrl(publicId);
             return imageUrl;
         }
+
+        public async Task<UploadImageResponseDTO> UploadTemplateFileAsync(IFormFile file, string folder)
+        {
+
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException("File is null or empty.", nameof(file));
+            }
+
+            var extension = Path.GetExtension(file.FileName);
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".dxf",
+                ".iba",
+                ".mdl",
+                ".plt",
+                ".pdf",
+                ".docx",
+                ".xlsx"
+            };
+
+            if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
+            {
+                throw new InvalidOperationException("Only .DXF, .IBA, .MDL, .PLT, .PDF, .DOCX, .XLSX files are allowed.");
+            }
+
+            await using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false,
+                Folder = folder
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            if (uploadResult.Error != null)
+            {
+                throw new InvalidOperationException($"Cloudinary upload failed: {uploadResult.Error.Message}");
+            }
+
+            return new UploadImageResponseDTO
+            {
+                Url = uploadResult.SecureUrl?.ToString() ?? string.Empty,
+                PublicId = uploadResult.PublicId
+            };
+
+
+
+
+
+        }
     }
 }
