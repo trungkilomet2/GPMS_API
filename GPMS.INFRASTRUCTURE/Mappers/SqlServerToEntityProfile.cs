@@ -68,8 +68,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.UO_COMMENT, GPMS.DOMAIN.Entities.Comment>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OC_ID))
-                .ForMember(dest => dest.fromUserId, opt => opt.MapFrom(src => src.FROM_USER))
-                .ForMember(dest => dest.UserName,opt => opt.MapFrom(src => src.FROM_USERNavigation.FULLNAME))
+                .ForMember(dest => dest.fromUserId, opt => opt.MapFrom(src => src.FROM_USER))               
                 .ForMember(dest => dest.toOrderId, opt => opt.MapFrom(src => src.TO_ORDER))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
                 .ForMember(dest => dest.SendDateTime, opt => opt.MapFrom(src => src.SEND_DATETIME))

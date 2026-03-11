@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace GMPS.API.Controllers
@@ -17,20 +18,23 @@ namespace GMPS.API.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepositories _commentRepo;
-
+        private readonly IUserRepositories _userRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger)
+        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger, IUserRepositories userRepo)
         {
             _commentRepo = commentInterface ?? throw new ArgumentNullException(nameof(commentInterface));
             _configuration = configuration;
             _logger = logger;
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
         public async Task<IActionResult> GetCommentByOrderId(int orderId)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var user = await _userRepo.GetUserById(userId);
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
@@ -41,7 +45,7 @@ namespace GMPS.API.Controllers
                 var comment = result.Select(c => new CommentDTO
                 {
                     Id = c.Id,
-                    UserName = c.UserName,
+                    UserName = user.UserName,
                     ToOrderId = c.toOrderId,
                     Content = c.Content,
                     SendDateTime = c.SendDateTime
@@ -136,6 +140,7 @@ namespace GMPS.API.Controllers
         [HttpPut("update-comment/{CommentId}")]
         public async Task<ActionResult<Comment>> UpdateComment(int CommentId, [FromBody] UpdatedCommentDTO? comment)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 if (ModelState.IsValid)
@@ -150,7 +155,7 @@ namespace GMPS.API.Controllers
                         SendDateTime = DateTime.UtcNow
                     };
 
-                    var updated = await _commentRepo.UpdateComment(newComment);
+                    var updated = await _commentRepo.UpdateComment(newComment, userId);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Put,
                         "Comment {CommentId} updated successfully", CommentId);
@@ -179,7 +184,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
@@ -189,12 +195,13 @@ namespace GMPS.API.Controllers
         [HttpDelete("delete-comment/{id}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
                     "Deleting comment {CommentId}", id);
 
-                await _commentRepo.DeleteComment(id);
+                await _commentRepo.DeleteComment(id, userId);
 
                 _logger.LogInformation(CustomLogEvents.CommentController_Delete,
                     "Comment {CommentId} deleted successfully", id);

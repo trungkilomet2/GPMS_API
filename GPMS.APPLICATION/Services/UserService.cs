@@ -60,5 +60,11 @@ namespace GPMS.APPLICATION.Services
             var data = await _userBaseRepo.Update(user);
             return data;
         }
+
+        public Task<User> GetUserById(int id)
+        {
+            var data = _userBaseRepo.GetById(id);
+            return data;
+        }
     }
 }
