@@ -1,5 +1,6 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
@@ -9,12 +10,12 @@ namespace GPMS.APPLICATION.Services
 {
     public class OrderService : IOrderRepositories
     {
-        private readonly IBaseRepositories<Order> _orderBaseRepo;
+        private readonly IBaseOrderRepositories _orderBaseRepo;
         private readonly IBaseRepositories<OMaterial> _materialBaseRepo;
         private readonly IBaseRepositories<User> _userBaseRepo;
 
         public OrderService(
-            IBaseRepositories<Order> orderBaseRepo,
+            IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
             IBaseRepositories<User> userBaseRepo)
         {
@@ -56,10 +57,10 @@ namespace GPMS.APPLICATION.Services
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
                 throw new Exception($"Order with id '{orderId}' not exist in system.");
-            if (existing.Status != "Modification")
+            if (existing.StatusName != OrderStatus_Constants.Modification)
                 throw new Exception("Only modify order with status 'Modification'.");
 
-            return await _orderBaseRepo.Update(updatedOrder);
+            return await _orderBaseRepo.UpdateOrder(orderId, updatedOrder, histories);
         }
 
         public async Task<OMaterial> AddMaterial(int orderId, OMaterial material)

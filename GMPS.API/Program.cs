@@ -1,4 +1,4 @@
-using GPMS.INFRASTRUCTURE.DataContext;
+﻿using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.Mappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -75,6 +75,7 @@ builder.Services.AddScoped<IBaseUserRoleRepo, SqlServerUserRoleRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
 
+builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 

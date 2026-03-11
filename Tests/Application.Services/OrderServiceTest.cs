@@ -1,5 +1,6 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Services;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Moq;
 
@@ -7,14 +8,14 @@ namespace GPMS.TEST.Application.Services;
 
 public class OrderServiceTest
 {
-    private readonly Mock<IBaseRepositories<Order>> _orderBaseRepo = new();
+    private readonly Mock<IBaseOrderRepositories> _orderBaseRepo = new();
     private readonly Mock<IBaseRepositories<OMaterial>> _materialBaseRepo = new();
     private readonly Mock<IBaseRepositories<User>> _userBaseRepo = new();
 
     private OrderService BuildService() =>
         new OrderService(_orderBaseRepo.Object, _materialBaseRepo.Object, _userBaseRepo.Object);
 
-    private static Order BuildFakeOrder(int id = 1, int userId = 1, string status = "Pending") => new Order
+    private static Order BuildFakeOrder(int id = 1, int userId = 1, string statusName = OrderStatus_Constants.Pending) => new Order
     {
         Id = id,
         UserId = userId,
@@ -26,7 +27,8 @@ public class OrderServiceTest
         Cpu = 100,
         StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
         EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
-        Status = status,
+        Status = 1,
+        StatusName = statusName,
         Templates = new List<OTemplate>(),
         Materials = new List<OMaterial>(),
         Histories = new List<OHistoryUpdate>()
@@ -158,19 +160,20 @@ public class OrderServiceTest
     [Fact]
     public async Task UpdateOrder_ReturnsUpdatedOrder_WhenSuccessful()
     {
-        var existing = BuildFakeOrder(id: 1, status: "Modification");
-        var updated = BuildFakeOrder(id: 1, status: "Modification");
+        var existing = BuildFakeOrder(id: 1, statusName: OrderStatus_Constants.Modification);
+        var updated = BuildFakeOrder(id: 1, statusName: OrderStatus_Constants.Modification);
         updated.OrderName = "Updated Order";
 
         _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
-        _orderBaseRepo.Setup(x => x.Update(updated)).ReturnsAsync(updated);
+        _orderBaseRepo.Setup(x => x.UpdateOrder(1, updated, It.IsAny<List<OHistoryUpdate>>()))
+                      .ReturnsAsync(updated);
 
         var service = BuildService();
         var result = await service.UpdateOrder(1, updated, new List<OHistoryUpdate>());
 
         Assert.NotNull(result);
         Assert.Equal("Updated Order", result.OrderName);
-        _orderBaseRepo.Verify(x => x.Update(updated), Times.Once);
+        _orderBaseRepo.Verify(x => x.UpdateOrder(1, updated, It.IsAny<List<OHistoryUpdate>>()), Times.Once);
     }
 
     [Fact]
@@ -186,7 +189,7 @@ public class OrderServiceTest
     [Fact]
     public async Task UpdateOrder_ThrowsException_WhenEndDateBeforeStartDate()
     {
-        var updated = BuildFakeOrder(id: 1, status: "Modification");
+        var updated = BuildFakeOrder(id: 1, statusName: OrderStatus_Constants.Modification);
         updated.StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5));
         updated.EndDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -200,7 +203,7 @@ public class OrderServiceTest
     [Fact]
     public async Task UpdateOrder_ThrowsException_WhenOrderDoesNotExist()
     {
-        var updated = BuildFakeOrder(id: 99, status: "Modification");
+        var updated = BuildFakeOrder(id: 99, statusName: OrderStatus_Constants.Modification);
         _orderBaseRepo.Setup(x => x.GetById(99)).ReturnsAsync((Order)null);
 
         var service = BuildService();
@@ -213,8 +216,8 @@ public class OrderServiceTest
     [Fact]
     public async Task UpdateOrder_ThrowsException_WhenOrderStatusIsNotModification()
     {
-        var existing = BuildFakeOrder(id: 1, status: "Pending");
-        var updated = BuildFakeOrder(id: 1, status: "Pending");
+        var existing = BuildFakeOrder(id: 1, statusName: OrderStatus_Constants.Pending);
+        var updated = BuildFakeOrder(id: 1, statusName: OrderStatus_Constants.Pending);
         _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
 
         var service = BuildService();

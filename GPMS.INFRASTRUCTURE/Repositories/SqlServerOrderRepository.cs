@@ -1,5 +1,6 @@
 using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerOrderRepository : IBaseRepositories<Order>
+    public class SqlServerOrderRepository : IBaseOrderRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -49,10 +50,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Order> Create(Order entity)
         {
-            var orderEntity =  _mapper.Map<ORDER>(entity);
+            var orderEntity = _mapper.Map<ORDER>(entity);
 
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
+
             if (entity.Material != null)
             {
                 foreach (var m in entity.Material)
@@ -110,9 +112,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             existing.IMAGE = updatedOrder.Image;
             existing.NOTE = updatedOrder.Note;
 
-            var pendingStatus = await _context.O_STATUS.FirstOrDefaultAsync(s => s.NAME == "Pending");
+            var pendingStatus = await _context.O_STATUS
+                .FirstOrDefaultAsync(s => s.NAME == OrderStatus_Constants.Pending);
             if (pendingStatus is null)
-                throw new InvalidOperationException("Status 'Pending' not exist in system");
+                throw new InvalidOperationException($"Status '{OrderStatus_Constants.Pending}' not exist in system");
 
             existing.OS_ID = pendingStatus.OS_ID;
 
@@ -126,7 +129,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                         ORDER_ID = orderId,
                         NAME = t.TemplateName,
                         TYPE = t.Type,
-                        FILE = t.File,       
+                        FILE = t.File,
                         QUANTITY = t.Quantity,
                         NOTE = t.Note
                     });

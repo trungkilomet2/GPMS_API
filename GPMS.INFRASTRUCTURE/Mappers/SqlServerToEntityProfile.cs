@@ -61,6 +61,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
@@ -68,7 +69,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.UO_COMMENT, GPMS.DOMAIN.Entities.Comment>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OC_ID))
-                .ForMember(dest => dest.fromUserId, opt => opt.MapFrom(src => src.FROM_USER))               
+                .ForMember(dest => dest.fromUserId, opt => opt.MapFrom(src => src.FROM_USER))
                 .ForMember(dest => dest.toOrderId, opt => opt.MapFrom(src => src.TO_ORDER))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
                 .ForMember(dest => dest.SendDateTime, opt => opt.MapFrom(src => src.SEND_DATETIME))
