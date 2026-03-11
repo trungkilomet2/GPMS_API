@@ -60,7 +60,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS.NAME))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))

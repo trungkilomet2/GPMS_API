@@ -442,7 +442,7 @@ namespace GMPS.API.Controllers
                         Quantity = input.Quantity,
                         Cpu = input.Cpu,
                         Note = input.Note,
-                        Status = "Process",
+                        Status = 1,
                         Material = input.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
