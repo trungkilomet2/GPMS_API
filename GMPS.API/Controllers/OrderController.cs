@@ -98,7 +98,7 @@ namespace GMPS.API.Controllers
                         StartDate = o.StartDate,
                         EndDate = o.EndDate,
                         Image = o.Image,
-                        Status = o.Status
+                        Status = o.StatusName
                     });
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
@@ -219,7 +219,7 @@ namespace GMPS.API.Controllers
                         StartDate = o.StartDate,
                         EndDate = o.EndDate,
                         Image = o.Image,
-                        Status = o.Status
+                        Status = o.StatusName
                     });
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
@@ -311,7 +311,7 @@ namespace GMPS.API.Controllers
                     EndDate = order.EndDate,
                     Image = order.Image,
                     Note = order.Note,
-                    Status = order.Status,
+                    Status = order.StatusName,
                     Templates = order.Templates,
                     Materials = order.Materials
                 };
@@ -426,7 +426,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.OrderController_Post,"Creating new order for UserId {UserId}", input?.UserId);
+                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Creating new order for UserId {UserId}", input?.UserId);
                 if (ModelState.IsValid)
                 {
                     var newOrder = new Order
@@ -618,11 +618,11 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
-                if (existingOrder.Status != "Modification")
+                if (existingOrder.StatusName != OrderStatus_Constants.Modification)
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Put,
                         "Order {OrderId} cannot be updated - current status is '{Status}', required 'Modification'",
-                        id, existingOrder.Status);
+                        id, existingOrder.StatusName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -644,6 +644,11 @@ namespace GMPS.API.Controllers
                     return Forbid();
                 }
 
+                // Giữ ảnh cũ nếu user không gửi ảnh mới
+                var resolvedImage = !string.IsNullOrEmpty(input!.Image)
+                    ? input.Image
+                    : existingOrder.Image;
+
                 var histories = new List<OHistoryUpdate>();
                 void TrackChange(string field, string? oldVal, string? newVal)
                 {
@@ -657,14 +662,14 @@ namespace GMPS.API.Controllers
                         });
                 }
 
-                TrackChange("OrderName", existingOrder.OrderName, input!.OrderName);
+                TrackChange("OrderName", existingOrder.OrderName, input.OrderName);
                 TrackChange("Type", existingOrder.Type, input.Type);
                 TrackChange("Size", existingOrder.Size, input.Size);
                 TrackChange("Color", existingOrder.Color, input.Color);
                 TrackChange("StartDate", existingOrder.StartDate.ToString(), input.StartDate.ToString());
                 TrackChange("EndDate", existingOrder.EndDate.ToString(), input.EndDate.ToString());
                 TrackChange("Quantity", existingOrder.Quantity.ToString(), input.Quantity.ToString());
-                TrackChange("Image", existingOrder.Image, input.Image);
+                TrackChange("Image", existingOrder.Image, resolvedImage);
                 TrackChange("Note", existingOrder.Note, input.Note);
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
@@ -681,9 +686,8 @@ namespace GMPS.API.Controllers
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
-                    Image = input.Image ?? existingOrder.Image,
+                    Image = resolvedImage,
                     Note = input.Note,
-                    Status = "Pending",
                     Template = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName,

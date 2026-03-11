@@ -12,6 +12,6 @@ namespace GMPS.API.DTOs
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public string? Image { get; set; }
-        public string Status { get; set; }
+        public string? Status { get; set; }
     }
 }
