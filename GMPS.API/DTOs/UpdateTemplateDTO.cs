@@ -10,6 +10,7 @@ namespace GMPS.API.DTOs
         [StringLength(5, ErrorMessage = "Type cannot exceed 5 characters")]
         public string? Type { get; set; }
 
+        [Url(ErrorMessage = "File must be a valid URL")]
         [StringLength(2048, ErrorMessage = "File URL is too long")]
         public string? File { get; set; }
 
