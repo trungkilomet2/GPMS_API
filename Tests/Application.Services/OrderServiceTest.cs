@@ -224,7 +224,7 @@ public class OrderServiceTest
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.UpdateOrder(1, updated, new List<OHistoryUpdate>()));
 
-        Assert.Equal("Only modify order with status 'Modification'.", ex.Message);
+        Assert.Equal($"Only modify order with status '{OrderStatus_Constants.Modification}'.", ex.Message);
     }
 
     // ─── AddMaterial ─────────────────────────────────────────────────────────────
