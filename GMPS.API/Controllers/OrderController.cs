@@ -449,13 +449,13 @@ namespace GMPS.API.Controllers
                         }).ToList(),
                     };
                     var result = await _orderRepo.CreateOrder(newOrder);
-                    _logger.LogInformation(CustomLogEvents.OrderController_Post,"Order {OrderId} created successfully for UserId {UserId}",result.Id, input.UserId);
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post, "Order {OrderId} created successfully for UserId {UserId}", result.Id, input.UserId);
 
                     return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post,"Invalid model state while creating order for UserId {UserId}",input?.UserId);
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state while creating order for UserId {UserId}", input?.UserId);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -467,7 +467,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.OrderController_Post, ex,"Error occurred while creating order for UserId {UserId}",input?.UserId);
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex, "Error occurred while creating order for UserId {UserId}", input?.UserId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -475,7 +475,7 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
-                return StatusCode(StatusCodes.Status500InternalServerError,exceptionDetails.Detail);
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
             }
         }
 
@@ -705,6 +705,100 @@ namespace GMPS.API.Controllers
                 _logger.LogError(CustomLogEvents.OrderController_Put, ex,
                     "Error occurred while updating OrderId {OrderId}", id);
 
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpPost("{orderId}/request-order-modification", Name = "Request order modification")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> RequestOrderModification(int orderId)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Put,
+                    "Requesting modification for OrderId {OrderId}", orderId);
+                if (orderId <= 0)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Invalid OrderId {OrderId} - must be greater than 0", orderId);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+                var existingOrder = await _orderRepo.GetOrderDetail(orderId);
+                if (existingOrder is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Order {OrderId} not found", orderId);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order with id ' {orderId} ' not found" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                        "Order {OrderId} cannot request modification - current status is '{Status}', required Chờ Xét Duyệt",
+                        orderId, existingOrder.StatusName);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status500InternalServerError,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "Only Chờ Xét Duyệt order can request modification" } }
+                    };
+                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+                }
+                var histories = new List<OHistoryUpdate>();
+                void TrackChange(string field, string? oldVal, string? newVal)
+                {
+                    if (oldVal != newVal)
+                        histories.Add(new OHistoryUpdate
+                        {
+                            OrderId = orderId,
+                            FieldName = field,
+                            OldValue = oldVal ?? string.Empty,
+                            NewValue = newVal ?? string.Empty
+                        });
+                }
+                TrackChange("Status",existingOrder.StatusName,OrderStatus_Constants.Modification);
+                var updatedOrder = new Order
+                {
+                    Id = orderId,
+                    Status = 2
+                };
+                await _orderRepo.RequestOrderModification(orderId, updatedOrder, histories);
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Put,
+                    "Modification request for OrderId {OrderId} submitted successfully", orderId);
+
+                return Ok($"Modification request for order '{orderId}' submitted successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Put, ex,
+                    "Error occurred while requesting modification for OrderId {OrderId}", orderId);
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,

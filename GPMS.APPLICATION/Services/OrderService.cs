@@ -13,15 +13,18 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseOrderRepositories _orderBaseRepo;
         private readonly IBaseRepositories<OMaterial> _materialBaseRepo;
         private readonly IBaseRepositories<User> _userBaseRepo;
+        private readonly IBaseOrderStatusRepositories _orderStatusRepo;
 
         public OrderService(
             IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
-            IBaseRepositories<User> userBaseRepo)
+            IBaseRepositories<User> userBaseRepo,
+            IBaseOrderStatusRepositories orderStatusRepo)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
             _materialBaseRepo = materialBaseRepo ?? throw new ArgumentNullException(nameof(materialBaseRepo));
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
+            _orderStatusRepo = orderStatusRepo ?? throw new ArgumentNullException(nameof(orderStatusRepo));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
@@ -74,6 +77,19 @@ namespace GPMS.APPLICATION.Services
 
             material.OrderId = orderId;
             return await _materialBaseRepo.Create(material);
+        }
+
+        public async Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            if (updatedOrder == null)
+                throw new Exception("Failed to update order.");
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new Exception($"Order with id '{orderId}' not exist in system.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.RequestOrderModification(orderId, updatedOrder, histories);
         }
     }
 }
