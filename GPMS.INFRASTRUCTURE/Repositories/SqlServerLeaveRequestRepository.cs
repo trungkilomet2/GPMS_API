@@ -49,14 +49,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (existing is null)
                 throw new KeyNotFoundException($"Leave request with id '{entity.Id}' not found.");
 
-            var deniedStatus = await _context.LR_STATUS
-                .FirstOrDefaultAsync(s => s.NAME == LeaveRequestStatus_Constants.Denied);
+            var status = await _context.LR_STATUS
+                .FirstOrDefaultAsync(s => s.LRS_ID == entity.StatusId);
 
-            if (deniedStatus is null)
-                throw new InvalidOperationException($"Status '{LeaveRequestStatus_Constants.Denied}' not found in system.");
+            if (status is null)
+                throw new InvalidOperationException($"Status with id '{entity.StatusId}' not found in system.");
 
-            existing.LRS_ID = deniedStatus.LRS_ID;
-            existing.DENY_CONTENT = entity.DenyContent;
+            existing.LRS_ID = status.LRS_ID;
+            existing.DENY_CONTENT = entity.DenyContent;  
             existing.DATE_REPLY = entity.DateReply;
 
             await _context.SaveChangesAsync();
