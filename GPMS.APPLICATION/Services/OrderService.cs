@@ -58,7 +58,7 @@ namespace GPMS.APPLICATION.Services
             if (existing is null)
                 throw new Exception($"Order with id '{orderId}' not exist in system.");
             if (existing.StatusName != OrderStatus_Constants.Modification)
-                throw new Exception("Only modify order with status 'Modification'.");
+                throw new Exception($"Only modify order with status '{OrderStatus_Constants.Modification}'.");
 
             return await _orderBaseRepo.UpdateOrder(orderId, updatedOrder, histories);
         }

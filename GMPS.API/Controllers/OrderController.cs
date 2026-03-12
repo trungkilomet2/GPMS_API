@@ -631,7 +631,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "status", new[] { "Only modify order with status 'Modification'" } }
+                        { "status", new[] { $"Only modify order with status '{OrderStatus_Constants.Modification}'" } }
                     };
                     return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
                 }
