@@ -1,4 +1,4 @@
-using AutoMapper;
+    using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
@@ -30,7 +30,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<IEnumerable<LeaveRequest>>(data);
         }
 
-        public Task<LeaveRequest> GetById(object id) => throw new NotImplementedException();
+        public async Task<LeaveRequest> GetById(object id)
+        {
+            var data = await _context.LEAVE_REQUEST
+                .Include(lr => lr.USER)
+                .Include(lr => lr.LRS)
+                .FirstOrDefaultAsync(lr => lr.LR_ID == (int)id);
+
+            return _mapper.Map<LeaveRequest>(data);
+        }
+
         public Task<LeaveRequest> Create(LeaveRequest entity) => throw new NotImplementedException();
         public Task<LeaveRequest> Update(LeaveRequest entity) => throw new NotImplementedException();
         public Task Delete(object id) => throw new NotImplementedException();

@@ -1,12 +1,14 @@
-using GMPS.API.DTOs;
+﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace GMPS.API.Controllers
@@ -27,13 +29,52 @@ namespace GMPS.API.Controllers
         // GET api/leaverequest/leave-request-list
         [HttpGet("leave-request-list", Name = "Get all leave request list")]
         [Authorize(Roles = "Owner,PM")]
-        public async Task<ActionResult<RestDTO<IEnumerable<LeaveRequestListDTO>>>> GetLeaveRequests([FromQuery] RequestDTO<LeaveRequest> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<LeaveRequestListDTO>>>> GetLeaveRequests([FromQuery] LeaveRequestRequestDTO input)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
-                    "Getting all leave requests - PageIndex: {PageIndex}, PageSize: {PageSize}",
-                    input.PageIndex, input.PageSize);
+                    "Getting all leave requests - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, DateCreateFrom: {DateCreateFrom}, DateCreateTo: {DateCreateTo}",
+                    input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
+
+                if (!string.IsNullOrEmpty(input.Status) &&
+                    input.Status != LeaveRequestStatus_Constants.Pending &&
+                    input.Status != LeaveRequestStatus_Constants.Approved &&
+                    input.Status != LeaveRequestStatus_Constants.Denied)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "Invalid Status value '{Status}' provided", input.Status);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}'." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (input.DateCreateFrom.HasValue && input.DateCreateTo.HasValue
+                    && input.DateCreateFrom > input.DateCreateTo)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "DateCreateFrom {DateCreateFrom} is greater than DateCreateTo {DateCreateTo}",
+                        input.DateCreateFrom, input.DateCreateTo);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -59,6 +100,16 @@ namespace GMPS.API.Controllers
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                     result = result.Where(lr => lr.UserFullName != null &&
                         lr.UserFullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrEmpty(input.Status))
+                    result = result.Where(lr => lr.StatusName != null &&
+                        lr.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+
+                if (input.DateCreateFrom.HasValue)
+                    result = result.Where(lr => lr.DateCreate >= input.DateCreateFrom.Value.Date);
+
+                if (input.DateCreateTo.HasValue)
+                    result = result.Where(lr => lr.DateCreate < input.DateCreateTo.Value.Date.AddDays(1));
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -92,7 +143,6 @@ namespace GMPS.API.Controllers
                         Content = lr.Content,
                         DateCreate = lr.DateCreate,
                         DateReply = lr.DateReply,
-                        DenyContent = lr.DenyContent,
                         Status = lr.StatusName
                     });
 
@@ -115,6 +165,123 @@ namespace GMPS.API.Controllers
             {
                 _logger.LogError(CustomLogEvents.LeaveRequestController_Get, ex,
                     "Error occurred while getting all leave requests");
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // GET api/leaverequest/leave-request-detail/{id}
+        [HttpGet("leave-request-detail/{id}", Name = "Get leave request detail by id")]
+        [Authorize(Roles = "Owner,PM,Team_Leader,Worker")]
+        public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> GetLeaveRequestDetail(int id)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
+                    "Getting leave request detail for LeaveRequestId {LeaveRequestId}", id);
+
+                if (id <= 0)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "Invalid LeaveRequestId {LeaveRequestId} - must be greater than 0", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var leaveRequest = await _leaveRequestRepo.GetLeaveRequestById(id);
+
+                if (leaveRequest is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "Leave request {LeaveRequestId} not found", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Leave request with id '{id}' not found" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                if (userIdClaim is null || roleClaim is null)
+                    return Unauthorized();
+
+                if (!int.TryParse(userIdClaim, out var requesterId))
+                    return Unauthorized();
+
+                var isTeamLeader = roleClaim == nameof(RoleName.Team_Leader);
+                var isWorker = roleClaim == nameof(RoleName.Worker);
+
+                if ((isWorker || isTeamLeader) && leaveRequest.UserId != requesterId)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "UserId {RequesterId} with role '{Role}' attempted to access LeaveRequestId {LeaveRequestId} belonging to UserId {OwnerId}",
+                        requesterId, roleClaim, id, leaveRequest.UserId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status403Forbidden,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "authorization", new[] { "You do not have permission to view this leave request." } }
+                    };
+                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+                }
+
+                var data = new LeaveRequestDetailDTO
+                {
+                    Id = leaveRequest.Id,
+                    UserId = leaveRequest.UserId,
+                    UserFullName = leaveRequest.UserFullName,
+                    Content = leaveRequest.Content,
+                    DateCreate = leaveRequest.DateCreate,
+                    DateReply = leaveRequest.DateReply,
+                    DenyContent = leaveRequest.DenyContent,
+                    Status = leaveRequest.StatusName
+                };
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
+                    "Returned detail for LeaveRequestId {LeaveRequestId} to UserId {RequesterId} successfully",
+                    id, requesterId);
+
+                return Ok(new RestDTO<LeaveRequestDetailDTO>
+                {
+                    Data = data,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action("GetLeaveRequestDetail", "LeaveRequest", new { id }, Request.Scheme)!, "self", "GET"),
+                        new LinkDTO(Url.Action("GetLeaveRequests", "LeaveRequest", null, Request.Scheme)!, "leave-request-list", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Get, ex,
+                    "Error occurred while getting detail for LeaveRequestId {LeaveRequestId}", id);
 
                 var exceptionDetails = new ProblemDetails
                 {

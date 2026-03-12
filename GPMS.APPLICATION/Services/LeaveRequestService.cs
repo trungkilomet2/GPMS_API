@@ -1,4 +1,4 @@
-using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
@@ -18,5 +18,8 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests()
             => await _leaveRequestBaseRepo.GetAll(null);
+
+        public async Task<LeaveRequest> GetLeaveRequestById(int id)
+            => await _leaveRequestBaseRepo.GetById(id);
     }
 }

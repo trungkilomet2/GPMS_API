@@ -7,5 +7,6 @@ namespace GPMS.APPLICATION.Repositories
     public interface ILeaveRequestRepositories
     {
         Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests();
+        Task<LeaveRequest> GetLeaveRequestById(int id);
     }
 }
