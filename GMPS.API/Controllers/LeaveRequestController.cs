@@ -392,5 +392,86 @@ namespace GMPS.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
+
+        // PUT api/leaverequest/{id}/approve
+        [HttpPut("{id}/approve")]
+        [Authorize(Roles = "Owner,PM")]
+        public async Task<ActionResult> ApproveLeaveRequest(int id)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "Approving LeaveRequestId {LeaveRequestId}", id);
+
+                if (id <= 0)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                        "Invalid LeaveRequestId {LeaveRequestId} - must be greater than 0", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                await _leaveRequestRepo.ApproveLeaveRequest(id);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} approved successfully", id);
+
+                return Ok($"Leave request '{id}' has been approved successfully.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} not found", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "id", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cannot be approved - invalid status", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
+                    "Error occurred while approving LeaveRequestId {LeaveRequestId}", id);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
     }
 }

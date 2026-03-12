@@ -34,7 +34,23 @@ namespace GPMS.APPLICATION.Services
                 throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be denied.");
 
             leaveRequest.DenyContent = denyContent;
-            leaveRequest.StatusId = 3; 
+            leaveRequest.StatusId = 3;
+            leaveRequest.DateReply = DateTime.UtcNow;
+
+            return await _leaveRequestBaseRepo.Update(leaveRequest);
+        }
+
+        public async Task<LeaveRequest> ApproveLeaveRequest(int id)
+        {
+            var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
+
+            if (leaveRequest is null)
+                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+
+            if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
+                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be approved.");
+
+            leaveRequest.StatusId = 2; 
             leaveRequest.DateReply = DateTime.UtcNow;
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
