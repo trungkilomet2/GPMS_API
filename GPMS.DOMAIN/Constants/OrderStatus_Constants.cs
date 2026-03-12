@@ -10,9 +10,8 @@ namespace GPMS.DOMAIN.Constants
     {
         public const string Pending = "Chờ Xét Duyệt";
         public const string Modification = "Yêu Cầu Chỉnh Sửa";
-        public const string Approved = "Approved";
-        public const string Processing = "Processing";
-        public const string Completed = "Completed";
-        public const string Cancelled = "Cancelled";
+        public const string Approved = "Đã Chấp Nhận";
+        public const string Rejected = "Đã Từ Chối";
+        public const string Cancelled = "Đã Hủy";
     }
 }
