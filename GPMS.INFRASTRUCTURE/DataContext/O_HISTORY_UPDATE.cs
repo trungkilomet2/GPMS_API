@@ -22,6 +22,9 @@ public partial class O_HISTORY_UPDATE
     [StringLength(255)]
     public string NEW_VALUE { get; set; } = null!;
 
+    [Column(TypeName = "datetime")]
+    public DateTime? CHANGE_AT { get; set; }
+
     [ForeignKey("ORDER_ID")]
     [InverseProperty("O_HISTORY_UPDATE")]
     public virtual ORDER ORDER { get; set; } = null!;

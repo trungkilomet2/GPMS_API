@@ -16,6 +16,9 @@ public partial class O_MATERIAL
     [StringLength(150)]
     public string NAME { get; set; } = null!;
 
+    [StringLength(30)]
+    public string? COLOR { get; set; }
+
     [StringLength(255)]
     public string? IMAGE { get; set; }
 

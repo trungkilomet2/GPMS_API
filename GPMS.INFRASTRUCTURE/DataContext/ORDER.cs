@@ -36,12 +36,15 @@ public partial class ORDER
     public int QUANTITY { get; set; }
 
     [Column(TypeName = "decimal(18, 2)")]
-    public decimal? CPU { get; set; }
+    public decimal CPU { get; set; }
 
     [StringLength(255)]
     public string? NOTE { get; set; }
 
     public int OS_ID { get; set; }
+
+    [InverseProperty("ORDER")]
+    public virtual ORDER_REJECT_REASON? ORDER_REJECT_REASON { get; set; }
 
     [ForeignKey("OS_ID")]
     [InverseProperty("ORDER")]
@@ -55,6 +58,9 @@ public partial class ORDER
 
     [InverseProperty("ORDER")]
     public virtual ICollection<O_TEMPLATE> O_TEMPLATE { get; set; } = new List<O_TEMPLATE>();
+
+    [InverseProperty("ORDER")]
+    public virtual ICollection<PRODUCTION> PRODUCTION { get; set; } = new List<PRODUCTION>();
 
     [InverseProperty("TO_ORDERNavigation")]
     public virtual ICollection<UO_COMMENT> UO_COMMENT { get; set; } = new List<UO_COMMENT>();

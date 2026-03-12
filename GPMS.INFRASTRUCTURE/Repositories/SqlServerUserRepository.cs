@@ -52,7 +52,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> FindUserByUserName(string username)
         {
-            var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();
+            var data = await _context.USER.Where(u => u.USERNAME.Equals(username)).FirstOrDefaultAsync();
 
             if (data is null) return null;
 
@@ -75,7 +75,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> Login(string UserName, string password)
         {
-            var data = await _context.USER.Where(u => u.UserName.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+            var data = await _context.USER.Where(u => u.USERNAME.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
 
             return _mapper.Map<User>(data);
         }

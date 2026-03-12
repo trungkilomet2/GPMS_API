@@ -52,7 +52,7 @@ public class AccountServiceTest
     [Fact]
     public async Task Login_ReturnsNull_WhenPasswordInvalid()
     {
-        var user = new User { UserName = "validuser", PasswordHash = "hashed" };
+        var user = new User { UserName = "validuser", PasswordHash = "AQAAAAIAAYagAAAAEOxoaXaFwlfrzFu68tB383ozk6AVd/UmOzboySqemEoZCgFhi+DYkS+kNKuTtGVCQA==" };
         _accountBaseRepo.Setup(x => x.FindUserByUserName("validuser")).ReturnsAsync(user);
 
         var service = BuildService();
