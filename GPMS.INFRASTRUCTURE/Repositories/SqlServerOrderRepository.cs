@@ -179,8 +179,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
             if(existing == null)
                 throw new KeyNotFoundException($"Order '{orderId}' not exist");
-            existing.OS_ID = _context.O_STATUS.FirstOrDefault(s => s.NAME == OrderStatus_Constants.Modification)?.OS_ID 
-                ?? throw new InvalidOperationException($"Status '{OrderStatus_Constants.Modification}' not exist in system");
+            existing.OS_ID = updatedOrder.Status;
             foreach (var history in histories)
             {
                 await _context.O_HISTORY_UPDATE.AddAsync(new O_HISTORY_UPDATE
