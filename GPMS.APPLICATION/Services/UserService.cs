@@ -14,12 +14,10 @@ namespace GPMS.APPLICATION.Services
     public class UserService : IUserRepositories
     {   
         private readonly IBaseRepositories<User> _userBaseRepo;  
-        private readonly IBaseWorkerRepositories _workerRepo;
 
-        public UserService(IBaseRepositories<User> userBaseRepo, IBaseWorkerRepositories workerRepo)
+        public UserService(IBaseRepositories<User> userBaseRepo)
         {
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
-            _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
         }   
 
         public Task<User> CreateNewUser(User user)
@@ -67,18 +65,6 @@ namespace GPMS.APPLICATION.Services
         {
             var data = _userBaseRepo.GetById(id);
             return data;
-        }
-
-        public async Task<IEnumerable<User>> GetAllEmployees()
-        {
-            var data = await _workerRepo.GetEmployees();
-            return data;
-        }
-
-        public async Task<User> GetEmployeeById(int id)
-        {
-            var data = await _workerRepo.GetEmployeeById(id);
-            return data;
-        }
+        }        
     }
 }
