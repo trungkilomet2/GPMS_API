@@ -15,7 +15,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.USER_ID))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.USERNAME))
                 .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.PASSWORDHASH))
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
                 .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.LOCATION))

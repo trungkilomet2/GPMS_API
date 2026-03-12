@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-public partial class UO_COMMENT
+public partial class UP_COMMENT
 {
     [Key]
-    public int OC_ID { get; set; }
+    public int UPC_ID { get; set; }
 
     public int FROM_USER { get; set; }
 
-    public int TO_ORDER { get; set; }
+    public int TO_PRODUCTION { get; set; }
 
     [StringLength(500)]
     public string? CONTENT { get; set; }
@@ -22,10 +22,10 @@ public partial class UO_COMMENT
     public DateTime? SEND_DATETIME { get; set; }
 
     [ForeignKey("FROM_USER")]
-    [InverseProperty("UO_COMMENT")]
+    [InverseProperty("UP_COMMENT")]
     public virtual USER FROM_USERNavigation { get; set; } = null!;
 
-    [ForeignKey("TO_ORDER")]
-    [InverseProperty("UO_COMMENT")]
-    public virtual ORDER TO_ORDERNavigation { get; set; } = null!;
+    [ForeignKey("TO_PRODUCTION")]
+    [InverseProperty("UP_COMMENT")]
+    public virtual PRODUCTION TO_PRODUCTIONNavigation { get; set; } = null!;
 }
