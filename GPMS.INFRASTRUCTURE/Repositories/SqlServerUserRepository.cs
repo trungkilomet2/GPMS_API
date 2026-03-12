@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerUserRepository : IBaseRepositories<User>, IBaseAccountRepositories
+    public class SqlServerUserRepository : IBaseRepositories<User>, IBaseAccountRepositories, IBaseWorkerRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -71,6 +71,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var data = await _context.USER.Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
             return _mapper.Map<User>(data);
+        }
+
+        public async Task<IEnumerable<User>> GetEmployees()
+        {
+            var users = await _context.USER
+                              .Include(u => u.ROLE)
+                              .Include(u => u.WR)
+                              .Include(u => u.US)
+                              .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
+                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
+            return _mapper.Map<List<User>>(users);
         }
 
         public async Task<User> Login(string UserName, string password)
