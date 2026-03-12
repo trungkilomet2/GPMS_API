@@ -1,6 +1,6 @@
 namespace GMPS.API.DTOs
 {
-    public class LeaveRequestListDTO
+    public class LeaveRequestDetailDTO
     {
         public int Id { get; set; }
         public int UserId { get; set; }
@@ -8,6 +8,7 @@ namespace GMPS.API.DTOs
         public string? Content { get; set; }
         public DateTime DateCreate { get; set; }
         public DateTime? DateReply { get; set; }
+        public string? DenyContent { get; set; }
         public string? Status { get; set; }
     }
 }

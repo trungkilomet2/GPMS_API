@@ -1,5 +1,6 @@
-using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
@@ -18,5 +19,25 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests()
             => await _leaveRequestBaseRepo.GetAll(null);
+
+        public async Task<LeaveRequest> GetLeaveRequestById(int id)
+            => await _leaveRequestBaseRepo.GetById(id);
+
+        public async Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent)
+        {
+            var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
+
+            if (leaveRequest is null)
+                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+
+            if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
+                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be denied.");
+
+            leaveRequest.DenyContent = denyContent;
+            leaveRequest.StatusId = 3; 
+            leaveRequest.DateReply = DateTime.UtcNow;
+
+            return await _leaveRequestBaseRepo.Update(leaveRequest);
+        }
     }
 }
