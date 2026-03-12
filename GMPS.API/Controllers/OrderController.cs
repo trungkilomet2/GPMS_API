@@ -728,7 +728,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("{orderId}/request-order-modification", Name = "Cancel order by customer")]
+        [HttpPost("{orderId}/request-order-modification", Name = "Request order modification")]
         [Authorize(Roles = "Owner")]
         public async Task<ActionResult> RequestOrderModification(int orderId)
         {
@@ -795,6 +795,7 @@ namespace GMPS.API.Controllers
                             NewValue = newVal ?? string.Empty
                         });
                 }
+                TrackChange("Status",existingOrder.StatusName,OrderStatus_Constants.Modification);
                 var updatedOrder = new Order
                 {
                     Id = orderId,
