@@ -13,7 +13,7 @@ namespace GPMS.APPLICATION.Services
 {
     public class UserService : IUserRepositories
     {   
-        private readonly IBaseRepositories<User> _userBaseRepo;   
+        private readonly IBaseRepositories<User> _userBaseRepo;  
 
         public UserService(IBaseRepositories<User> userBaseRepo)
         {
@@ -65,6 +65,6 @@ namespace GPMS.APPLICATION.Services
         {
             var data = _userBaseRepo.GetById(id);
             return data;
-        }
+        }        
     }
 }

@@ -20,9 +20,25 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
                 .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.LOCATION))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.US_ID))
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.ROLE))
+                .ForMember(dest => dest.WorkerRoles, opt => opt.MapFrom(src => src.WR))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.US))
                 .ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ROLE_ID))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
+                .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.WORKER_ROLE, GPMS.DOMAIN.Entities.WorkerRole>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WR_ID))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
+                .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.U_STATUS, GPMS.DOMAIN.Entities.UserStatus>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.US_ID))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
                 .ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OTemplate>()
@@ -42,10 +58,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
                 .ForMember(dest => dest.FieldName, opt => opt.MapFrom(src => src.FIELD_NAME))
                 .ForMember(dest => dest.OldValue, opt => opt.MapFrom(src => src.OLD_VALUE))
-                .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE));
-               // .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.em)).ReverseMap();
-
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>();
+                .ForMember(dest => dest.NewValue, opt => opt.MapFrom(src => src.NEW_VALUE))
+                .ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER, GPMS.DOMAIN.Entities.Order>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORDER_ID))
