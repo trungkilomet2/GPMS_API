@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.ContextRepo
+namespace GPMS.APPLICATION.Repositories
 {
-    public interface IBaseWorkerRepositories
+    public interface IWorkerRepositories
     {
-        Task<IEnumerable<User>> GetEmployees();
+        Task<IEnumerable<User>> GetAllEmployees();
         Task<User> GetEmployeeById(int id);
     }
 }

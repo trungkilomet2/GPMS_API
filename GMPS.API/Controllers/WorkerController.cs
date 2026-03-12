@@ -10,12 +10,12 @@ namespace GMPS.API.Controllers
     [ApiController]
     public class WorkerController : ControllerBase
     {
-        private readonly IUserRepositories _userRepo;
+        private readonly IWorkerRepositories _workerRepo;
         private readonly ILogger<AccountController> _logger;
 
-        public WorkerController(IUserRepositories userRepo,ILogger<AccountController> logger)
+        public WorkerController(IWorkerRepositories workerRepo,ILogger<AccountController> logger)
         {
-            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
+            _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
             _logger = logger;
         }
 
@@ -27,7 +27,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.UserController_Get,
                     "Getting all employees");
 
-                var result = await _userRepo.GetAllEmployees();
+                var result = await _workerRepo.GetAllEmployees();
 
                 if (!result.Any())
                 {
@@ -59,7 +59,7 @@ namespace GMPS.API.Controllers
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(
-                    Url.Action(null, "User", null, Request.Scheme)!,
+                    Url.Action(null, "Worker", null, Request.Scheme)!,
                     "self",
                     "GET"
                 )
@@ -79,6 +79,78 @@ namespace GMPS.API.Controllers
 
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
                     "Error while getting employees");
+
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpGet("get-worker-by-id/{userId}")]
+        public async Task<IActionResult> GetEmployeeById(int userId)
+        {
+            if(userId <= 0)
+                {
+                _logger.LogWarning(CustomLogEvents.UserController_Get,
+                    "Invalid employee Id {EmployeeId}", userId);
+                return StatusCode(StatusCodes.Status400BadRequest,$"Invalid employee Id '{userId}'");
+            }
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                    "Getting employee with Id {EmployeeId}", userId);
+
+                var result = await _workerRepo.GetEmployeeById(userId);
+
+                if (result == null)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Get,
+                        "Employee with Id {EmployeeId} not found", userId);
+
+                    return StatusCode(StatusCodes.Status404NotFound,
+                        $"Employee with Id '{userId}' not found");
+                }
+
+                var employee = new EmployeeDTO
+                {
+                    Id = result.Id,
+                    UserName = result.UserName,
+                    FullName = result.FullName,
+                    PhoneNumber = result.PhoneNumber,
+                    Email = result.Email,
+                    Role = string.Join(", ", result.Roles.Select(r => r.Name)),
+                    WorkerRole = string.Join(", ", result.WorkerRoles.Select(w => w.Name)),
+                    Status = result.Status?.Name ?? "Unknown"
+                };
+
+                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                    "Returned employee with Id {EmployeeId}", userId);
+
+                var response = new RestDTO<EmployeeDTO>
+                {
+                    Data = employee,
+                    RecordCount = 1,
+                    Links = new List<LinkDTO>
+            {
+                new LinkDTO(
+                    Url.Action(null, "Worker", new { userId }, Request.Scheme)!,
+                    "self",
+                    "GET"
+                )
+            }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+
+                _logger.LogError(CustomLogEvents.Error_Get, ex,
+                    "Error while getting employee with Id {EmployeeId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }

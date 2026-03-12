@@ -15,6 +15,5 @@ namespace GPMS.APPLICATION.Repositories
        Task DisableAnUser(User user);
        Task<User> ViewProfile(int id);
        Task<User> UpdateProfile(int userId, User user);
-        Task<IEnumerable<User>> GetAllEmployees();
     }
 }

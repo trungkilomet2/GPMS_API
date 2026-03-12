@@ -74,5 +74,11 @@ namespace GPMS.APPLICATION.Services
             var data = await _workerRepo.GetEmployees();
             return data;
         }
+
+        public async Task<User> GetEmployeeById(int id)
+        {
+            var data = await _workerRepo.GetEmployeeById(id);
+            return data;
+        }
     }
 }
