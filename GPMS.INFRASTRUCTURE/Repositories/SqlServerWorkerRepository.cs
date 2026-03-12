@@ -26,11 +26,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Create(User entity)
         {
             var userEntity = _mapper.Map<USER>(entity);
-            var userNameExists = await _context.USER.AnyAsync(u => u.UserName == entity.UserName);
-            if(userNameExists != null)
+            var userNameExists = await _context.USER.Where(u => u.UserName.Equals(entity.UserName)).FirstOrDefaultAsync();
+            if (userNameExists != null)
                 {
                 throw new Exception("Username already exists");
             }
+            userEntity.ROLE.Clear();
             await _context.USER.AddAsync(userEntity);
             await _context.SaveChangesAsync();
 
@@ -78,9 +79,35 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<User>(users);
         }
 
-        public Task<User> Update(User entity)
+        public async Task<User> Update(User entity)
         {
-            throw new NotImplementedException();
+            var existing = await _context.USER
+                .Include(u => u.ROLE)
+                .FirstOrDefaultAsync(u => u.USER_ID == entity.Id);
+
+            if (existing == null)
+                throw new KeyNotFoundException($"Employee '{entity.Id}' not found");
+
+            existing.FULLNAME = entity.FullName;
+            existing.US_ID = entity.StatusId;
+
+            if (entity.Roles != null)
+            {
+                existing.ROLE.Clear();
+
+                foreach (var role in entity.Roles)
+                {
+                    var roleEntity = await _context.ROLE
+                        .FirstOrDefaultAsync(r => r.ROLE_ID == role.Id);
+
+                    if (roleEntity != null)
+                        existing.ROLE.Add(roleEntity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<User>(existing);
         }
     }
 }

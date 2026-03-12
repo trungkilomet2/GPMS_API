@@ -22,7 +22,8 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
-        [HttpGet("get-all-worker")]
+        [HttpGet("get-all-employees")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetEmployees()
         {
             try
@@ -87,7 +88,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpGet("get-worker-by-id/{userId}")]
+        [HttpGet("get-employee-by-id/{userId}")]
+        [Authorize(Roles = "Owner")]
         public async Task<IActionResult> GetEmployeeById(int userId)
         {
             if(userId <= 0)
@@ -160,14 +162,14 @@ namespace GMPS.API.Controllers
         }
 
         // api/worker
-        [HttpPost("create-worker")]
-        // [Authorize(Roles = "Admin")]
+        [HttpPost("create-employee")]
+        [Authorize(Roles = "Owner")]
         public async Task<ActionResult> CreateWorker([FromBody] CreateEmployeeDTO? input)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                    "Creating new employee {UserName}", input?.UserName);
+                    "Creating new worker {UserName}", input?.UserName);
 
                 if (ModelState.IsValid)
                 {
@@ -187,15 +189,15 @@ namespace GMPS.API.Controllers
                     var result = await _workerRepo.CreateEmployee(newUser);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                        "Employee {UserId} created successfully", result.Id);
+                        "Worker {UserId} created successfully", result.Id);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Employee '{result.Id}' has been created");
+                        $"Worker '{result.Id}' has been created");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Post,
-                        "Invalid model state while creating employee {UserName}", input?.UserName);
+                        "Invalid model state while creating Worker {UserName}", input?.UserName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -231,6 +233,64 @@ namespace GMPS.API.Controllers
 
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     exceptionDetails.Detail);
+            }
+        }
+
+        [HttpPut("update-employee/{userId}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> UpdateEmployee(int userId, [FromBody] UpdateEmployeeDTO input)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.WorkerController_Put,
+                    "Updating employee {UserId}", userId);
+
+                if (userId <= 0)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest,
+                        $"Invalid employee Id '{userId}'");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var updatedUser = new User
+                    {
+                        Id = userId,
+                        FullName = input.FullName,
+                        StatusId = input.StatusId,
+                        Roles = input.RoleIds?.Select(r => new Role
+                        {
+                            Id = r
+                        }).ToList()
+                    };
+
+                    var result = await _workerRepo.UpdateEmployee(userId, updatedUser);
+
+                    _logger.LogInformation(CustomLogEvents.WorkerController_Put,
+                        "Employee {UserId} updated successfully", userId);
+
+                    return Ok($"Employee '{userId}' has been updated");
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest
+                    };
+
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Post, ex,
+                    "Error occurred while updating employee {UserId}", userId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
     }
