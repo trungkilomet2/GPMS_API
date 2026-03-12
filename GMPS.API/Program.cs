@@ -89,6 +89,9 @@ builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialReposi
 builder.Services.AddScoped<IBaseRepositories<Comment>, SqlServerCommentRepository>();
 builder.Services.AddScoped<ICommentRepositories, CommentServices>();
 
+builder.Services.AddScoped<IBaseRepositories<LeaveRequest>, SqlServerLeaveRequestRepository>();
+builder.Services.AddScoped<ILeaveRequestRepositories, LeaveRequestService>();
+
 builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();

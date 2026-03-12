@@ -88,6 +88,18 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
                 .ForMember(dest => dest.SendDateTime, opt => opt.MapFrom(src => src.SEND_DATETIME))
                 .ReverseMap();
+
+            // LEAVE REQUEST
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.LEAVE_REQUEST, GPMS.DOMAIN.Entities.LeaveRequest>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.LR_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.USER != null ? src.USER.FULLNAME : null))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
+                .ForMember(dest => dest.DateCreate, opt => opt.MapFrom(src => src.DATE_CREATE))
+                .ForMember(dest => dest.DateReply, opt => opt.MapFrom(src => src.DATE_REPLY))
+                .ForMember(dest => dest.DenyContent, opt => opt.MapFrom(src => src.DENY_CONTENT))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.LRS_ID))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.LRS != null ? src.LRS.NAME : null));
         }
     }
 }

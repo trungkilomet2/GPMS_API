@@ -42,5 +42,10 @@ namespace GPMS.DOMAIN.Constants
         public const int WorkerController_Put = 50630;
         public const int WorkerController_Delete = 50640;
 
+        // LEAVE REQUEST CONTROLLER
+        public const int LeaveRequestController_Get = 50510;
+        public const int LeaveRequestController_Post = 50520;
+        public const int LeaveRequestController_Put = 50530;
+        public const int LeaveRequestController_Delete = 50540;
     }
 }
