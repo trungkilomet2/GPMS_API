@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +8,10 @@ namespace GPMS.DOMAIN.Constants
 {
     public class OrderStatus_Constants
     {
-        public const string Pending = "Pending";
-        public const string Modification = "Modification";
-        public const string Processing = "Processing";
-        public const string Completed = "Completed";
-        public const string Cancelled = "Cancelled";
+        public const string Pending = "Chờ Xét Duyệt";
+        public const string Modification = "Yêu Cầu Chỉnh Sửa";
+        public const string Approved = "Đã Chấp Nhận";
+        public const string Rejected = "Đã Từ Chối";
+        public const string Cancelled = "Đã Hủy";
     }
 }
