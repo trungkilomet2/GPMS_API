@@ -37,10 +37,10 @@ namespace GPMS.DOMAIN.Constants
         public const int OrderController_Delete = 50440;
 
         //WORKER CONTROLLER
-        public const int WorkerController_Get = 50510;
-        public const int WorkerController_Post = 50520;
-        public const int WorkerController_Put = 50530;
-        public const int WorkerController_Delete = 50540;
+        public const int WorkerController_Get = 50610;
+        public const int WorkerController_Post = 50620;
+        public const int WorkerController_Put = 50630;
+        public const int WorkerController_Delete = 50640;
 
     }
 }
