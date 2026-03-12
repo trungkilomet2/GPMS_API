@@ -11,22 +11,22 @@ namespace GPMS.APPLICATION.Services
 {
     public class WorkerService : IWorkerRepositories
     {
-        private readonly IBaseWorkerRepositories _workerRepo;
+        private readonly IBaseRepositories<User> _workerRepo;
 
-        public WorkerService(IBaseWorkerRepositories workerRepo)
+        public WorkerService(IBaseRepositories<User> workerRepo)
         {
             _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
         {
-            var data = await _workerRepo.GetEmployees();
+            var data = await _workerRepo.GetAll(null);
             return data;
         }
 
         public async Task<User> GetEmployeeById(int id)
         {
-            var data = await _workerRepo.GetEmployeeById(id);
+            var data = await _workerRepo.GetById(id);
             return data;
         }
     }

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerWorkerRepository : IBaseWorkerRepositories
+    public class SqlServerWorkerRepository : IBaseRepositories<User>
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -23,18 +23,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public async Task<User> GetEmployeeById(int id)
+        public Task<User> Create(User entity)
         {
-            var users = await _context.USER
-                              .Include(u => u.ROLE)
-                              .Include(u => u.WR)
-                              .Include(u => u.US)
-                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();
-            return _mapper.Map<User>(users);
+            throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<User>> GetEmployees()
+        public Task Delete(object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<User>> GetAll(object? obj)
         {
             var users = await _context.USER
                               .Include(u => u.ROLE)
@@ -43,6 +42,22 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                               .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
                               r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
             return _mapper.Map<List<User>>(users);
+        }
+
+        public async Task<User> GetById(object id)
+        {
+            var users = await _context.USER
+                              .Include(u => u.ROLE)
+                              .Include(u => u.WR)
+                              .Include(u => u.US)
+                              .Where(u => u.USER_ID == (int)id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
+                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();
+            return _mapper.Map<User>(users);
+        }
+
+        public Task<User> Update(User entity)
+        {
+            throw new NotImplementedException();
         }
     }
 }
