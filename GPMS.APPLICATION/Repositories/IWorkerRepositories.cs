@@ -11,5 +11,6 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<IEnumerable<User>> GetAllEmployees();
         Task<User> GetEmployeeById(int id);
+        Task<User> CreateEmployee(User user);
     }
 }

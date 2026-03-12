@@ -12,10 +12,12 @@ namespace GPMS.APPLICATION.Services
     public class WorkerService : IWorkerRepositories
     {
         private readonly IBaseRepositories<User> _workerRepo;
+        private readonly IBaseRepositories<Role> _roleRepo;
 
-        public WorkerService(IBaseRepositories<User> workerRepo)
+        public WorkerService(IBaseRepositories<User> workerRepo, IBaseRepositories<Role> roleRepo)
         {
             _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
+            _roleRepo = roleRepo;
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
@@ -28,6 +30,24 @@ namespace GPMS.APPLICATION.Services
         {
             var data = await _workerRepo.GetById(id);
             return data;
+        }
+
+        public async Task<User> CreateEmployee(User user)
+        {
+            if (user == null)
+                throw new Exception("Failed to create employee.");            
+            if (user.Roles != null && user.Roles.Any())
+            {
+                foreach (var role in user.Roles)
+                {
+                    var existingRole = await _roleRepo.GetById(role.Id);
+
+                    if (existingRole == null)
+                        throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                }
+            }
+
+            return await _workerRepo.Create(user);
         }
     }
 }

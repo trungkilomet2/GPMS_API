@@ -1,7 +1,10 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
+using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GMPS.API.Controllers
@@ -24,14 +27,14 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Getting all employees");
 
                 var result = await _workerRepo.GetAllEmployees();
 
                 if (!result.Any())
                 {
-                    _logger.LogInformation(CustomLogEvents.UserController_Get,
+                    _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                         "No employees found");
 
                     return StatusCode(StatusCodes.Status404NotFound, "No employees found");
@@ -49,7 +52,7 @@ namespace GMPS.API.Controllers
                     Status = u.Status?.Name ?? "Unknown"
                 });
 
-                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Returned {Count} employees", result.Count());
 
                 var response = new RestDTO<IEnumerable<EmployeeDTO>>
@@ -89,20 +92,20 @@ namespace GMPS.API.Controllers
         {
             if(userId <= 0)
                 {
-                _logger.LogWarning(CustomLogEvents.UserController_Get,
+                _logger.LogWarning(CustomLogEvents.WorkerController_Get,
                     "Invalid employee Id {EmployeeId}", userId);
                 return StatusCode(StatusCodes.Status400BadRequest,$"Invalid employee Id '{userId}'");
             }
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Getting employee with Id {EmployeeId}", userId);
 
                 var result = await _workerRepo.GetEmployeeById(userId);
 
                 if (result == null)
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Get,
+                    _logger.LogWarning(CustomLogEvents.WorkerController_Get,
                         "Employee with Id {EmployeeId} not found", userId);
 
                     return StatusCode(StatusCodes.Status404NotFound,
@@ -121,7 +124,7 @@ namespace GMPS.API.Controllers
                     Status = result.Status?.Name ?? "Unknown"
                 };
 
-                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Returned employee with Id {EmployeeId}", userId);
 
                 var response = new RestDTO<EmployeeDTO>
@@ -153,6 +156,81 @@ namespace GMPS.API.Controllers
                     "Error while getting employee with Id {EmployeeId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // api/worker
+        [HttpPost("create-worker")]
+        // [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> CreateWorker([FromBody] CreateEmployeeDTO? input)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.WorkerController_Post,
+                    "Creating new employee {UserName}", input?.UserName);
+
+                if (ModelState.IsValid)
+                {
+                    var passwordHasher = new PasswordHasher<User>();
+                    var newUser = new User
+                    {
+                        UserName = input.UserName,
+                        PasswordHash = passwordHasher.HashPassword(null, input.Password),
+                        FullName = input.FullName,
+                        StatusId = 1,
+                        Roles = input.RoleIds?.Select(r => new Role
+                        {
+                            Id = r
+                        }).ToList()
+                    };
+
+                    var result = await _workerRepo.CreateEmployee(newUser);
+
+                    _logger.LogInformation(CustomLogEvents.WorkerController_Post,
+                        "Employee {UserId} created successfully", result.Id);
+
+                    return StatusCode(StatusCodes.Status201Created,
+                        $"Employee '{result.Id}' has been created");
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.WorkerController_Post,
+                        "Invalid model state while creating employee {UserName}", input?.UserName);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.WorkerController_Post, ex.Message);
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status404NotFound, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Post, ex,
+                    "Error occurred while creating employee {UserName}", input?.UserName);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    exceptionDetails.Detail);
             }
         }
     }

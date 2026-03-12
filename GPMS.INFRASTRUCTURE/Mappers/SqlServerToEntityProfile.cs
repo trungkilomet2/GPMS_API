@@ -20,7 +20,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
                 .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.LOCATION))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
-
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.US_ID))
                 .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.ROLE))
                 .ForMember(dest => dest.WorkerRoles, opt => opt.MapFrom(src => src.WR))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.US))

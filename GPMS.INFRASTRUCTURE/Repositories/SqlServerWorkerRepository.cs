@@ -23,9 +23,32 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public Task<User> Create(User entity)
+        public async Task<User> Create(User entity)
         {
-            throw new NotImplementedException();
+            var userEntity = _mapper.Map<USER>(entity);
+            var userNameExists = await _context.USER.AnyAsync(u => u.UserName == entity.UserName);
+            if(userNameExists != null)
+                {
+                throw new Exception("Username already exists");
+            }
+            await _context.USER.AddAsync(userEntity);
+            await _context.SaveChangesAsync();
+
+            if (entity.Roles != null)
+            {
+                foreach (var role in entity.Roles)
+                {
+                    var roleEntity = await _context.ROLE
+                        .FirstOrDefaultAsync(r => r.ROLE_ID == role.Id);
+
+                    if (roleEntity != null)
+                        userEntity.ROLE.Add(roleEntity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<User>(userEntity);
         }
 
         public Task Delete(object id)
