@@ -1,5 +1,6 @@
-    using AutoMapper;
+using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -40,8 +41,30 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<LeaveRequest>(data);
         }
 
+        public async Task<LeaveRequest> Update(LeaveRequest entity)
+        {
+            var existing = await _context.LEAVE_REQUEST
+                .FirstOrDefaultAsync(lr => lr.LR_ID == entity.Id);
+
+            if (existing is null)
+                throw new KeyNotFoundException($"Leave request with id '{entity.Id}' not found.");
+
+            var deniedStatus = await _context.LR_STATUS
+                .FirstOrDefaultAsync(s => s.NAME == LeaveRequestStatus_Constants.Denied);
+
+            if (deniedStatus is null)
+                throw new InvalidOperationException($"Status '{LeaveRequestStatus_Constants.Denied}' not found in system.");
+
+            existing.LRS_ID = deniedStatus.LRS_ID;
+            existing.DENY_CONTENT = entity.DenyContent;
+            existing.DATE_REPLY = entity.DateReply;
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<LeaveRequest>(existing);
+        }
+
         public Task<LeaveRequest> Create(LeaveRequest entity) => throw new NotImplementedException();
-        public Task<LeaveRequest> Update(LeaveRequest entity) => throw new NotImplementedException();
         public Task Delete(object id) => throw new NotImplementedException();
     }
 }

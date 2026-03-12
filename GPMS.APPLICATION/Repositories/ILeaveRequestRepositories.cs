@@ -8,5 +8,6 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests();
         Task<LeaveRequest> GetLeaveRequestById(int id);
+        Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent);
     }
 }
