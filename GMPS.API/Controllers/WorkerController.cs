@@ -119,6 +119,7 @@ namespace GMPS.API.Controllers
                     Id = result.Id,
                     UserName = result.UserName,
                     FullName = result.FullName,
+                    AvatarUrl = result.AvartarUrl,
                     PhoneNumber = result.PhoneNumber,
                     Email = result.Email,
                     Role = string.Join(", ", result.Roles.Select(r => r.Name)),

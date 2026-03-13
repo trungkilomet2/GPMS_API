@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace GMPS.API.Controllers
@@ -40,18 +41,19 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Admin,Owner")]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
-            var result = await _userRepo.GetAllUser();
-            return new RestDTO<IEnumerable<User>>
-            {
-                Data = result,
-                PageIndex = input.PageIndex,
-                PageSize = input.PageSize,
-                RecordCount = result.Count(),
-                Links = new List<LinkDTO>
+
+                var result = await _userRepo.GetAllUser();
+                return new RestDTO<IEnumerable<User>>
+                {
+                    Data = result,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = result.Count(),
+                    Links = new List<LinkDTO>
                 {
                     new LinkDTO (Url.Action(null,"User", new { input.PageIndex, input.PageSize }, Request.Scheme)!,"self","GET")
                 }
-            };
+                };                
         }
 
         [HttpGet("admin/user-list")]
@@ -381,7 +383,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message,
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }

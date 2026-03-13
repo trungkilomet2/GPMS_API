@@ -13,7 +13,17 @@ namespace GPMS.TEST.Application.Services
 
         private CommentServices BuildService()
         {
-            return new CommentServices(_commentRepo.Object, null);
+            return new CommentServices(_commentRepo.Object, _orderRepo.Object);
+        }
+
+
+        [Fact]
+        public async Task CreateComment_ThrowsException_WhenEntityNull()
+        {
+            var service = BuildService();
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                service.CreateComment(null));
         }
 
         [Fact]
@@ -28,7 +38,8 @@ namespace GPMS.TEST.Application.Services
                 toOrderId = 1
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateComment(comment));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.CreateComment(comment));
         }
 
         [Fact]
@@ -38,16 +49,33 @@ namespace GPMS.TEST.Application.Services
 
             var comment = new Comment
             {
-                Content = "Test comment",
+                Content = "Test",
                 fromUserId = 0,
                 toOrderId = 1
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateComment(comment));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.CreateComment(comment));
         }
 
         [Fact]
-        public async Task CreateComment_ReturnsComment_WhenValidInput()
+        public async Task CreateComment_ThrowsException_WhenOrderInvalid()
+        {
+            var service = BuildService();
+
+            var comment = new Comment
+            {
+                Content = "Test",
+                fromUserId = 1,
+                toOrderId = 0
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.CreateComment(comment));
+        }
+
+        [Fact]
+        public async Task CreateComment_ReturnsComment_WhenValid()
         {
             var comment = new Comment
             {
@@ -68,32 +96,36 @@ namespace GPMS.TEST.Application.Services
             Assert.Equal("Test comment", result.Content);
         }
 
+
         [Fact]
         public async Task DeleteComment_ThrowsException_WhenIdInvalid()
         {
             var service = BuildService();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteComment(0,1));
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.DeleteComment(0, 1));
         }
 
         [Fact]
         public async Task DeleteComment_ThrowsException_WhenCommentNotFound()
         {
             _commentRepo.Setup(x => x.GetById(1))
-                .ReturnsAsync((Comment?)null);
+                .ReturnsAsync((Comment)null);
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteComment(1,1));
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.DeleteComment(1, 1));
         }
 
         [Fact]
-        public async Task DeleteComment_CallsDelete_WhenCommentValid()
+        public async Task DeleteComment_ThrowsException_WhenUserNotOwner()
         {
             var comment = new Comment
             {
                 Id = 1,
-                Content = "Test comment"
+                Content = "Test",
+                fromUserId = 5
             };
 
             _commentRepo.Setup(x => x.GetById(1))
@@ -101,30 +133,63 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await service.DeleteComment(1,1);
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.DeleteComment(1, 1));
+        }
+
+        [Fact]
+        public async Task DeleteComment_CallsDelete_WhenValid()
+        {
+            var comment = new Comment
+            {
+                Id = 1,
+                Content = "Test",
+                fromUserId = 1
+            };
+
+            _commentRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(comment);
+
+            var service = BuildService();
+
+            await service.DeleteComment(1, 1);
 
             _commentRepo.Verify(x => x.Delete(1), Times.Once);
         }
 
-        [Fact]
-        public async Task GetCommentById_ThrowsException_WhenNoCommentFound()
-        {
-            _commentRepo.Setup(x => x.GetAll(1))
-                .ReturnsAsync(new List<Comment>());
 
+        [Fact]
+        public async Task GetCommentById_ThrowsException_WhenOrderInvalid()
+        {
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() => service.GetCommentById(1));
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.GetCommentById(0));
         }
 
         [Fact]
-        public async Task GetCommentById_ReturnsComments_WhenFound()
+        public async Task GetCommentById_ThrowsException_WhenOrderNotFound()
+        {
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync((Order)null);
+
+            var service = BuildService();
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.GetCommentById(1));
+        }
+
+        [Fact]
+        public async Task GetCommentById_ReturnsComments_WhenExist()
         {
             var comments = new List<Comment>
             {
                 new Comment { Id = 1, Content = "Comment 1" },
                 new Comment { Id = 2, Content = "Comment 2" }
             };
+
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new Order { Id = 1 });
 
             _commentRepo.Setup(x => x.GetAll(1))
                 .ReturnsAsync(comments);
@@ -135,42 +200,70 @@ namespace GPMS.TEST.Application.Services
 
             Assert.Equal(2, result.Count());
         }
-
-        [Fact]
-        public async Task UpdateComment_ReturnsComment_WhenSuccess()
-        {
-            var comment = new Comment
-            {
-                Id = 1,
-                Content = "Updated comment"
-            };
-
-            _commentRepo.Setup(x => x.Update(It.IsAny<Comment>()))
-                .ReturnsAsync(comment);
-
-            var service = BuildService();
-
-            var result = await service.UpdateComment(comment, 1);
-
-            Assert.NotNull(result);
-            Assert.Equal("Updated comment", result.Content);
-        }
+       
 
         [Fact]
         public async Task UpdateComment_ThrowsException_WhenCommentNotFound()
         {
-            var comment = new Comment
-            {
-                Id = 1,
-                Content = "Updated comment"
-            };
+            var comment = new Comment { Id = 1 };
 
-            _commentRepo.Setup(x => x.Update(It.IsAny<Comment>()))
-                .ReturnsAsync((Comment?)null);
+            _commentRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync((Comment)null);
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() => service.UpdateComment(comment,1));
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.UpdateComment(comment, 1));
+        }
+
+        [Fact]
+        public async Task UpdateComment_ThrowsException_WhenUserNotOwner()
+        {
+            var existing = new Comment
+            {
+                Id = 1,
+                fromUserId = 2
+            };
+
+            var comment = new Comment { Id = 1 };
+
+            _commentRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(existing);
+
+            var service = BuildService();
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.UpdateComment(comment, 1));
+        }
+
+        [Fact]
+        public async Task UpdateComment_ReturnsUpdatedComment_WhenValid()
+        {
+            var existing = new Comment
+            {
+                Id = 1,
+                fromUserId = 1
+            };
+
+            var updated = new Comment
+            {
+                Id = 1,
+                Content = "Updated comment",
+                fromUserId = 1
+            };
+
+            _commentRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(existing);
+
+            _commentRepo.Setup(x => x.Update(updated))
+                .ReturnsAsync(updated);
+
+            var service = BuildService();
+
+            var result = await service.UpdateComment(updated, 1);
+
+            Assert.NotNull(result);
+            Assert.Equal("Updated comment", result.Content);
         }
     }
 }
