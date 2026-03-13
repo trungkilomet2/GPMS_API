@@ -68,7 +68,6 @@ namespace GPMS.DOMAIN.Constants
         public const string NOTI_FAILED = "NOTI-002";
     }
 
-
     public static class Message_Contents
     {
         public const string NO_SEARCH_RESULT = "No search results found.";
