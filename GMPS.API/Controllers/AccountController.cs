@@ -42,7 +42,9 @@ namespace GMPS.API.Controllers
                 {
 
                     var user = await _accountRepo.Login(input.UserName!, input.Password!);
-                    if (user is null) return NotFound("Invalid Login attempt.");
+                    if (user is null) 
+                        return NotFound("Invalid Login attempt.");
+
                     else
                     {
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
