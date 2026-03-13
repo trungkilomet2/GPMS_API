@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -8,15 +9,23 @@ namespace GPMS.APPLICATION.Services
     public class ProductionService : IProductionRepositories
     {
         private readonly IBaseProductionRepositories _productionRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ProductionService(IBaseProductionRepositories productionRepo)
+        public ProductionService(IBaseProductionRepositories productionRepo, IUnitOfWork unitOfWork)
         {
             _productionRepo = productionRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Production> CreateProduction(Production production)
-        {
-            if (production is null) throw new Exception("Failed to create production.");
+        {       
+            if(production is null) throw new Exception("Production data is required.");
+            production.Status = Enums.CreateStatus.Creating;
+            
+            if (production is null) 
+                throw new Exception("Failed to create production.");
+
+
             return await _productionRepo.CreateProduction(production);
         }
 

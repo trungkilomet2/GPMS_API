@@ -19,31 +19,53 @@ namespace GMPS.API.Controllers
             _productionService = productionService;
         }
 
-        [HttpPost]
+        [HttpPost("create-production")]
         public async Task<ActionResult<MessageResponseDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
-            var result = await _productionService.CreateProduction(new Production
+            try
             {
-                PmId = dto.PmId,
-                OrderId = dto.OrderId,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                StatusId = dto.StatusId
-            });
+                if (ModelState.IsValid)
+                {
+                    var result = await _productionService.CreateProduction(new Production
+                    {
+                        PmId = dto.PmId,
+                        OrderId = dto.OrderId,
+                        StartDate = dto.StartDate,
+                        EndDate = dto.EndDate,
+                        StatusId = dto.StatusId
+                    });
 
-            return Ok(new MessageResponseDTO<Production>
+                    return Ok(new MessageResponseDTO<Production>
+                    {
+                        MessageCode = Message_Codes.PROD_PLAN_CREATED,
+                        MessageContent = Message_Contents.PRODUCTION_PLAN_CREATED,
+                        Data = result
+                    });
+                } else
+                {
+                    var detail = new ValidationProblemDetails(ModelState);
+                    return BadRequest(new MessageResponseDTO<Production>
+                    {
+                        MessageCode = Message_Codes.SYS_ACTION_FAILED,
+                        MessageContent = detail.Detail ?? "Invalid input data."
+                    });
+                }
+            }
+            catch (Exception ex)
             {
-                MessageCode = Message_Codes.PROD_PLAN_CREATED,
-                MessageContent = Message_Contents.PRODUCTION_PLAN_CREATED,
-                Data = result
-            });
+                return BadRequest(new MessageResponseDTO<Production>
+                {
+                    MessageCode = Message_Codes.ORD_CANCEL_SUCCESS,
+                    MessageContent = ex.Message
+                });
+            }
         }
 
-        [HttpGet]
+        [HttpGet("get-list-production")]
         public async Task<ActionResult<IEnumerable<Production>>> GetList()
             => Ok(await _productionService.GetProductionList());
 
-        [HttpGet("{id:int}")]
+        [HttpGet("production-detail/{id:int}")]
         public async Task<ActionResult<Production>> GetDetail(int id)
             => Ok(await _productionService.GetProductionDetail(id));
 

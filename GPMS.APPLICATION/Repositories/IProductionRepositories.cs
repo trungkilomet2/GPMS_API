@@ -1,4 +1,5 @@
-﻿using GPMS.DOMAIN.Entities;
+﻿using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
