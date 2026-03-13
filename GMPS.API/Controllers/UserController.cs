@@ -100,6 +100,69 @@ namespace GMPS.API.Controllers
             }
         }
 
+        [HttpPost("admin/create-user")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<RestDTO<UserListDTO>>> CreateUser([FromBody] CreateUserDTO input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Post, "Admin creating new user with UserName: {UserName}", input.UserName);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Invalid model state when creating user");
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                var newUser = new User
+                {
+                    UserName = input.UserName,
+                    PasswordHash = input.Password,
+                    FullName = input.FullName,
+                    StatusId = 1
+                };
+
+                var createdUser = await _userRepo.CreateNewUser(newUser, input.RoleIds);
+
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "User created successfully with UserName: {UserName}", createdUser.UserName);
+
+                var result = new UserListDTO
+                {
+                    Id = createdUser.Id,
+                    UserName = createdUser.UserName,
+                    FullName = createdUser.FullName,
+                    PhoneNumber = createdUser.PhoneNumber,
+                    AvartarUrl = createdUser.AvartarUrl,
+                    Location = createdUser.Location,
+                    Email = createdUser.Email,
+                    StatusId = createdUser.StatusId
+                };
+
+                return StatusCode(StatusCodes.Status201Created, new RestDTO<UserListDTO>
+                {
+                    Data = result,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "User", new { id = createdUser.Id }, Request.Scheme)!, "self", "POST")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Post, ex, "Error occurred while creating user with UserName: {UserName}", input.UserName);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while creating the user."
+                });
+            }
+        }
+
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
