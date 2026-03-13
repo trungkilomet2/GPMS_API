@@ -54,6 +54,52 @@ namespace GMPS.API.Controllers
             };
         }
 
+        [HttpGet("admin/user-list")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<RestDTO<IEnumerable<UserListDTO>>>> GetUserListForAdmin([FromQuery] RequestDTO<UserListDTO> input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Get, "Admin requesting user list");
+            try
+            {
+                var users = await _userRepo.GetAllUser();
+                var data = users.Select(u => new UserListDTO
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    FullName = u.FullName,
+                    PhoneNumber = u.PhoneNumber,
+                    AvartarUrl = u.AvartarUrl,
+                    Location = u.Location,
+                    Email = u.Email,
+                    StatusId = u.StatusId
+                }).ToList();
+
+                _logger.LogInformation(CustomLogEvents.UserController_Get, "Retrieved {Count} users successfully", data.Count);
+
+                return Ok(new RestDTO<IEnumerable<UserListDTO>>
+                {
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = data.Count,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "User", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Get, ex, "Error occurred while retrieving user list");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while loading the user list."
+                });
+            }
+        }
+
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
