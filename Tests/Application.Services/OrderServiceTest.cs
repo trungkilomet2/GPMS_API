@@ -11,9 +11,10 @@ public class OrderServiceTest
     private readonly Mock<IBaseOrderRepositories> _orderBaseRepo = new();
     private readonly Mock<IBaseRepositories<OMaterial>> _materialBaseRepo = new();
     private readonly Mock<IBaseRepositories<User>> _userBaseRepo = new();
+    private readonly Mock<IBaseOrderStatusRepositories> _orderStatusRepo = new();
 
     private OrderService BuildService() =>
-        new OrderService(_orderBaseRepo.Object, _materialBaseRepo.Object, _userBaseRepo.Object);
+        new OrderService(_orderBaseRepo.Object, _materialBaseRepo.Object, _userBaseRepo.Object, _orderStatusRepo.Object);
 
     private static Order BuildFakeOrder(int id = 1, int userId = 1, string statusName = OrderStatus_Constants.Pending) => new Order
     {
