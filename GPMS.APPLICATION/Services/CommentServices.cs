@@ -36,12 +36,12 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task DeleteComment(int id, int userId)
+        public async Task DeleteComment(int CommentId, int userId)
         {
-            if (id <= 0)
+            if (CommentId <= 0)
                 throw new Exception("Invalid comment id");
 
-            var comment = await _commentRepo.GetById(id);
+            var comment = await _commentRepo.GetById(CommentId);
             if (comment == null)
                 throw new Exception("Comment not found");
 
@@ -49,12 +49,12 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("You can only update your own comment");
 
             if (comment == null)
-                throw new Exception($"Comment with id {id} does not exist");
+                throw new Exception($"Comment with id {CommentId} does not exist");
 
             if (string.IsNullOrWhiteSpace(comment.Content))
                 throw new Exception("Cannot delete empty comment");
 
-            await _commentRepo.Delete(id);
+            await _commentRepo.Delete(CommentId);
         }
 
 
@@ -66,7 +66,7 @@ namespace GPMS.APPLICATION.Services
             var order = await _orderRepo.GetById(orderId);
 
             if (order == null)
-                throw new Exception($"Order with id {orderId} does not exist");
+                throw new Exception($"Order does not exist");
             var data = await _commentRepo.GetAll(orderId);   
             return data;
         }

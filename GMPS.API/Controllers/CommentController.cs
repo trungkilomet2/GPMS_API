@@ -236,7 +236,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);

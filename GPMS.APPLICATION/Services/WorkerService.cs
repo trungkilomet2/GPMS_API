@@ -14,12 +14,14 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<Role> _roleRepo;
         private readonly IBaseRepositories<UserStatus> _userStatusRepo;
         private readonly IBaseWorkerRepository _workerRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo)
+        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork)
         {
             _roleRepo = roleRepo;
             _userStatusRepo = userStatusRepo ?? throw new ArgumentNullException(nameof(userStatusRepo));
             _workerRepo = workerRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
@@ -43,18 +45,27 @@ namespace GPMS.APPLICATION.Services
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
 
-            if (user.Roles != null && user.Roles.Any())
+            User createdUser = null;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                foreach (var role in user.Roles)
+                if (user.Roles != null && user.Roles.Any())
                 {
-                    var existingRole = await _roleRepo.GetById(role.Id);
+                    foreach (var role in user.Roles)
+                    {
+                        var existingRole = await _roleRepo.GetById(role.Id);
 
-                    if (existingRole == null)
-                        throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                        if (existingRole == null)
+                            throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                    }
                 }
-            }
 
-            return await _workerRepo.Create(user);
+                createdUser = await _workerRepo.Create(user);
+
+                await _unitOfWork.SaveChangesAsync();
+            });
+
+            return createdUser;
         }
 
         public async Task<User> UpdateEmployee(int userId, User user)
