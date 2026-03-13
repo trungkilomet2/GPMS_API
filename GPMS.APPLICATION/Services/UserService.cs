@@ -1,6 +1,7 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Identity;
 using System;
@@ -50,9 +51,34 @@ namespace GPMS.APPLICATION.Services
             return createdUser;
         }
 
-        public Task DisableAnUser(User user)
+        public async Task DisableAnUser(int userId)
         {
-            throw new NotImplementedException();
+            var user = await _userBaseRepo.GetById(userId);
+            if (user == null)
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+            if (user.StatusId == UserStatus_Constants.Inactive)
+                throw new InvalidOperationException("User is already disabled.");
+
+            user.StatusId = UserStatus_Constants.Inactive;
+            await _userBaseRepo.Update(user);
+        }
+
+        public async Task AssignRoles(int userId, List<int> roleIds)
+        {
+            var user = await _userBaseRepo.GetById(userId);
+            if (user == null)
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+
+            var roleNames = new List<string>();
+            foreach (var roleId in roleIds)
+            {
+                var role = await _roleRepo.GetById(roleId);
+                if (role == null)
+                    throw new KeyNotFoundException($"Role with ID {roleId} not found.");
+                roleNames.Add(role.Name);
+            }
+
+            await _userRoleRepo.ReplaceUserRoles(user, roleNames);
         }
 
         public async Task<IEnumerable<User>> GetAllUser()
@@ -82,6 +108,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
             }
+            user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;
         }
