@@ -41,6 +41,13 @@ namespace GPMS.DOMAIN.Constants
         public const string PROD_STAGE_ADDED = "PROD-004";
         public const string PROD_STAGE_UPDATED = "PROD-005";
         public const string PROD_STAGE_DELETED = "PROD-006";
+
+        public const string PROD_CREATED = "PROD-007";
+        public const string PROD_UPDATED = "PROD-008";
+        public const string PROD_REVISION_REQUESTED = "PROD-009";
+        public const string PROD_DENIED = "PROD-010";
+        public const string PROD_PLAN_CONFIGURED = "PROD-011";
+
         // Task
         public const string TASK_ASSIGNED = "TASK-001";
         public const string TASK_STATUS_UPDATED = "TASK-002";
@@ -102,6 +109,12 @@ namespace GPMS.DOMAIN.Constants
         public const string PRODUCTION_STAGE_ADDED = "Production stage added successfully.";
         public const string PRODUCTION_STAGE_UPDATED = "Production stage updated successfully.";
         public const string PRODUCTION_STAGE_DELETED = "Production stage deleted successfully.";
+
+        public const string PRODUCTION_CREATED = "Production created successfully.";
+        public const string PRODUCTION_UPDATED = "Production updated successfully.";
+        public const string PRODUCTION_REVISION_REQUESTED = "Production revision requested successfully.";
+        public const string PRODUCTION_DENIED = "Production denied successfully.";
+        public const string PRODUCTION_PLAN_CONFIGURED = "Production plan configured successfully.";
 
         public const string TASK_ASSIGNED = "Task assigned successfully.";
         public const string TASK_STATUS_UPDATED = "Task status updated successfully.";

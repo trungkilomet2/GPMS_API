@@ -100,6 +100,53 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.DenyContent, opt => opt.MapFrom(src => src.DENY_CONTENT))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.LRS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.LRS != null ? src.LRS.NAME : null));
+
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.P_PART, GPMS.DOMAIN.Entities.ProductionPart>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
+                .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.TEAM_LEADER_ID))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
+                .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PPS_ID))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PPS != null ? src.PPS.NAME : null))
+                .ReverseMap();
+            // PRODUCTION PART
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.P_PART, GPMS.DOMAIN.Entities.ProductionPart>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
+                .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.TEAM_LEADER_ID))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
+                .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PPS_ID))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PPS != null ? src.PPS.NAME : null))
+                .ReverseMap();
+
+            // PRODUCTION 
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.PRODUCTION, GPMS.DOMAIN.Entities.Production>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.PmId, opt => opt.MapFrom(src => src.PM_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.P_START_DATE))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.P_END_DATE))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PS_ID))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PS != null ? src.PS.NAME : null))
+                .ForMember(dest => dest.RejectReason, opt => opt.MapFrom(src => src.PRODUCTION_REJECT_REASON != null ? src.PRODUCTION_REJECT_REASON.REASON : null))
+                .ForMember(dest => dest.Parts, opt => opt.MapFrom(src => src.P_PART))
+                .ReverseMap()
+                .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PM_ID, opt => opt.MapFrom(src => src.PmId))
+                .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.OrderId))
+                .ForMember(dest => dest.P_START_DATE, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.P_END_DATE, opt => opt.MapFrom(src => src.EndDate))
+                .ForMember(dest => dest.PS_ID, opt => opt.MapFrom(src => src.StatusId));
+
+
+
         }
     }
 }
