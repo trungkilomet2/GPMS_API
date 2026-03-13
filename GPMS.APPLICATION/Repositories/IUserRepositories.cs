@@ -11,7 +11,7 @@ namespace GPMS.APPLICATION.Repositories
     {   
        Task<IEnumerable<User>> GetAllUser();
         Task<User> GetUserById(int id);
-        Task<User> CreateNewUser(User user);
+        Task<User> CreateNewUser(User user, List<int> roleIds);
        Task DisableAnUser(User user);
        Task<User> ViewProfile(int id);
        Task<User> UpdateProfile(int userId, User user);
