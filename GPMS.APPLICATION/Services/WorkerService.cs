@@ -11,15 +11,17 @@ namespace GPMS.APPLICATION.Services
 {
     public class WorkerService : IWorkerRepositories
     {
-        private readonly IBaseRepositories<User> _workerRepo;
         private readonly IBaseRepositories<Role> _roleRepo;
         private readonly IBaseRepositories<UserStatus> _userStatusRepo;
+        private readonly IBaseWorkerRepository _workerRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public WorkerService(IBaseRepositories<User> workerRepo, IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo)
+        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork)
         {
-            _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
             _roleRepo = roleRepo;
             _userStatusRepo = userStatusRepo ?? throw new ArgumentNullException(nameof(userStatusRepo));
+            _workerRepo = workerRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
@@ -30,7 +32,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> GetEmployeeById(int id)
         {
-            var data = await _workerRepo.GetById(id);
+            var data = await _workerRepo.GetWorkerById(id);
             return data;
         }
 
@@ -43,18 +45,27 @@ namespace GPMS.APPLICATION.Services
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
 
-            if (user.Roles != null && user.Roles.Any())
+            User createdUser = null;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                foreach (var role in user.Roles)
+                if (user.Roles != null && user.Roles.Any())
                 {
-                    var existingRole = await _roleRepo.GetById(role.Id);
+                    foreach (var role in user.Roles)
+                    {
+                        var existingRole = await _roleRepo.GetById(role.Id);
 
-                    if (existingRole == null)
-                        throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                        if (existingRole == null)
+                            throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                    }
                 }
-            }
 
-            return await _workerRepo.Create(user);
+                createdUser = await _workerRepo.Create(user);
+
+                await _unitOfWork.SaveChangesAsync();
+            });
+
+            return createdUser;
         }
 
         public async Task<User> UpdateEmployee(int userId, User user)
@@ -65,7 +76,7 @@ namespace GPMS.APPLICATION.Services
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
 
-            var existing = await _workerRepo.GetById(userId);
+            var existing = await _workerRepo.GetWorkerById(userId);
             if (existing == null)
                 throw new KeyNotFoundException($"Employee with id '{userId}' not found.");
 
