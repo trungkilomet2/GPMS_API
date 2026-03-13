@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.DOMAIN.Constants
 {
-    public static class MessageCodes
+    public static class Message_Codes
     {
         // Validation
         public const string VAL_NO_SEARCH_RESULT = "VAL-001";
@@ -69,7 +69,7 @@ namespace GPMS.DOMAIN.Constants
     }
 
 
-    public static class MessagesContents
+    public static class Message_Contents
     {
         public const string NO_SEARCH_RESULT = "No search results found.";
         public const string REQUIRED_FIELD = "This field is required.";

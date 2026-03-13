@@ -1,4 +1,5 @@
-﻿using GMPS.API.DTOs;
+﻿using Azure.Messaging;
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -43,8 +44,10 @@ namespace GMPS.API.Controllers
 
                     var user = await _accountRepo.Login(input.UserName!, input.Password!);
                     if (user is null) 
-                        return NotFound("Invalid Login attempt.");
-
+                        return NotFound( new {
+                            Code = Message_Codes.AUTH_LOGIN_FAILED,
+                            Message = Message_Contents.LOGIN_FAILED,
+                        });
                     else
                     {
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
