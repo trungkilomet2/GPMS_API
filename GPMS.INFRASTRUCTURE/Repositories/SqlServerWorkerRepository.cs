@@ -26,7 +26,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> Create(User entity)
         {
             var userEntity = _mapper.Map<USER>(entity);
-            var userNameExists = await _context.USER.Where(u => u.UserName.Equals(entity.UserName)).FirstOrDefaultAsync();
+            var userNameExists = await _context.USER.Where(u => u.USERNAME.Equals(entity.UserName)).FirstOrDefaultAsync();
             if (userNameExists != null)
                 {
                 throw new Exception("Username already exists");
