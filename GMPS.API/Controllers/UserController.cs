@@ -163,6 +163,94 @@ namespace GMPS.API.Controllers
             }
         }
 
+        [HttpPut("admin/disable/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> DisableUser(int id)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin disabling UserId {UserId}", id);
+            try
+            {
+                await _userRepo.DisableAnUser(id);
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "UserId {UserId} disabled successfully", id);
+                return Ok($"User with ID {id} has been disabled.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while disabling UserId {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while disabling the user."
+                });
+            }
+        }
+
+        [HttpPut("admin/assign-roles/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> AssignRoles(int id, [FromBody] AssignRoleDTO input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin assigning roles to UserId {UserId}", id);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid model state when assigning roles to UserId {UserId}", id);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                await _userRepo.AssignRoles(id, input.RoleIds);
+
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Roles assigned successfully to UserId {UserId}", id);
+                return Ok($"Roles assigned successfully to user with ID {id}.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while assigning roles to UserId {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while assigning roles."
+                });
+            }
+        }
+
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
