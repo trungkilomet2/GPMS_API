@@ -53,5 +53,11 @@ namespace GPMS.DOMAIN.Constants
         public const int OrderRejectController_Post = 50720;
         public const int OrderRejectController_Put = 50730;
         public const int OrderRejectController_Delete = 50740;
+
+        // WORKER ROLE CONTROLLER
+        public const int WorkerRoleController_Get = 50810;
+        public const int WorkerRoleController_Post = 50820;
+        public const int WorkerRoleController_Put = 50830;
+        public const int WorkerRoleController_Delete = 50840;
     }
 }
