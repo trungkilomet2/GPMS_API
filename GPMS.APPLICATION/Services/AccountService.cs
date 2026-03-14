@@ -98,7 +98,8 @@ namespace GPMS.APPLICATION.Services
         {
             var user = await _accountBaseRepo.FindUserByUserName(username);
             if (user is null) return null;
-            // Check hashed password 
+            if (user.StatusId == UserStatus_Constants.Inactive) return null;
+            // Check hashed password
             var hashedPassword = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, password);
             if (hashedPassword is PasswordVerificationResult.Failed)
             {

@@ -56,6 +56,203 @@ namespace GMPS.API.Controllers
                 };                
         }
 
+        [HttpGet("admin/user-list")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<RestDTO<IEnumerable<UserListDTO>>>> GetUserListForAdmin([FromQuery] RequestDTO<UserListDTO> input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Get, "Admin requesting user list");
+            try
+            {
+                var users = await _userRepo.GetAllUser();
+                var data = users.Select(u => new UserListDTO
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    FullName = u.FullName,
+                    PhoneNumber = u.PhoneNumber,
+                    AvartarUrl = u.AvartarUrl,
+                    Location = u.Location,
+                    Email = u.Email,
+                    StatusId = u.StatusId
+                }).ToList();
+
+                _logger.LogInformation(CustomLogEvents.UserController_Get, "Retrieved {Count} users successfully", data.Count);
+
+                return Ok(new RestDTO<IEnumerable<UserListDTO>>
+                {
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = data.Count,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "User", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Get, ex, "Error occurred while retrieving user list");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while loading the user list."
+                });
+            }
+        }
+
+        [HttpPost("admin/create-user")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<RestDTO<UserListDTO>>> CreateUser([FromBody] CreateUserDTO input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Post, "Admin creating new user with UserName: {UserName}", input.UserName);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Invalid model state when creating user");
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                var newUser = new User
+                {
+                    UserName = input.UserName,
+                    PasswordHash = input.Password,
+                    FullName = input.FullName,
+                    StatusId = 1
+                };
+
+                var createdUser = await _userRepo.CreateNewUser(newUser, input.RoleIds);
+
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "User created successfully with UserName: {UserName}", createdUser.UserName);
+
+                var result = new UserListDTO
+                {
+                    Id = createdUser.Id,
+                    UserName = createdUser.UserName,
+                    FullName = createdUser.FullName,
+                    PhoneNumber = createdUser.PhoneNumber,
+                    AvartarUrl = createdUser.AvartarUrl,
+                    Location = createdUser.Location,
+                    Email = createdUser.Email,
+                    StatusId = createdUser.StatusId
+                };
+
+                return StatusCode(StatusCodes.Status201Created, new RestDTO<UserListDTO>
+                {
+                    Data = result,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "User", new { id = createdUser.Id }, Request.Scheme)!, "self", "POST")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Post, ex, "Error occurred while creating user with UserName: {UserName}", input.UserName);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while creating the user."
+                });
+            }
+        }
+
+        [HttpPut("admin/disable/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> DisableUser(int id)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin disabling UserId {UserId}", id);
+            try
+            {
+                await _userRepo.DisableAnUser(id);
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "UserId {UserId} disabled successfully", id);
+                return Ok($"User with ID {id} has been disabled.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while disabling UserId {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while disabling the user."
+                });
+            }
+        }
+
+        [HttpPut("admin/assign-roles/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> AssignRoles(int id, [FromBody] AssignRoleDTO input)
+        {
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin assigning roles to UserId {UserId}", id);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid model state when assigning roles to UserId {UserId}", id);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                await _userRepo.AssignRoles(id, input.RoleIds);
+
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Roles assigned successfully to UserId {UserId}", id);
+                return Ok($"Roles assigned successfully to user with ID {id}.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while assigning roles to UserId {UserId}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = "An error occurred while assigning roles."
+                });
+            }
+        }
+
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]

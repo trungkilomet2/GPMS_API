@@ -9,10 +9,13 @@ namespace GPMS.TEST.Application.Services
     public class UserServiceTest
     {
         private readonly Mock<IBaseRepositories<User>> _userRepo = new();
+        private readonly Mock<IBaseRepositories<Role>> _roleRepo = new();
+        private readonly Mock<IBaseUserRoleRepo> _userRoleRepo = new();
+        private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
         private UserService BuildService()
         {
-            return new UserService(_userRepo.Object);
+            return new UserService(_userRepo.Object, _roleRepo.Object, _userRoleRepo.Object, _unitOfWork.Object);
         }
 
         [Fact]
