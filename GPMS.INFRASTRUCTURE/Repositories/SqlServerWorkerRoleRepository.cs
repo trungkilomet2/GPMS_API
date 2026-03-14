@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerWorkerRoleRepository : IBaseRepositories<WorkerRole>
+    public class SqlServerWorkerRoleRepository : IBaseRepositories<WorkerRole>, IBaseWorkerRoleRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -36,15 +36,22 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
+        public async Task<WorkerRole> FindRoleByName(string roleName)
+        {
+            var data = await _context.WORKER_ROLE.FirstOrDefaultAsync(r => r.NAME== roleName);
+            return _mapper.Map<WorkerRole>(data);
+        }
+
         public async Task<IEnumerable<WorkerRole>> GetAll(object? obj)
         {
             var data = await _context.WORKER_ROLE.ToListAsync();
             return _mapper.Map<List<WorkerRole>>(data);
         }
 
-        public Task<WorkerRole> GetById(object id)
+        public async Task<WorkerRole> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.WORKER_ROLE.FindAsync(id);
+            return _mapper.Map<WorkerRole>(data);
         }
 
         public Task<WorkerRole> Update(WorkerRole entity)
