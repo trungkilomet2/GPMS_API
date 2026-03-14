@@ -114,6 +114,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.LOCATION = entity.Location;
                 existingUser.AVATAR = entity.AvartarUrl;
                 existingUser.EMAIL = entity.Email;
+                existingUser.US_ID = entity.StatusId;
             
                 _context.USER.Update(existingUser);
                 await _context.SaveChangesAsync();
