@@ -56,6 +56,93 @@ namespace GMPS.API.Controllers
                 };                
         }
 
+
+        [HttpGet("get-user-detail-for-admin/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<RestDTO<UserDetailDTO>>> GetUserDetail(int userId)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.UserController_Get,
+                    "Getting user detail for UserId {UserId}", userId);
+
+                if (ModelState.IsValid)
+                {
+                    var user = await _userRepo.GetUserById(userId);
+
+                    if (user == null)
+                    {
+                        _logger.LogWarning(CustomLogEvents.UserController_Get,
+                            "User not found for UserId {UserId}", userId);
+
+                        return NotFound(new ProblemDetails
+                        {
+                            Detail = $"User with ID {userId} not found.",
+                            Status = StatusCodes.Status404NotFound,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                        });
+                    }
+
+                    var userDetail = new UserDetailDTO
+                    {
+                        Id = user.Id,
+                        UserName = user.UserName,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        Email = user.Email,
+                        AvatarUrl = user.AvartarUrl,
+                        Location = user.Location,
+                        Status = user.Status?.Name ?? "Unknown",
+                        Role = string.Join(", ", user.Roles.Select(r => r.Name)),
+                        WorkerRole = string.Join(", ", user.WorkerRoles.Select(w => w.Name))
+                    };
+
+                    _logger.LogInformation(CustomLogEvents.UserController_Get,
+                        "User detail retrieved successfully for UserId {UserId}", userId);
+
+                    return StatusCode(StatusCodes.Status200OK, new RestDTO<UserDetailDTO>
+                    {
+                        Data = userDetail,
+                        Links = new List<LinkDTO>
+                {
+                    new LinkDTO(
+                        Url.Action("GetUserDetail", "User", new { userId }, Request.Scheme)!,
+                        "self",
+                        "GET"
+                    )
+                }
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Get,
+                        "Invalid model state when getting user detail for UserId {UserId}", userId);
+
+                    var details = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+
+                    return BadRequest(details);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.UserController_Get, ex,
+                    "Error occurred while retrieving user details for UserId {UserId}", userId);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
+                };
+
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
         [HttpGet("admin/user-list")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<RestDTO<IEnumerable<UserListDTO>>>> GetUserListForAdmin([FromQuery] RequestDTO<UserListDTO> input)
