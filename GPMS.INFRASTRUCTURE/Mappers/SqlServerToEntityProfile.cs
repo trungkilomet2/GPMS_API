@@ -100,6 +100,16 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.DenyContent, opt => opt.MapFrom(src => src.DENY_CONTENT))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.LRS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.LRS != null ? src.LRS.NAME : null));
+
+
+            //ORDER REJECT REASON
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER_REJECT_REASON, GPMS.DOMAIN.Entities.OrderRejectReason>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORR_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.REASON))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
+                .ReverseMap();
         }
     }
 }
