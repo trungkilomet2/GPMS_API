@@ -116,7 +116,23 @@ namespace GPMS.APPLICATION.Services
         public Task<User> GetUserById(int id)
         {
             var data = _userBaseRepo.GetById(id);
+            if(data == null)
+                {
+                throw new KeyNotFoundException("User not found");
+            }
             return data;
-        }        
+        }
+
+        public async Task<User> UpdateUserForAdmin(int userId,User user)
+        {
+            var result = await _userBaseRepo.GetById(userId);
+            if (result == null)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+            }
+            user.StatusId = result.StatusId;
+            var data = await _userBaseRepo.Update(user);
+            return data;
+        }
     }
 }

@@ -69,7 +69,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> GetById(object id)
         {
-            var data = await _context.USER.Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
+            var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
+                              .Include(u => u.WR).Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
             return _mapper.Map<User>(data);
         }
 
