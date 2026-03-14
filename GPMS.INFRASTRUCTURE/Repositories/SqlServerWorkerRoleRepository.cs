@@ -38,7 +38,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<WorkerRole> FindRoleByName(string roleName)
         {
-            var data = await _context.WORKER_ROLE.FirstOrDefaultAsync(r => r.NAME== roleName);
+            var data = await _context.WORKER_ROLE.FirstOrDefaultAsync(r => r.NAME.ToLower() == roleName.ToLower());
             return _mapper.Map<WorkerRole>(data);
         }
 
