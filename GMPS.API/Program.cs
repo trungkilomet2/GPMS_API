@@ -86,7 +86,8 @@ builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 builder.Services.AddScoped<IBaseOrderStatusRepositories, SqlServerOrderRepository>();
-
+builder.Services.AddScoped<IBaseRepositories<OrderRejectReason>, SqlServerOrderRejectRepository>();
+builder.Services.AddScoped<IOrderRejectRepositories, OrderRejectService>();
 
 builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialRepository>();
 
