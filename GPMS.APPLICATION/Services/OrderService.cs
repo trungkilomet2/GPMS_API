@@ -72,6 +72,9 @@ namespace GPMS.APPLICATION.Services
             if (order is null)
                 throw new Exception($"Order with id '{orderId}' not found.");
 
+            if (order.StatusName == OrderStatus_Constants.Approved)
+                throw new InvalidOperationException("Cannot add material to an approved order.");
+
             if (material.Value <= 0)
                 throw new Exception("Quantity must be greater than zero.");
 
