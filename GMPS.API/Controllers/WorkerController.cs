@@ -239,7 +239,7 @@ namespace GMPS.API.Controllers
 
         [HttpPut("update-employee/{userId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult> UpdateEmployee(int userId, [FromBody] UpdateEmployeeDTO input)
+        public async Task<ActionResult> UpdateWorker(int userId, [FromBody] UpdateEmployeeDTO input)
         {
             try
             {

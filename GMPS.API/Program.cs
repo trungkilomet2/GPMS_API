@@ -79,6 +79,8 @@ builder.Services.AddScoped<IBaseWorkerRepository, SqlServerWorkerRepository>();
 builder.Services.AddScoped<IBaseRepositories<UserStatus>, SqlServerUserStatusRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
+builder.Services.AddScoped<IBaseRepositories<WorkerRole>, SqlServerWorkerRoleRepository>();
+builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 
 builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
