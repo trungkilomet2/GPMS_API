@@ -340,68 +340,93 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
+        [HttpPut("update-user-for-admin/{userId}")]
+        [Authorize(Roles = "Admin")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult<RestDTO<User>>> UpdateUser( [FromForm] UpdatedUserDTO? user)
+        public async Task<ActionResult<RestDTO<User>>> UpdateUserForAdmin(int userId, [FromForm] UpdatedUserDTO? user)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Put,"Updating profile for UserId {UserId}", userId);
-                if (ModelState.IsValid)
-                {
-                    string? imageUrl = null;
+                _logger.LogInformation(CustomLogEvents.UserController_Put,
+                    "Admin updating user for UserId {UserId}", userId);
 
-                    if (user.AvartarUrl != null)
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Put,
+                        "Invalid model state when updating user for UserId {UserId}", userId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
                     {
-                        var uploadResult = await _cloudinaryService.UploadImageAsync(user.AvartarUrl, CloudinaryConstrants.Cloudinary_Order_Image_Folder);
-                        imageUrl = uploadResult.Url;
-                    }
-                    var result = new User
-                    {
-                        Id = userId,
-                        FullName = user.FullName,
-                        PhoneNumber = user.PhoneNumber,
-                        AvartarUrl = imageUrl,
-                        Location = user.Location,
-                        Email = user.Email
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
                     };
-                    var updatedUser = await _userRepo.UpdateProfile(userId, result);
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Put,"Profile updated successfully for UserId {UserId}", userId);
-
-                    return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
-                    {
-                        Data = updatedUser,
-                        Links = new List<LinkDTO>
-        {
-            new LinkDTO(
-                Url.Action(null, "User", new { id = updatedUser.Id }, Request.Scheme)!,
-                "self",
-                "PUT"
-            )
-        }
-                    });
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
-                else
+
+                string? imageUrl = null;
+
+                if (user.AvartarUrl != null)
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Put,"Invalid model state when updating profile for UserId {UserId}", userId);
-                    var errorDetails = new ValidationProblemDetails(ModelState);
-                    errorDetails.Status = StatusCodes.Status400BadRequest;
-                    errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                    return BadRequest(errorDetails.Errors);
+                    var uploadResult = await _cloudinaryService.UploadImageAsync(
+                        user.AvartarUrl,
+                        CloudinaryConstrants.Cloudinary_Order_Image_Folder
+                    );
+
+                    imageUrl = uploadResult.Url;
                 }
+
+                var updateUser = new User
+                {
+                    Id = userId,
+                    FullName = user.FullName,
+                    PhoneNumber = user.PhoneNumber,
+                    AvartarUrl = imageUrl,
+                    Location = user.Location,
+                    Email = user.Email
+                };
+
+                var updatedUser = await _userRepo.UpdateUserForAdmin(userId, updateUser);
+
+                _logger.LogInformation(CustomLogEvents.UserController_Put,
+                    "User updated successfully for UserId {UserId}", userId);
+
+                return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
+                {
+                    Data = updatedUser,
+                    Links = new List<LinkDTO>
+            {
+                new LinkDTO(
+                    Url.Action("UpdateUserForAdmin", "User", new { userId }, Request.Scheme)!,
+                    "self",
+                    "PUT"
+                )
+            }
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+
+                return NotFound(new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Put, ex,"Error occurred while updating profile for UserId {UserId}", userId);
+                _logger.LogError(CustomLogEvents.UserController_Put, ex,
+                    "Error occurred while updating user for UserId {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
+
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }

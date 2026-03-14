@@ -123,5 +123,16 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
+        public async Task<User> UpdateUserForAdmin(int userId,User user)
+        {
+            var result = await _userBaseRepo.GetById(userId);
+            if (result == null)
+            {
+                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+            }
+            user.StatusId = result.StatusId;
+            var data = await _userBaseRepo.Update(user);
+            return data;
+        }
     }
 }

@@ -16,5 +16,6 @@ namespace GPMS.APPLICATION.Repositories
        Task AssignRoles(int userId, List<int> roleIds);
        Task<User> ViewProfile(int id);
        Task<User> UpdateProfile(int userId, User user);
+        Task<User> UpdateUserForAdmin(int userId,User user);
     }
 }
