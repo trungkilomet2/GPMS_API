@@ -47,5 +47,11 @@ namespace GPMS.DOMAIN.Constants
         public const int LeaveRequestController_Post = 50520;
         public const int LeaveRequestController_Put = 50530;
         public const int LeaveRequestController_Delete = 50540;
+
+        // ORDER REJECT CONTROLLER
+        public const int OrderRejectController_Get = 50710;
+        public const int OrderRejectController_Post = 50720;
+        public const int OrderRejectController_Put = 50730;
+        public const int OrderRejectController_Delete = 50740;
     }
 }
