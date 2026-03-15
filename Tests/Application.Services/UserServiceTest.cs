@@ -45,7 +45,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() => service.ViewProfile(1));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => service.ViewProfile(1));
         }
 
         [Fact]
