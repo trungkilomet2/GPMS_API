@@ -32,13 +32,18 @@ namespace GMPS.API.Controllers
                         OrderId = dto.OrderId,
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
-                    return Ok(new MessageResponseDTO<Production>
+
+                    return Ok(new RestDTO<Production>
                     {
-                        MessageCode = Message_Codes.PROD_PLAN_CREATED,
-                        MessageContent = Message_Contents.PRODUCTION_PLAN_CREATED,
-                        Data = result
+                        Data = result,
+                        Links = new List<LinkDTO>
+                        {
+                            new LinkDTO(Url.Action(null,"production/create",result,Request.Scheme!),"self","POST")
+                        }
+
                     });
-                } else
+                }
+                else
                 {
                     var detail = new ValidationProblemDetails(ModelState);
                     return BadRequest(new MessageResponseDTO<Production>
@@ -80,7 +85,7 @@ namespace GMPS.API.Controllers
             {
                 PmId = dto.PmId,
                 OrderId = dto.OrderId,
-              //  StatusId = dto.StatusId
+                //  StatusId = dto.StatusId
             }));
 
         [HttpGet("production-plans/pending")]

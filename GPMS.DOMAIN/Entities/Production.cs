@@ -10,6 +10,5 @@
         public int StatusId { get; set; }
         public string? StatusName { get; set; }
         public string? RejectReason { get; set; }
-        public List<ProductionPart> Parts { get; set; } = new();
     }
 }
