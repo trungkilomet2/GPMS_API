@@ -20,6 +20,21 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests()
             => await _leaveRequestBaseRepo.GetAll(null);
 
+        public async Task<IEnumerable<LeaveRequest>> GetLeaveRequestsByUserId(int userId)
+            => await _leaveRequestBaseRepo.GetAll(userId);
+
+        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content)
+        {
+            var leaveRequest = new LeaveRequest
+            {
+                UserId = userId,
+                Content = content,
+                DateCreate = DateTime.UtcNow
+            };
+
+            return await _leaveRequestBaseRepo.Create(leaveRequest);
+        }
+
         public async Task<LeaveRequest> GetLeaveRequestById(int id)
             => await _leaveRequestBaseRepo.GetById(id);
 
