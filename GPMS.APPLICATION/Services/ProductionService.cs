@@ -9,6 +9,8 @@ namespace GPMS.APPLICATION.Services
     public class ProductionService : IProductionRepositories
     {
         private readonly IBaseProductionRepositories _productionRepo;
+        private readonly IBaseRepositories<Role> _roleRepositories;
+
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionService(IBaseProductionRepositories productionRepo, IUnitOfWork unitOfWork)
@@ -20,8 +22,16 @@ namespace GPMS.APPLICATION.Services
         public async Task<Production> CreateProduction(Production production)
         {
             if (production is null) throw new Exception("Production data is required.");
+
+            User isPmExist = _roleRepositories.GetById(production.PmId);
+
+
             return await _productionRepo.CreateProduction(production);
         }
+
+        
+
+
 
         public async Task<IEnumerable<Production>> GetProductionList() => await _productionRepo.GetProductionList();
 

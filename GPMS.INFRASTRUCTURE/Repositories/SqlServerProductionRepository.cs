@@ -4,10 +4,11 @@ using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerProductionRepository : IBaseProductionRepositories
+    public class SqlServerProductionRepository : IBaseRepositories<Production>, IBaseProductionRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -18,25 +19,46 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper;
         }
 
-        public async Task<Production> CreateProduction(Production production)
+        public Task<IEnumerable<Production>> GetAll(object? obj)
         {
-            var isUserExist = await _context.USER.AnyAsync(u => u.USER_ID == production.PmId);
-            if(!isUserExist)
+            throw new NotImplementedException();
+        }
+
+        public Task<Production> GetById(object id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Production> Create(Production entity)
+        {
+            var pm_id = await _context.USER.Include(u => u.ROLE).Where(u => u.USER_ID == entity.PmId).FirstOrDefaultAsync();
+            if (pm_id is null)
             {
-                throw new Exception($"User with id '{production.PmId}' not found.");
+                throw new Exception($"User with id '{entity.PmId}' not found.");
                 return null;
             }
-            var isOrderExist = await _context.ORDER.AnyAsync(o => o.ORDER_ID == production.OrderId);
+
+            var isOrderExist = await _context.ORDER.AnyAsync(o => o.ORDER_ID == entity.OrderId);
             if (!isOrderExist)
             {
-                throw new Exception($"User with id '{production.OrderId}' not found.");
+                throw new Exception($"User with id '{entity.OrderId}' not found.");
                 return null;
             }
-            var entity = _mapper.Map<PRODUCTION>(production);
-            _context.PRODUCTION.Add(entity);
+            var production_database = _mapper.Map<PRODUCTION>(entity);
+            _context.PRODUCTION.Add(production_database);
             await _context.SaveChangesAsync();
 
-            return await GetProductionDetail(entity.PRODUCTION_ID) ?? throw new Exception("Failed to create production.");
+            return await GetProductionDetail(production_database.PRODUCTION_ID) ?? throw new Exception("Failed to create production.");
+        }
+
+        public Task<Production> Update(Production entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Delete(object id)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<IEnumerable<Production>> GetProductionList()
@@ -141,5 +163,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             .Include(x => x.P_PART)
                 .ThenInclude(p => p.PPS)
             .Include(x => x.PRODUCTION_REJECT_REASON);
+
+
+
+
+
     }
 }

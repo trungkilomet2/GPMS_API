@@ -53,11 +53,8 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new MessageResponseDTO<Production>
-                {
-                    MessageCode = Message_Codes.ORD_CANCEL_SUCCESS,
-                    MessageContent = ex.Message
-                });
+                ProblemDetails detail = new ProblemDetails();
+                detail.Detail = ex.Message;
             }
         }
 
