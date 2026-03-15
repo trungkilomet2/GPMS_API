@@ -66,8 +66,8 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<Production>> GetProductionList()
         {
-
-            => await _productionRepo.GetProductionList();
+            var data = await _productionRepo.GetProductionList();
+            return data;
         }
 
         public async Task<Production> GetProductionDetail(int productionId)

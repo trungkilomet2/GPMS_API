@@ -3,6 +3,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -26,6 +27,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 var data = _context.PRODUCTION;
                 return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
             }
+
             throw new Exception("Đã có lỗi xảy ra trong hệ thống");
         }
 

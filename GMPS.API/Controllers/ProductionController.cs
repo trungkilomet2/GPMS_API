@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
+using System.Net.WebSockets;
 
 namespace GMPS.API.Controllers
 {
@@ -81,9 +82,14 @@ namespace GMPS.API.Controllers
         [HttpGet("production/list")]
         public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
         {
+            // Lấy danh sách theo input
 
+            var data = await _productionService.GetProductionList();
+            data.AsQueryable().OrderBy($"{input.SortColumn} {input.SortOrder}")
+                        .Skip(input.PageIndex * input.PageSize)
+                        .Take(input.PageSize);
 
-            return Ok(await _productionService.GetProductionList());
+            return Ok(data);
         }
 
         [HttpGet("production/detail/{id:int}")]
