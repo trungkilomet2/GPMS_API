@@ -556,6 +556,98 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // POST api/leaverequest/create
+        [HttpPost("create")]
+        [Authorize(Roles = "Admin,Owner,PM,Team_Leader,KCS,Worker")]
+        public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> CreateLeaveRequest([FromBody] CreateLeaveRequestDTO? input)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var requesterId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Post,
+                    "UserId {UserId} is creating a leave request", requesterId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Post,
+                        "Invalid model state while UserId {UserId} creating a leave request", requesterId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var created = await _leaveRequestRepo.CreateLeaveRequest(requesterId, input!.Content);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Post,
+                    "UserId {UserId} created LeaveRequestId {LeaveRequestId} successfully", requesterId, created.Id);
+
+                var data = new LeaveRequestDetailDTO
+                {
+                    Id = created.Id,
+                    UserId = created.UserId,
+                    UserFullName = created.UserFullName,
+                    Content = created.Content,
+                    DateCreate = created.DateCreate,
+                    DateReply = created.DateReply,
+                    DenyContent = created.DenyContent,
+                    Status = created.StatusName
+                };
+
+                return CreatedAtAction(
+                    nameof(GetMyLeaveRequestHistoryDetail),
+                    new { id = created.Id },
+                    new RestDTO<LeaveRequestDetailDTO>
+                    {
+                        Data = data,
+                        Links = new List<LinkDTO>
+                        {
+                            new LinkDTO(Url.Action("GetMyLeaveRequestHistoryDetail", "LeaveRequest", new { id = created.Id }, Request.Scheme)!, "self", "GET"),
+                            new LinkDTO(Url.Action("GetMyLeaveRequestHistory", "LeaveRequest", null, Request.Scheme)!, "my-leave-request-history", "GET")
+                        }
+                    });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Post, ex,
+                    "System configuration error while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Post, ex,
+                    "Error occurred while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
         // PUT api/leaverequest/{id}/deny
         [HttpPut("{id}/deny")]
         [Authorize(Roles = "Owner,PM")]
