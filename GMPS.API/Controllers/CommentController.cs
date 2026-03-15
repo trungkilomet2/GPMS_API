@@ -97,13 +97,13 @@ namespace GMPS.API.Controllers
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Creating comment for OrderId {OrderId} by UserId {UserId}",
                         comment.ToOrderId, comment.FromUserId);
-
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
                     {
                         fromUserId = comment.FromUserId,
                         toOrderId = comment.ToOrderId,
                         Content = comment.Content,
-                        SendDateTime = DateTime.UtcNow
+                        SendDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
 
                     var result = await _commentRepo.CreateComment(userId,newComment);

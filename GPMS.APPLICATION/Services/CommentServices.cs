@@ -40,7 +40,6 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("Content cannot be empty");
             if (entity.fromUserId !=userId)
                 throw new Exception("You can only create comment for yourself");
-            entity.SendDateTime = DateTime.UtcNow;
             var data = _commentRepo.Create(entity);
             return data;
         }
