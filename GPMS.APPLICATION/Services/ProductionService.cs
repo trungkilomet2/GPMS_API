@@ -18,14 +18,8 @@ namespace GPMS.APPLICATION.Services
         }
 
         public async Task<Production> CreateProduction(Production production)
-        {       
-            if(production is null) throw new Exception("Production data is required.");
-            production.Status = Enums.CreateStatus.Creating;
-            
-            if (production is null) 
-                throw new Exception("Failed to create production.");
-
-
+        {
+            if (production is null) throw new Exception("Production data is required.");
             return await _productionRepo.CreateProduction(production);
         }
 
@@ -34,19 +28,22 @@ namespace GPMS.APPLICATION.Services
         public async Task<Production> GetProductionDetail(int productionId)
             => await _productionRepo.GetProductionDetail(productionId) ?? throw new Exception($"Production with id '{productionId}' not found.");
 
+        // Yêu cầu chỉnh sửa kế hoạch cho sản xuất cho hợp lý
         public async Task<Production> RequestProductionRevision(int productionId)
         {
             var production = await GetProductionDetail(productionId);
-            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.RevisionRequested);
+            // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
+            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
             return await _productionRepo.UpdateProduction(production);
         }
 
+        // Từ chối kế hoạch sản xuất với lý do cụ thể, lưu lại lịch sử từ chối
         public async Task<Production> DenyProduction(int productionId, int userId, string reason)
         {
             if (string.IsNullOrWhiteSpace(reason)) throw new Exception("Deny reason is required.");
 
             var production = await GetProductionDetail(productionId);
-            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.Rejected);
+            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.Reject);
             var updated = await _productionRepo.UpdateProduction(production);
             await _productionRepo.SaveRejectReason(productionId, userId, reason);
             return updated;

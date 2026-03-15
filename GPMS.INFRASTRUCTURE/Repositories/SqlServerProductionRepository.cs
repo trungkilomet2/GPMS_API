@@ -20,6 +20,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Production> CreateProduction(Production production)
         {
+            var isUserExist = await _context.USER.AnyAsync(u => u.USER_ID == production.PmId);
+            if(!isUserExist)
+            {
+                throw new Exception($"User with id '{production.PmId}' not found.");
+                return null;
+            }
+            var isOrderExist = await _context.ORDER.AnyAsync(o => o.ORDER_ID == production.OrderId);
+            if (!isOrderExist)
+            {
+                throw new Exception($"User with id '{production.OrderId}' not found.");
+                return null;
+            }
             var entity = _mapper.Map<PRODUCTION>(production);
             _context.PRODUCTION.Add(entity);
             await _context.SaveChangesAsync();
@@ -53,7 +65,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var status = await _context.P_STATUS.FirstOrDefaultAsync(x => x.NAME == statusName);
             if (status != null) return status.PS_ID;
 
-            var fallback = await _context.P_STATUS.FirstOrDefaultAsync(x => x.NAME == ProductionStatus_Constants.RevisionRequested)
+            var fallback = await _context.P_STATUS.FirstOrDefaultAsync(x => x.NAME == ProductionStatus_Constants.NeedUpdate)
                 ?? await _context.P_STATUS.FirstOrDefaultAsync();
 
             return fallback?.PS_ID ?? throw new Exception("No production status configured.");

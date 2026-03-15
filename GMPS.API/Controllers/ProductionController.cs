@@ -30,11 +30,8 @@ namespace GMPS.API.Controllers
                     {
                         PmId = dto.PmId,
                         OrderId = dto.OrderId,
-                        StartDate = dto.StartDate,
-                        EndDate = dto.EndDate,
-                        StatusId = dto.StatusId
+                        StatusId = ProductionStatus_Constants.Pending_ID
                     });
-
                     return Ok(new MessageResponseDTO<Production>
                     {
                         MessageCode = Message_Codes.PROD_PLAN_CREATED,
@@ -83,9 +80,7 @@ namespace GMPS.API.Controllers
             {
                 PmId = dto.PmId,
                 OrderId = dto.OrderId,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                StatusId = dto.StatusId
+              //  StatusId = dto.StatusId
             }));
 
         [HttpGet("plans/pending")]

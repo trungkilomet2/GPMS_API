@@ -1,15 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace GMPS.API.DTOs
 {
     public class CreateProductionDTO
     {
-        [Required]   
+        [Required(ErrorMessage = "PM không được để trống")]
         public int PmId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "OrderId không được để trống")]
         public int OrderId { get; set; }
-        public DateOnly? StartDate { get; set; }
-        public DateOnly? EndDate { get; set; }
-        public int StatusId { get; set; }
     }
 }
