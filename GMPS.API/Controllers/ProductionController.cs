@@ -3,6 +3,7 @@ using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -26,6 +27,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("production/create")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
@@ -81,14 +83,14 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("production/list")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
+      //  [Authorize(Roles = "Admin,Owner")]
+        public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
             var data = await _productionService.GetProductionList();
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize).ToList();
-
 
             return Ok(new RestDTO<IEnumerable<Production>>
             {
