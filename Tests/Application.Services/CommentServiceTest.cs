@@ -1,5 +1,4 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
-using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
 using Moq;
@@ -10,20 +9,15 @@ namespace GPMS.TEST.Application.Services
     {
         private readonly Mock<IBaseRepositories<Comment>> _commentRepo = new();
         private readonly Mock<IBaseRepositories<Order>> _orderRepo = new();
+        private readonly Mock<IBaseRepositories<User>> _userRepo = new();
 
         private CommentServices BuildService()
         {
-            return new CommentServices(_commentRepo.Object, _orderRepo.Object);
-        }
-
-
-        [Fact]
-        public async Task CreateComment_ThrowsException_WhenEntityNull()
-        {
-            var service = BuildService();
-
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                service.CreateComment(null));
+            return new CommentServices(
+                _commentRepo.Object,
+                _orderRepo.Object,
+                _userRepo.Object
+            );
         }
 
         [Fact]
@@ -38,28 +32,18 @@ namespace GPMS.TEST.Application.Services
                 toOrderId = 1
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.CreateComment(comment));
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new User { Id = 1 });
+
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new Order { Id = 1 });
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.CreateComment(1, comment));
         }
 
         [Fact]
-        public async Task CreateComment_ThrowsException_WhenFromUserInvalid()
-        {
-            var service = BuildService();
-
-            var comment = new Comment
-            {
-                Content = "Test",
-                fromUserId = 0,
-                toOrderId = 1
-            };
-
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.CreateComment(comment));
-        }
-
-        [Fact]
-        public async Task CreateComment_ThrowsException_WhenOrderInvalid()
+        public async Task CreateComment_ThrowsException_WhenUserNotFound()
         {
             var service = BuildService();
 
@@ -67,11 +51,58 @@ namespace GPMS.TEST.Application.Services
             {
                 Content = "Test",
                 fromUserId = 1,
-                toOrderId = 0
+                toOrderId = 1
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.CreateComment(comment));
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync((User)null);
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.CreateComment(1, comment));
+        }
+
+        [Fact]
+        public async Task CreateComment_ThrowsException_WhenOrderNotFound()
+        {
+            var service = BuildService();
+
+            var comment = new Comment
+            {
+                Content = "Test",
+                fromUserId = 1,
+                toOrderId = 1
+            };
+
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new User { Id = 1 });
+
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync((Order)null);
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.CreateComment(1, comment));
+        }
+
+        [Fact]
+        public async Task CreateComment_ThrowsException_WhenUserIdMismatch()
+        {
+            var service = BuildService();
+
+            var comment = new Comment
+            {
+                Content = "Test",
+                fromUserId = 2,
+                toOrderId = 1
+            };
+
+            _userRepo.Setup(x => x.GetById(2))
+                .ReturnsAsync(new User { Id = 2 });
+
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new Order { Id = 1 });
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.CreateComment(1, comment));
         }
 
         [Fact]
@@ -85,17 +116,22 @@ namespace GPMS.TEST.Application.Services
                 toOrderId = 1
             };
 
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new User { Id = 1 });
+
+            _orderRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(new Order { Id = 1 });
+
             _commentRepo.Setup(x => x.Create(It.IsAny<Comment>()))
                 .ReturnsAsync(comment);
 
             var service = BuildService();
 
-            var result = await service.CreateComment(comment);
+            var result = await service.CreateComment(1, comment);
 
             Assert.NotNull(result);
             Assert.Equal("Test comment", result.Content);
         }
-
 
         [Fact]
         public async Task DeleteComment_ThrowsException_WhenIdInvalid()
@@ -157,7 +193,6 @@ namespace GPMS.TEST.Application.Services
             _commentRepo.Verify(x => x.Delete(1), Times.Once);
         }
 
-
         [Fact]
         public async Task GetCommentById_ThrowsException_WhenOrderInvalid()
         {
@@ -200,7 +235,6 @@ namespace GPMS.TEST.Application.Services
 
             Assert.Equal(2, result.Count());
         }
-       
 
         [Fact]
         public async Task UpdateComment_ThrowsException_WhenCommentNotFound()
