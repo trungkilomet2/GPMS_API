@@ -70,11 +70,9 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails();
                 exceptionDetails.Detail = ex.Message;
                 exceptionDetails.Status =
-                StatusCodes.Status401Unauthorized;
-                exceptionDetails.Type =
-                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                StatusCodes.Status500InternalServerError;
                 return StatusCode(
-                StatusCodes.Status401Unauthorized,
+                StatusCodes.Status500InternalServerError,
                 exceptionDetails);
             }
         }

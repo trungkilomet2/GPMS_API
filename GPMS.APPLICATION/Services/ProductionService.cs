@@ -11,32 +11,53 @@ namespace GPMS.APPLICATION.Services
     {
         private readonly IBaseProductionRepositories _productionRepo;
         private readonly IBaseRepositories<Role> _roleRepositories;
+        private readonly IBaseRepositories<User> _userRepositories;
         private readonly IBaseRepositories<Production> _prdRepo;
+        private readonly IBaseRepositories<Order> _orderRepo;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, IBaseProductionRepositories prdRepo)
+        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, IBaseProductionRepositories prdRepo,
+            IBaseRepositories<Role> roleRepositories, IBaseRepositories<User> userRepositories, IBaseRepositories<Order> orderRepo)
         {
             _productionRepo = prdRepo;
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
+            _roleRepositories = roleRepositories;
+            _userRepositories = userRepositories;
+            _orderRepo = orderRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
         {
-            bool isChecked = true;
-            if (production is  null)
+            if (production is null)
             {
                 throw new ValidationException("Production data is required.");
-                isChecked = false;
+            }
+            // Kiểm tra người dùng trong hệ thống
+            User check_user_system = await _userRepositories.GetById(production.PmId);
+            if (check_user_system is null)
+            {
+                throw new ValidationException("Người dùng không tồn tại trong hệ thống");
+            }
+            IEnumerable<Role> roles_of_user = await _roleRepositories.GetAll(production.PmId);
+            if (roles_of_user.Count() == 0)
+            {
+                throw new Exception("Người dùng không tồn tại role nào");
+            }
+            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner)).Count() == 0)
+            {
+                throw new ValidationException("Chỉ Owner mới được tạo Production");
             }
 
-
-
-
-
-            if(!isChecked)
+            // Kiêm tra đơn hàng trong hệ thống
+            Order check_order_system = await _orderRepo.GetById(production.OrderId);
+            if (check_order_system is null)
             {
-                return null;
+                throw new ValidationException("Đơn hàng không tồn tại trong hệ thống");
+            }
+            if (check_order_system.Status != OrderStatus_Constants.Approved_ID)
+            {
+                throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất");
             }
 
             //    User isPmExist = _roleRepositories.GetById(production.PmId);
