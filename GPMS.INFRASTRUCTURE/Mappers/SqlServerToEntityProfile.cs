@@ -14,7 +14,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.USER, GPMS.DOMAIN.Entities.User>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.USER_ID))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
-                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER)).ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FULLNAME))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PHONE_NUMBER))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.USERNAME))
                 .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.PASSWORDHASH))
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
@@ -144,6 +144,14 @@ namespace GPMS.INFRASTRUCTURE.Mappers
 
 
 
+            //ORDER REJECT REASON
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER_REJECT_REASON, GPMS.DOMAIN.Entities.OrderRejectReason>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORR_ID))
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.REASON))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
+                .ReverseMap();
         }
     }
 }

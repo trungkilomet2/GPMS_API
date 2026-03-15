@@ -16,7 +16,5 @@ namespace GMPS.API.DTOs
         [StringLength(500, ErrorMessage = "Content cannot exceed 500 characters")]
         public string Content { get; set; }
 
-        [Required(ErrorMessage = "SendDateTime is required")]
-        public DateTime SendDateTime { get; set; }
     }
 }

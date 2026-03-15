@@ -88,6 +88,7 @@ namespace GMPS.API.Controllers
         [HttpPost("create-comment")]
         public async Task<ActionResult> CreateComment([FromBody] CreatedCommentDTO? comment)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 if (ModelState.IsValid)
@@ -95,16 +96,16 @@ namespace GMPS.API.Controllers
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Creating comment for OrderId {OrderId} by UserId {UserId}",
                         comment.ToOrderId, comment.FromUserId);
-
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
                     {
                         fromUserId = comment.FromUserId,
                         toOrderId = comment.ToOrderId,
                         Content = comment.Content,
-                        SendDateTime = DateTime.UtcNow
+                        SendDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
 
-                    var result = await _commentRepo.CreateComment(newComment);
+                    var result = await _commentRepo.CreateComment(userId,newComment);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Comment {CommentId} created successfully for OrderId {OrderId}",
@@ -135,7 +136,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
@@ -235,7 +237,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);

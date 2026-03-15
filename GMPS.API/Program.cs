@@ -74,17 +74,21 @@ builder.Services.AddScoped<IAccountRepositories, AccountService>();
 builder.Services.AddScoped<IBaseUserRoleRepo, SqlServerUserRoleRepository>();
 
 builder.Services.AddScoped<IWorkerRepositories, WorkerService>();
-builder.Services.AddScoped<IBaseRepositories<User>, SqlServerWorkerRepository>();
+builder.Services.AddScoped<IBaseWorkerRepository, SqlServerWorkerRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<UserStatus>, SqlServerUserStatusRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
+builder.Services.AddScoped<IBaseRepositories<WorkerRole>, SqlServerWorkerRoleRepository>();
+builder.Services.AddScoped<IBaseWorkerRoleRepositories, SqlServerWorkerRoleRepository>();
+builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 
 builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 builder.Services.AddScoped<IBaseOrderStatusRepositories, SqlServerOrderRepository>();
-
+builder.Services.AddScoped<IBaseRepositories<OrderRejectReason>, SqlServerOrderRejectRepository>();
+builder.Services.AddScoped<IOrderRejectRepositories, OrderRejectService>();
 
 builder.Services.AddScoped<IBaseRepositories<OMaterial>, SqlServerMaterialRepository>();
 

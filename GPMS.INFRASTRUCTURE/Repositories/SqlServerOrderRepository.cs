@@ -193,5 +193,15 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             await _context.SaveChangesAsync();
             return _mapper.Map<Order>(existing);
         }
+
+        public async Task<Order> ChangeStatus(int orderId, int newStatus)
+        {
+            var existing = await _context.ORDER.FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
+            if (existing == null)
+                throw new KeyNotFoundException($"Order '{orderId}' not exist");
+            existing.OS_ID = newStatus;
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(existing);
+        }
     }
 }

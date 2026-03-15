@@ -525,6 +525,17 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                    "Cannot add material to OrderId {OrderId}: {Message}", orderId, ex.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                });
+            }
             catch (Exception ex)
             {
                 var exceptionDetails = new ProblemDetails

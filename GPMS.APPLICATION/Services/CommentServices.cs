@@ -14,47 +14,55 @@ namespace GPMS.APPLICATION.Services
     {
         private readonly IBaseRepositories<Comment> _commentRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
+        private readonly IBaseRepositories<User> _userRepo;
 
-        public CommentServices(IBaseRepositories<Comment> commentRepo, IBaseRepositories<Order> orderRepo)
+        public CommentServices(IBaseRepositories<Comment> commentRepo, IBaseRepositories<Order> orderRepo, IBaseRepositories<User> userRepo)
         {
             _commentRepo = commentRepo ?? throw new ArgumentNullException(nameof(commentRepo));
             _orderRepo = orderRepo;
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
-        public Task<Comment> CreateComment(Comment entity)
+        public Task<Comment> CreateComment(int userId, Comment entity)
         {
+            var exist = _userRepo.GetById(entity.fromUserId);
+            if (exist == null) {
+                throw new Exception("User not found");
+            }
+             var orderExist = _orderRepo.GetById(entity.toOrderId);
+            if (orderExist == null)
+            {
+                throw new Exception("Order not found");
+            }
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
             if (string.IsNullOrWhiteSpace(entity.Content))
-                throw new ArgumentException("Content cannot be empty");
-            if (entity.fromUserId <= 0)
-                throw new ArgumentException("Invalid fromUserId");
-            if (entity.toOrderId <= 0)
-                throw new ArgumentException("Invalid toOrderId");
-            entity.SendDateTime = DateTime.UtcNow;
+                throw new Exception("Content cannot be empty");
+            if (entity.fromUserId !=userId)
+                throw new Exception("You can only create comment for yourself");
             var data = _commentRepo.Create(entity);
             return data;
         }
 
-        public async Task DeleteComment(int id, int userId)
+        public async Task DeleteComment(int CommentId, int userId)
         {
-            if (id <= 0)
+            if (CommentId <= 0)
                 throw new Exception("Invalid comment id");
 
-            var comment = await _commentRepo.GetById(id);
+            var comment = await _commentRepo.GetById(CommentId);
             if (comment == null)
                 throw new Exception("Comment not found");
 
             if (comment.fromUserId != userId)
-                throw new Exception("You can only update your own comment");
+                throw new Exception("You can only delete your own comment");
 
             if (comment == null)
-                throw new Exception($"Comment with id {id} does not exist");
+                throw new Exception($"Comment with id {CommentId} does not exist");
 
             if (string.IsNullOrWhiteSpace(comment.Content))
                 throw new Exception("Cannot delete empty comment");
 
-            await _commentRepo.Delete(id);
+            await _commentRepo.Delete(CommentId);
         }
 
 
@@ -66,7 +74,7 @@ namespace GPMS.APPLICATION.Services
             var order = await _orderRepo.GetById(orderId);
 
             if (order == null)
-                throw new Exception($"Order with id {orderId} does not exist");
+                throw new Exception($"Order does not exist");
             var data = await _commentRepo.GetAll(orderId);   
             return data;
         }

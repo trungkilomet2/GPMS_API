@@ -119,6 +119,7 @@ namespace GMPS.API.Controllers
                     Id = result.Id,
                     UserName = result.UserName,
                     FullName = result.FullName,
+                    AvatarUrl = result.AvartarUrl,
                     PhoneNumber = result.PhoneNumber,
                     Email = result.Email,
                     Role = string.Join(", ", result.Roles.Select(r => r.Name)),
@@ -238,7 +239,7 @@ namespace GMPS.API.Controllers
 
         [HttpPut("update-employee/{userId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult> UpdateEmployee(int userId, [FromBody] UpdateEmployeeDTO input)
+        public async Task<ActionResult> UpdateWorker(int userId, [FromBody] UpdateEmployeeDTO input)
         {
             try
             {
