@@ -44,6 +44,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 userRoles = await _context.USER.Include(u => u.ROLE).Where(u=> u.USER_ID == user.Id).Select(u => u.ROLE).ToListAsync();
             }
 
+            if (obj is int)
+            {
+                userRoles = await _context.USER.Include(u => u.ROLE).Where(u => u.USER_ID == (int)obj).Select(u => u.ROLE).ToListAsync();
+            }
+
             return _mapper.Map<IEnumerable<Role>>(userRoles.SelectMany(ur => ur).ToList()); 
         }
 

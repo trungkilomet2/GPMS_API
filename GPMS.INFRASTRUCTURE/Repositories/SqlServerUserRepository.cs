@@ -39,7 +39,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             USER userSQL = _mapper.Map<USER>(entity);
             await _context.AddAsync(userSQL);
-            await _context.SaveChangesAsync();
             return _mapper.Map<User>(userSQL);
 
         }
@@ -94,7 +93,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 USER userSQL = _mapper.Map<USER>(user);
                 userSQL.US_ID = 1; // 1 equal Active status in User
                 await _context.AddAsync(userSQL);
-                await _context.SaveChangesAsync();
                 return _mapper.Map<User>(userSQL);
             }
             catch (Exception ex)
@@ -118,7 +116,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.US_ID = entity.StatusId;
             
                 _context.USER.Update(existingUser);
-                await _context.SaveChangesAsync();
                 return _mapper.Map<User>(existingUser);       
         }
     }

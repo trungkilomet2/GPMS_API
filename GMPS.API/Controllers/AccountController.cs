@@ -1,4 +1,5 @@
-﻿using GMPS.API.DTOs;
+﻿using Azure.Messaging;
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -19,7 +20,7 @@ namespace GMPS.API.Controllers
     {
         private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
-        private readonly ILogger<AccountController> _logger;    
+        private readonly ILogger<AccountController> _logger;
         public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger)
         {
             _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
@@ -40,9 +41,15 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
-
                     var user = await _accountRepo.Login(input.UserName!, input.Password!);
-                    if (user is null) return NotFound("Invalid Login attempt.");
+                    if (user is null)
+                    {
+                        return NotFound(new
+                        {
+                            Code = Message_Codes.AUTH_LOGIN_FAILED,
+                            Message = Message_Contents.LOGIN_FAILED,
+                        });
+                    }
                     else
                     {
                         var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["JWT:SigningKey"])), SecurityAlgorithms.HmacSha256);
@@ -63,7 +70,7 @@ namespace GMPS.API.Controllers
                         // Ky token cuoi cung va gui tra ve cho user
                         var jwtString = new JwtSecurityTokenHandler().WriteToken(jwtObject);
                         //Logging thông tin đăng nhập thành công
-                        _logger.LogInformation(CustomLogEvents.AccountController_Post, $"Tài khoản {user.User.UserName} đã đăng nhập thành công");
+                        _logger.LogInformation(CustomLogEvents.AccountController_Post, $"Tài khoản ({user.User.UserName}) đã đăng nhập thành công");
                         return StatusCode(StatusCodes.Status200OK, jwtString);
                     }
                 }
@@ -140,7 +147,7 @@ namespace GMPS.API.Controllers
                     return new BadRequestObjectResult(details);
                 }
             }
-            catch(DbUpdateException e)
+            catch (DbUpdateException e)
             {
                 var details = new ValidationProblemDetails(ModelState);
                 details.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";

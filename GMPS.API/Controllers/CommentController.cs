@@ -69,7 +69,6 @@ namespace GMPS.API.Controllers
                         new LinkDTO(Url.Action(null, "Comment", null, Request.Scheme)!, "self", "GET")
                     }
                 };
-
                 return Ok(response);
             }
             catch (Exception ex)

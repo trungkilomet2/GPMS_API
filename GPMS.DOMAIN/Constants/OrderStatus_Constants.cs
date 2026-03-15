@@ -8,6 +8,14 @@ namespace GPMS.DOMAIN.Constants
 {
     public class OrderStatus_Constants
     {
+
+        public const int Pending_ID = 1;
+        public const int Modification_ID = 2;
+        public const int Approved_ID = 3;
+        public const int Rejected_ID = 4;
+        public const int Cancelled_ID = 5;
+
+
         public const string Pending = "Chờ Xét Duyệt";
         public const string Modification = "Yêu Cầu Chỉnh Sửa";
         public const string Approved = "Đã Chấp Nhận";
