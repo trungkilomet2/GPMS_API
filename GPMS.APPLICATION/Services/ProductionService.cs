@@ -8,12 +8,12 @@ namespace GPMS.APPLICATION.Services
 {
     public class ProductionService : IProductionRepositories
     {
-        private readonly IBaseProductionRepositories _productionRepo;
+        private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<Role> _roleRepositories;
 
         private readonly IUnitOfWork _unitOfWork;
 
-        public ProductionService(IBaseProductionRepositories productionRepo, IUnitOfWork unitOfWork)
+        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork)
         {
             _productionRepo = productionRepo;
             _unitOfWork = unitOfWork;
@@ -23,13 +23,11 @@ namespace GPMS.APPLICATION.Services
         {
             if (production is null) throw new Exception("Production data is required.");
 
-            User isPmExist = _roleRepositories.GetById(production.PmId);
-
-
-            return await _productionRepo.CreateProduction(production);
+            //    User isPmExist = _roleRepositories.GetById(production.PmId);
+            return await _productionRepo.Create(production);
         }
 
-        
+
 
 
 

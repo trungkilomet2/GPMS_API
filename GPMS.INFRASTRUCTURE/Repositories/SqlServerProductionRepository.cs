@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerProductionRepository : IBaseRepositories<Production>, IBaseProductionRepositories
+    public class SqlServerProductionRepository : IBaseRepositories<Production>
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;

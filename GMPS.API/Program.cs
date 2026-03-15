@@ -98,7 +98,8 @@ builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-builder.Services.AddScoped<IBaseProductionRepositories, SqlServerProductionRepository>();
+builder.Services.AddScoped<IBaseRepositories<Production>, SqlServerProductionRepository>();
+
 builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();

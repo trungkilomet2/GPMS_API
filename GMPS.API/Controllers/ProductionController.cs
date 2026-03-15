@@ -20,7 +20,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("production/create")]
-        public async Task<ActionResult<MessageResponseDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
+        public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
             {
@@ -44,17 +44,12 @@ namespace GMPS.API.Controllers
                 else
                 {
                     var detail = new ValidationProblemDetails(ModelState);
-                    return BadRequest(new MessageResponseDTO<Production>
-                    {
-                        MessageCode = Message_Codes.SYS_ACTION_FAILED,
-                        MessageContent = detail.Detail ?? "Invalid input data."
-                    });
+                    return BadRequest(detail);
                 }
             }
             catch (Exception ex)
             {
-                ProblemDetails detail = new ProblemDetails();
-                detail.Detail = ex.Message;
+                return null;
             }
         }
 
