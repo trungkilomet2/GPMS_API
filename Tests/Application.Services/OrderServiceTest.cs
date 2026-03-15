@@ -220,6 +220,38 @@ public class OrderServiceTest
 
 
     [Fact]
+    public async Task UpdateOrder_Throws_WhenEndDateInvalid()
+    {
+        var updated = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
+        updated.EndDate = updated.StartDate.AddDays(-1);
+
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(updated);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.UpdateOrder(1, updated, new()));
+
+        Assert.Equal("End date must be greater than start date.", ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenStatusNotModification()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        var updated = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.UpdateOrder(1, updated, new()));
+
+        Assert.Contains(OrderStatus_Constants.Modification, ex.Message);
+    }
+
+    [Fact]
     public async Task AddMaterial_ReturnsMaterial()
     {
         var order = BuildFakeOrder();
@@ -237,6 +269,59 @@ public class OrderServiceTest
         Assert.Equal(1, result.OrderId);
     }
 
+    [Fact]
+    public async Task AddMaterial_Throws_WhenOrderNotFound()
+    {
+        _orderBaseRepo.Setup(x => x.GetById(99)).ReturnsAsync((Order)null);
+
+        var material = new OMaterial { Name = "Cotton", Value = 5, Uom = "m" };
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(99, material));
+
+        Assert.Equal("Order with id '99' not found.", ex.Message);
+    }
+
+    [Fact]
+    public async Task AddMaterial_Throws_WhenOrderApproved()
+    {
+        var order = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(order);
+
+        var material = new OMaterial { Name = "Cotton", Value = 5, Uom = "m" };
+        var service = BuildService();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddMaterial(1, material));
+    }
+
+    [Fact]
+    public async Task AddMaterial_Throws_WhenValueInvalid()
+    {
+        var order = BuildFakeOrder();
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(order);
+
+        var material = new OMaterial { Name = "Cotton", Value = 0, Uom = "m" };
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(1, material));
+
+        Assert.Equal("Quantity must be greater than zero.", ex.Message);
+    }
+
+
+    [Fact]
+    public async Task RequestOrderModification_Throws_WhenOrderNotFound()
+    {
+        var updated = BuildFakeOrder();
+        _orderBaseRepo.Setup(x => x.GetById(99)).ReturnsAsync((Order)null);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.RequestOrderModification(99, updated, new()));
+
+        Assert.Equal("Order with id '99' not exist in system.", ex.Message);
+    }
 
     [Fact]
     public async Task RequestOrderModification_ReturnsOrder_WhenSuccessful()
