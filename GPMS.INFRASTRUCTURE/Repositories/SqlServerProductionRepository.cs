@@ -24,7 +24,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             if (obj is null)
             {
-                var data = _context.PRODUCTION;
+                var data = _context.PRODUCTION.Include(p => p.ORDER);
                 return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
             }
 

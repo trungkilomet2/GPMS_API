@@ -6,6 +6,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Net;
 using System.Net.WebSockets;
 
@@ -82,14 +83,24 @@ namespace GMPS.API.Controllers
         [HttpGet("production/list")]
         public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
         {
-            // Lấy danh sách theo input
-
+            // Lấy danh sách theo input từ csdl
             var data = await _productionService.GetProductionList();
-            data.AsQueryable().OrderBy($"{input.SortColumn} {input.SortOrder}")
-                        .Skip(input.PageIndex * input.PageSize)
-                        .Take(input.PageSize);
+            //filter data
+            var result = data.Skip(input.PageIndex * input.PageSize)
+                        .Take(input.PageSize).ToList();
 
-            return Ok(data);
+
+            return Ok(new RestDTO<IEnumerable<Production>>
+            {
+                Data = result,
+                PageIndex = input.PageIndex,
+                PageSize = input.PageSize,
+                RecordCount = data.Count(),
+                Links = new List<LinkDTO>
+                {
+                   new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
+                }
+            });
         }
 
         [HttpGet("production/detail/{id:int}")]
