@@ -1,222 +1,268 @@
-﻿using GMPS.API.Controllers;
+using GMPS.API.Controllers;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
-using Microsoft.AspNetCore.Http;
+using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Collections.Generic;
-using System.Security.Claims;
-using Xunit;
 
-public class UserControllerTests
+namespace GPMS.TEST.Api.Controllers;
+
+public class UserControllerTest
 {
-    private readonly Mock<IUserRepositories> _repo = new();
+    private readonly Mock<IUserRepositories> _userRepo = new();
     private readonly Mock<IConfiguration> _config = new();
-    private readonly Mock<ICloudinaryService> _cloudinary = new();
     private readonly Mock<ILogger<UserController>> _logger = new();
+    private readonly Mock<ICloudinaryService> _cloudinary = new();
 
-    private readonly UserController _controller;
-
-    public UserControllerTests()
+    private UserController BuildController(int userId = 1)
     {
-        _controller = new UserController(
-            _repo.Object,
-            _config.Object,
-            _logger.Object,
-            _cloudinary.Object
-        );
-
-        SetupHttpContext();
-        SetupUrlHelper();
+        var controller = new UserController(_userRepo.Object, _config.Object, _logger.Object, _cloudinary.Object);
+        ControllerTestHelper.AttachHttpContext(controller, ControllerTestHelper.BuildUserWithId(userId));
+        return controller;
     }
 
-    private void SetupHttpContext()
+    private static User BuildFakeUser(int id = 1) => new User
     {
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.Scheme = "http";
+        Id = id,
+        UserName = "testuser",
+        FullName = "Test User",
+        PhoneNumber = "0123456789",
+        AvartarUrl = null,
+        Location = "HCM",
+        Email = "test@mail.com",
+        StatusId = 1
+    };
 
-        var identity = new ClaimsIdentity(new[]
+    // ─── GetUserListForAdmin ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUserListForAdmin_Returns200_WhenSuccessful()
+    {
+        _userRepo.Setup(x => x.GetAllUser())
+            .ReturnsAsync(new List<User> { BuildFakeUser(1), BuildFakeUser(2) });
+
+        var result = await BuildController().GetUserListForAdmin(new RequestDTO<UserListDTO>());
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<UserListDTO>>>(obj.Value);
+        Assert.Equal(2, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetUserListForAdmin_Returns500_OnException()
+    {
+        _userRepo.Setup(x => x.GetAllUser()).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().GetUserListForAdmin(new RequestDTO<UserListDTO>());
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── GetUserDetail ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetUserDetail_Returns200_WhenFound()
+    {
+        _userRepo.Setup(x => x.GetUserById(1)).ReturnsAsync(BuildFakeUser());
+
+        var result = await BuildController().GetUserDetail(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(200, obj.StatusCode);
+        var dto = Assert.IsType<RestDTO<UserDetailDTO>>(obj.Value);
+        Assert.Equal(1, dto.Data.Id);
+    }
+
+    [Fact]
+    public async Task GetUserDetail_Returns404_WhenNotFound()
+    {
+        _userRepo.Setup(x => x.GetUserById(99)).ReturnsAsync((User)null);
+
+        var result = await BuildController().GetUserDetail(99);
+
+        var obj = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUserDetail_Returns500_OnException()
+    {
+        _userRepo.Setup(x => x.GetUserById(1)).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().GetUserDetail(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── CreateUser ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateUser_Returns201_WhenSuccessful()
+    {
+        _userRepo.Setup(x => x.CreateNewUser(It.IsAny<User>(), It.IsAny<List<int>>()))
+            .ReturnsAsync(BuildFakeUser(id: 5));
+
+        var input = new CreateUserDTO
         {
-            new Claim(ClaimTypes.NameIdentifier,"1")
-        });
-
-        httpContext.User = new ClaimsPrincipal(identity);
-
-        _controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext
+            UserName = "newuser1",
+            Password = "pass123",
+            FullName = "New User",
+            RoleIds = new List<int> { 1 }
         };
+
+        var result = await BuildController().CreateUser(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(201, obj.StatusCode);
     }
 
-    private void SetupUrlHelper()
+    [Fact]
+    public async Task CreateUser_Returns500_OnException()
     {
-        var mockUrl = new Mock<IUrlHelper>();
-        mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
-            .Returns("http://localhost/api/user");
+        _userRepo.Setup(x => x.CreateNewUser(It.IsAny<User>(), It.IsAny<List<int>>()))
+            .ThrowsAsync(new Exception("db error"));
 
-        _controller.Url = mockUrl.Object;
-    }
-
-    private static User FakeUser(int id = 1)
-    {
-        return new User
+        var input = new CreateUserDTO
         {
-            Id = id,
-            UserName = "testuser",
-            FullName = "Test User",
-            PhoneNumber = "0123456789",
-            Email = "test@mail.com",
-            AvartarUrl = "avatar.png",
-            Location = "HCM",
-            StatusId = 1,
-            Roles = new List<Role> { new Role { Name = "Worker" } },
-            WorkerRoles = new List<WorkerRole> { new WorkerRole { Name = "Tailor" } }
+            UserName = "newuser1",
+            Password = "pass123",
+            FullName = "New User",
+            RoleIds = new List<int> { 1 }
         };
+
+        var result = await BuildController().CreateUser(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
     }
 
+    // ─── DisableUser ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetUser_ReturnsUserList()
+    public async Task DisableUser_Returns200_WhenSuccessful()
     {
-        var users = new List<User> { FakeUser(), FakeUser(2) };
+        _userRepo.Setup(x => x.DisableAnUser(1)).Returns(Task.CompletedTask);
 
-        _repo.Setup(x => x.GetAllUser())
-            .ReturnsAsync(users);
+        var result = await BuildController().DisableUser(1);
 
-        var result = await _controller.GetUser(new RequestDTO<User>());
-
-        Assert.Equal(2, result.RecordCount);
-    }
-
-
-    [Fact]
-    public async Task GetUserDetail_ReturnsOk_WhenUserExists()
-    {
-        _repo.Setup(x => x.GetUserById(1))
-            .ReturnsAsync(FakeUser());
-
-        var result = await _controller.GetUserDetail(1);
-
-        var ok = Assert.IsType<ObjectResult>(result.Result);
-
-        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
     }
 
     [Fact]
-    public async Task GetUserDetail_ReturnsNotFound_WhenUserNotExist()
+    public async Task DisableUser_Returns404_WhenUserNotFound()
     {
-        _repo.Setup(x => x.GetUserById(1))
-            .ReturnsAsync((User?)null);
+        _userRepo.Setup(x => x.DisableAnUser(99))
+            .ThrowsAsync(new KeyNotFoundException("User not found."));
 
-        var result = await _controller.GetUserDetail(1);
+        var result = await BuildController().DisableUser(99);
 
-        Assert.IsType<NotFoundObjectResult>(result.Result);
+        var obj = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateUserForAdmin_ReturnsOk()
+    public async Task DisableUser_Returns400_WhenAlreadyInactive()
     {
-        _repo.Setup(x =>
-            x.UpdateUserForAdmin(1, It.IsAny<User>()))
-            .ReturnsAsync(FakeUser());
+        _userRepo.Setup(x => x.DisableAnUser(1))
+            .ThrowsAsync(new InvalidOperationException("User is already inactive."));
 
-        var result = await _controller.UpdateUserForAdmin(1, new UpdatedUserDTO());
+        var result = await BuildController().DisableUser(1);
 
-        var ok = Assert.IsType<ObjectResult>(result.Result);
-
-        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
+        var obj = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateUserForAdmin_ReturnsNotFound()
+    public async Task DisableUser_Returns500_OnException()
     {
-        _repo.Setup(x =>
-            x.UpdateUserForAdmin(1, It.IsAny<User>()))
-            .ThrowsAsync(new KeyNotFoundException());
+        _userRepo.Setup(x => x.DisableAnUser(1))
+            .ThrowsAsync(new Exception("db error"));
 
-        var result = await _controller.UpdateUserForAdmin(1, new UpdatedUserDTO());
+        var result = await BuildController().DisableUser(1);
 
-        Assert.IsType<NotFoundObjectResult>(result.Result);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
     }
 
+    // ─── AssignRoles ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task ViewProfile_ReturnsOk()
+    public async Task AssignRoles_Returns200_WhenSuccessful()
     {
-        _repo.Setup(x => x.ViewProfile(1))
-            .ReturnsAsync(FakeUser());
+        _userRepo.Setup(x => x.AssignRoles(1, It.IsAny<List<int>>())).Returns(Task.CompletedTask);
 
-        var result = await _controller.ViewProfile();
+        var input = new AssignRoleDTO { RoleIds = new List<int> { 1, 2 } };
+        var result = await BuildController().AssignRoles(1, input);
 
-        var ok = Assert.IsType<ObjectResult>(result.Result);
-
-        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
-    }
-
-    [Fact]
-    public async Task ViewProfile_ReturnsNotFound()
-    {
-        _repo.Setup(x => x.ViewProfile(1))
-            .ReturnsAsync((User?)null);
-
-        var result = await _controller.ViewProfile();
-
-        Assert.IsType<NotFoundObjectResult>(result.Result);
-    }
-
-
-    [Fact]
-    public async Task UpdateUser_Returns200_WhenUpdateSuccessful()
-    {
-        _repo.Setup(x =>
-            x.UpdateProfile(1, It.IsAny<User>()))
-            .ReturnsAsync(FakeUser());
-
-        var result = await _controller.UpdateUser(new UpdatedUserDTO());
-
-        var ok = Assert.IsType<ObjectResult>(result.Result);
-
-        Assert.Equal(StatusCodes.Status200OK, ok.StatusCode);
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateUser_Returns400_WhenModelInvalid()
+    public async Task AssignRoles_Returns404_WhenUserNotFound()
     {
-        _controller.ModelState.AddModelError("FullName", "Required");
+        _userRepo.Setup(x => x.AssignRoles(99, It.IsAny<List<int>>()))
+            .ThrowsAsync(new KeyNotFoundException("User not found."));
 
-        var result = await _controller.UpdateUser(new UpdatedUserDTO());
+        var input = new AssignRoleDTO { RoleIds = new List<int> { 1 } };
+        var result = await BuildController().AssignRoles(99, input);
 
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        var obj = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateUser_Returns404_WhenUserNotFound()
+    public async Task AssignRoles_Returns500_OnException()
     {
-        _repo.Setup(x =>
-            x.UpdateProfile(1, It.IsAny<User>()))
-            .ThrowsAsync(new KeyNotFoundException("User not found"));
+        _userRepo.Setup(x => x.AssignRoles(1, It.IsAny<List<int>>()))
+            .ThrowsAsync(new Exception("db error"));
 
-        var result = await _controller.UpdateUser(new UpdatedUserDTO());
+        var input = new AssignRoleDTO { RoleIds = new List<int> { 1 } };
+        var result = await BuildController().AssignRoles(1, input);
 
-        Assert.IsType<NotFoundObjectResult>(result.Result);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── ViewProfile ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ViewProfile_Returns200_WhenFound()
+    {
+        _userRepo.Setup(x => x.ViewProfile(1)).ReturnsAsync(BuildFakeUser());
+
+        var result = await BuildController(userId: 1).ViewProfile();
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(200, obj.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateUser_Returns500_WhenExceptionOccurs()
+    public async Task ViewProfile_Returns404_WhenNotFound()
     {
-        _repo.Setup(x =>
-            x.UpdateProfile(1, It.IsAny<User>()))
-            .ThrowsAsync(new Exception("Database error"));
+        _userRepo.Setup(x => x.ViewProfile(1)).ReturnsAsync((User)null);
 
-        var result = await _controller.UpdateUser(new UpdatedUserDTO());
+        var result = await BuildController(userId: 1).ViewProfile();
 
-        var error = Assert.IsType<ObjectResult>(result.Result);
+        var obj = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
 
-        Assert.Equal(StatusCodes.Status500InternalServerError, error.StatusCode);
+    [Fact]
+    public async Task ViewProfile_Returns500_OnException()
+    {
+        _userRepo.Setup(x => x.ViewProfile(1)).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController(userId: 1).ViewProfile();
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
     }
 }

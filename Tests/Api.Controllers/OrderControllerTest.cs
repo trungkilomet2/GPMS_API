@@ -1,241 +1,463 @@
-﻿using GMPS.API.Controllers;
+using GMPS.API.Controllers;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
-using Microsoft.AspNetCore.Http;
+using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GPMS.TEST.Api.Controllers
+namespace GPMS.TEST.Api.Controllers;
+
+public class OrderControllerTest
 {
-    public class OrderControllerTest
+    private readonly Mock<IOrderRepositories> _orderRepo = new();
+    private readonly Mock<ILogger<OrderController>> _logger = new();
+    private readonly Mock<ICloudinaryService> _cloudinary = new();
+
+    private OrderController BuildController(int userId = 1)
     {
-        private readonly Mock<IOrderRepositories> _mockRepo;
-        private readonly Mock<ILogger<OrderController>> _mockLogger;
-        private readonly Mock<ICloudinaryService> _mockCloudinary;
-        private readonly OrderController _controller;
+        var controller = new OrderController(_orderRepo.Object, _logger.Object, _cloudinary.Object);
+        ControllerTestHelper.AttachHttpContext(controller, ControllerTestHelper.BuildUserWithId(userId));
+        return controller;
+    }
 
-        public OrderControllerTest()
+    private static Order BuildFakeOrder(
+        int id = 1,
+        int userId = 1,
+        string statusName = OrderStatus_Constants.Pending) => new Order
         {
-            _mockRepo = new Mock<IOrderRepositories>();
-            _mockLogger = new Mock<ILogger<OrderController>>();
-            _mockCloudinary = new Mock<ICloudinaryService>();
+            Id = id,
+            UserId = userId,
+            OrderName = "Test Order",
+            Type = "Clothes",
+            Size = "L",
+            Color = "Red",
+            Quantity = 10,
+            Cpu = 100,
+            StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+            StatusName = statusName,
+            Templates = new List<OTemplate>(),
+            Materials = new List<OMaterial>(),
+            Histories = new List<OHistoryUpdate>()
+        };
 
-            _controller = new OrderController(
-                _mockRepo.Object,
-                _mockLogger.Object,
-                _mockCloudinary.Object
-            );
+    // ─── GetOrders ──────────────────────────────────────────────────────────
 
-            var httpContext = new DefaultHttpContext();
-            httpContext.Request.Scheme = "http";
+    [Fact]
+    public async Task GetOrders_Returns200_WhenSuccessful()
+    {
+        _orderRepo.Setup(x => x.GetAllOrders())
+            .ReturnsAsync(new List<Order> { BuildFakeOrder(1), BuildFakeOrder(2) });
 
-            _controller.ControllerContext = new ControllerContext()
-            {
-                HttpContext = httpContext
-            };
+        var result = await BuildController().GetOrders(new RequestDTO<Order>());
 
-            var mockUrl = new Mock<IUrlHelper>();
-            mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
-                   .Returns("http://localhost/api/order");
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(2, dto.RecordCount);
+    }
 
-            _controller.Url = mockUrl.Object;
-        }
+    [Fact]
+    public async Task GetOrders_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetAllOrders()).ThrowsAsync(new Exception("db error"));
 
+        var result = await BuildController().GetOrders(new RequestDTO<Order>());
 
-        [Fact]
-        public async Task CreateOrder_ShouldMapMaterialsAndTemplatesCorrectly()
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrders_Returns404_WhenPageIndexOutOfRange()
+    {
+        _orderRepo.Setup(x => x.GetAllOrders())
+            .ReturnsAsync(new List<Order> { BuildFakeOrder() });
+
+        var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    // ─── GetMyOrders ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetMyOrders_Returns200_WhenSuccessful()
+    {
+        _orderRepo.Setup(x => x.GetOrdersByUserId(1))
+            .ReturnsAsync(new List<Order> { BuildFakeOrder() });
+
+        var result = await BuildController(userId: 1).GetMyOrders(new RequestDTO<Order>());
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrdersByUserId(It.IsAny<int>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().GetMyOrders(new RequestDTO<Order>());
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── GetOrderDetail ───────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOrderDetail_Returns200_WhenFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(BuildFakeOrder());
+
+        var result = await BuildController().GetOrderDetail(1);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<OrderDetailDTO>>(obj.Value);
+        Assert.Equal(1, dto.Data.Id);
+    }
+
+    [Fact]
+    public async Task GetOrderDetail_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().GetOrderDetail(0);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderDetail_Returns404_WhenNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().GetOrderDetail(99);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderDetail_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().GetOrderDetail(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── GetOrderHistory ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOrderHistory_Returns200_WhenFound()
+    {
+        var order = BuildFakeOrder();
+        order.Histories = new List<OHistoryUpdate>
         {
-            var dto = new CreateOrderDTO
-            {
-                UserId = 1,
-                OrderName = "Test Order",
-                Type = "Shirt",
-                Size = "L",
-                Color = "Red",
-                Quantity = 50,
-                Cpu = 22000,
-                Note = "Test note",
-                StartDate = new DateOnly(2026, 3, 15),
-                EndDate = new DateOnly(2026, 3, 20),
+            new OHistoryUpdate { FieldName = "OrderName", OldValue = "A", NewValue = "B" }
+        };
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
 
-                Materials = new List<CreateMaterialDTO>
+        var result = await BuildController().GetOrderHistory(1);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OHistoryUpdate>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetOrderHistory_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().GetOrderHistory(0);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderHistory_Returns404_WhenNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().GetOrderHistory(99);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderHistory_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().GetOrderHistory(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── CreateOrder ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateOrder_Returns201_WhenSuccessful()
+    {
+        _orderRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
+            .ReturnsAsync(BuildFakeOrder(id: 5));
+
+        var input = new CreateOrderDTO
         {
-            new CreateMaterialDTO
-            {
-                MaterialName = "Fabric",
-                Image = "https://tse2.mm.bing.net/th/id/OIP.5zy9t73ebMLan12S5kGAEAHaEK?rs=1&pid=ImgDetMain&o=7&rm=3",
-                Value = 100,
-                Uom = "m",
-                Note = "material note"
-            }
-        },
+            UserId = 1,
+            OrderName = "New Order",
+            Type = "Shirt",
+            Color = "Blue",
+            StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+            Quantity = 10
+        };
 
-                Templates = new List<CreateTemplateDTO>
+        var result = await BuildController().CreateOrder(input);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(201, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateOrder_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var input = new CreateOrderDTO
         {
-            new CreateTemplateDTO
-            {
-                TemplateName = "Template1",
-                Type = "PDF",
-                File = "https://tse2.mm.bing.net/th/id/OIP.5zy9t73ebMLan12S5kGAEAHaEK?rs=1&pid=ImgDetMain&o=7&rm=3",
-                Quantity = 2,
-                Note = "template note"
-            }
-        }
-            };
+            UserId = 1,
+            OrderName = "New Order",
+            Type = "Shirt",
+            Color = "Blue",
+            StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+            Quantity = 10
+        };
 
-            var createdOrder = new Order
-            {
-                Id = 99,
-                OrderName = dto.OrderName
-            };
+        var result = await BuildController().CreateOrder(input);
 
-            _mockRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
-                     .ReturnsAsync(createdOrder);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
 
-            var result = await _controller.CreateOrder(dto);
+    // ─── AddMaterial ──────────────────────────────────────────────────────────
 
-            _mockRepo.Verify(x => x.CreateOrder(It.Is<Order>(o =>
-                o.UserId == dto.UserId &&
-                o.OrderName == dto.OrderName &&
-                o.Material.Count == 1 &&
-                o.Template.Count == 1 &&
-                o.Material.First().MaterialName == "Fabric" &&
-                o.Template.First().TemplateName == "Template1"
-            )), Times.Once);
+    [Fact]
+    public async Task AddMaterial_Returns201_WhenSuccessful()
+    {
+        _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
+            .ReturnsAsync(new OMaterial { Id = 10, Name = "Cotton", OrderId = 1 });
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
-        }
+        var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
 
-        [Fact]
-        public async Task CreateOrder_ReturnsBadRequest_WhenModelStateInvalid()
+        var result = await BuildController().AddMaterial(1, input);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(201, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddMaterial_Returns400_WhenOrderApproved()
+    {
+        _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
+            .ThrowsAsync(new InvalidOperationException("Cannot add material to an approved order."));
+
+        var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
+
+        var result = await BuildController().AddMaterial(1, input);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddMaterial_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
+
+        var result = await BuildController().AddMaterial(1, input);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── UpdateOrder ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateOrder_Returns200_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.UpdateOrder(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(existing);
+
+        var input = new UpdateOrderDTO
         {
-            _controller.ModelState.AddModelError("OrderName", "Required");
+            OrderName = "Updated",
+            Type = "Shirt",
+            Color = "Blue",
+            StartDate = existing.StartDate,
+            EndDate = existing.EndDate,
+            Quantity = 5
+        };
 
-            var dto = new CreateOrderDTO();
+        var result = await BuildController(userId: 1).UpdateOrder(1, input);
 
-            var result = await _controller.CreateOrder(dto);
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+    }
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+    [Fact]
+    public async Task UpdateOrder_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().UpdateOrder(0, new UpdateOrderDTO());
 
-            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
-        }
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
 
-        [Fact]
-        public async Task CreateOrder_ReturnsInternalServerError_WhenExceptionOccurs()
+    [Fact]
+    public async Task UpdateOrder_Returns404_WhenOrderNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().UpdateOrder(99, new UpdateOrderDTO
         {
-            var dto = new CreateOrderDTO
-            {
-                UserId = 1,
-                OrderName = "Test Order"
-            };
+            OrderName = "X", Type = "X", Color = "X",
+            StartDate = DateOnly.FromDateTime(DateTime.Now),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+            Quantity = 1
+        });
 
-            _mockRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
-                     .ThrowsAsync(new Exception("Database error"));
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
+    }
 
-            var result = await _controller.CreateOrder(dto);
+    [Fact]
+    public async Task UpdateOrder_Returns403_WhenStatusNotModification()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Pending);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
-
-            Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
-        }
-
-        [Fact]
-        public async Task RequestOrderModification_ReturnsOk_WhenSuccessful()
+        var result = await BuildController(userId: 1).UpdateOrder(1, new UpdateOrderDTO
         {
-            int orderId = 5;
+            OrderName = "X", Type = "X", Color = "X",
+            StartDate = existing.StartDate,
+            EndDate = existing.EndDate,
+            Quantity = 1
+        });
 
-            var order = new Order
-            {
-                Id = orderId,
-                StatusName = OrderStatus_Constants.Pending
-            };
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, obj.StatusCode);
+    }
 
-            _mockRepo.Setup(x => x.GetOrderDetail(orderId))
-                     .ReturnsAsync(order);
+    [Fact]
+    public async Task UpdateOrder_Returns403_WhenUserIsNotOwner()
+    {
+        var existing = BuildFakeOrder(userId: 99, statusName: OrderStatus_Constants.Modification);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
 
-            _mockRepo.Setup(x => x.RequestOrderModification(
-                It.IsAny<int>(),
-                It.IsAny<Order>(),
-                It.IsAny<List<OHistoryUpdate>>()))
-                .ReturnsAsync(new Order());
-
-            var result = await _controller.RequestOrderModification(orderId);
-
-            var okResult = Assert.IsType<OkObjectResult>(result);
-
-            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-        }
-
-        [Fact]
-        public async Task RequestOrderModification_ReturnsBadRequest_WhenOrderIdInvalid()
+        var result = await BuildController(userId: 1).UpdateOrder(1, new UpdateOrderDTO
         {
-            var result = await _controller.RequestOrderModification(0);
+            OrderName = "X", Type = "X", Color = "X",
+            StartDate = existing.StartDate,
+            EndDate = existing.EndDate,
+            Quantity = 1
+        });
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+        Assert.IsType<ForbidResult>(result);
+    }
 
-            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
-        }
+    [Fact]
+    public async Task UpdateOrder_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
 
-        [Fact]
-        public async Task RequestOrderModification_ReturnsNotFound_WhenOrderNotExist()
+        var result = await BuildController().UpdateOrder(1, new UpdateOrderDTO
         {
-            int orderId = 10;
+            OrderName = "X", Type = "X", Color = "X",
+            StartDate = DateOnly.FromDateTime(DateTime.Now),
+            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+            Quantity = 1
+        });
 
-            _mockRepo.Setup(x => x.GetOrderDetail(orderId))
-                     .ReturnsAsync((Order)null);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
 
-            var result = await _controller.RequestOrderModification(orderId);
+    // ─── RequestOrderModification ─────────────────────────────────────────────
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+    [Fact]
+    public async Task RequestOrderModification_Returns200_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(existing);
 
-            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
-        }
+        var result = await BuildController().RequestOrderModification(1);
 
-        [Fact]
-        public async Task RequestOrderModification_ReturnsForbidden_WhenStatusInvalid()
-        {
-            int orderId = 10;
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+    }
 
-            var order = new Order
-            {
-                Id = orderId,
-                StatusName = "Approved"
-            };
+    [Fact]
+    public async Task RequestOrderModification_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().RequestOrderModification(0);
 
-            _mockRepo.Setup(x => x.GetOrderDetail(orderId))
-                     .ReturnsAsync(order);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
 
-            var result = await _controller.RequestOrderModification(orderId);
+    [Fact]
+    public async Task RequestOrderModification_Returns404_WhenOrderNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+        var result = await BuildController().RequestOrderModification(99);
 
-            Assert.Equal(StatusCodes.Status403Forbidden, objectResult.StatusCode);
-        }
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
+    }
 
-        [Fact]
-        public async Task RequestOrderModification_ReturnsInternalServerError_WhenExceptionOccurs()
-        {
-            int orderId = 10;
+    [Fact]
+    public async Task RequestOrderModification_Returns403_WhenStatusNotPending()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
 
-            _mockRepo.Setup(x => x.GetOrderDetail(orderId))
-                     .ThrowsAsync(new Exception("Database error"));
+        var result = await BuildController().RequestOrderModification(1);
 
-            var result = await _controller.RequestOrderModification(orderId);
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, obj.StatusCode);
+    }
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+    [Fact]
+    public async Task RequestOrderModification_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
 
-            Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
-        }
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
     }
 }
