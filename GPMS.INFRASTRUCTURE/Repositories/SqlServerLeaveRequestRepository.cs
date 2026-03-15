@@ -23,11 +23,15 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<LeaveRequest>> GetAll(object? obj)
         {
-            var data = await _context.LEAVE_REQUEST
+            var query = _context.LEAVE_REQUEST
                 .Include(lr => lr.USER)
                 .Include(lr => lr.LRS)
-                .ToListAsync();
+                .AsQueryable();
 
+            if (obj is int userId)
+                query = query.Where(lr => lr.USER_ID == userId);
+
+            var data = await query.ToListAsync();
             return _mapper.Map<IEnumerable<LeaveRequest>>(data);
         }
 
