@@ -84,7 +84,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("production/list")]
       //  [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
+        public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
             var data = await _productionService.GetProductionList();

@@ -73,7 +73,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         public async Task<IEnumerable<Production>> GetProductionList()
-            => _mapper.Map<IEnumerable<Production>>(await QueryProductions().ToListAsync());
+            => _mapper.Map<IEnumerable<Production>>(await QueryProductions()
+                .Include(p=> p.ORDER).ThenInclude(p=> p.O_TEMPLATE)
+                .Include(p=> p.ORDER).ThenInclude(p=> p.O_MATERIAL)
+                .ToListAsync());
 
         public async Task<Production?> GetProductionDetail(int productionId)
         {
