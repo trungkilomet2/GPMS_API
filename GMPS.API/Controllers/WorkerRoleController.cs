@@ -81,7 +81,7 @@ namespace GMPS.API.Controllers
 
         [HttpPost("create-worker-roles")]
         [Authorize(Roles = "Owner,Admin,PM")]
-        public async Task<ActionResult> CreateWorker([FromBody] CreateWorkerRoleDTO? input)
+        public async Task<ActionResult> CreateWorkerRole([FromBody] CreateWorkerRoleDTO? input)
         {
             try
             {
@@ -116,17 +116,6 @@ namespace GMPS.API.Controllers
 
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning(CustomLogEvents.WorkerController_Post, ex.Message);
-                var exceptionDetails = new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status404NotFound,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-                return StatusCode(StatusCodes.Status404NotFound, ex.Message);
             }
             catch (Exception ex)
             {
