@@ -128,5 +128,51 @@ namespace GPMS.TEST.Application.Services
             Assert.NotNull(result);
             Assert.Equal("newuser", result.UserName);
         }
+
+        [Fact]
+        public async Task UpdateUserForAdmin_ThrowsException_WhenUserNotFound()
+        {
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync((User?)null);
+
+            var service = BuildService();
+
+            var user = new User { Id = 1, UserName = "updated" };
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                service.UpdateUserForAdmin(1, user));
+        }
+
+
+        [Fact]
+        public async Task UpdateUserForAdmin_ReturnsUpdatedUser_WhenValid()
+        {
+            var existingUser = new User
+            {
+                Id = 1,
+                UserName = "olduser",
+                StatusId = 1
+            };
+
+            var updatedUser = new User
+            {
+                Id = 1,
+                UserName = "newuser",
+                StatusId = 1
+            };
+
+            _userRepo.Setup(x => x.GetById(1))
+                .ReturnsAsync(existingUser);
+
+            _userRepo.Setup(x => x.Update(It.IsAny<User>()))
+                .ReturnsAsync(updatedUser);
+
+            var service = BuildService();
+
+            var result = await service.UpdateUserForAdmin(1, updatedUser);
+
+            Assert.NotNull(result);
+            Assert.Equal("newuser", result.UserName);
+        }
     }
 }
