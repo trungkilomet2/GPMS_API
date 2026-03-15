@@ -90,10 +90,6 @@ namespace GPMS.APPLICATION.Services
         public async Task<User> ViewProfile(int id)
         {
             var data = await _userBaseRepo.GetById(id);
-            if (data == null)
-            {
-                throw new KeyNotFoundException("User not found");
-            }
             return data;
         }
 
@@ -102,11 +98,11 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
-                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+                throw new Exception("User not found");
             }
             if (userId != result.Id)
             {
-                throw new Exception(string.Format("Error: {0}", string.Join(" ", "Id missmatch")));
+                throw new Exception("you can only update your own profile");
             }
             user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
@@ -128,7 +124,7 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
-                throw new Exception(string.Format("Error: {0}", string.Join(" ", "User not found")));
+                throw new KeyNotFoundException("User not found");
             }
             user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
