@@ -23,11 +23,15 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<LeaveRequest>> GetAll(object? obj)
         {
-            var data = await _context.LEAVE_REQUEST
+            var query = _context.LEAVE_REQUEST
                 .Include(lr => lr.USER)
                 .Include(lr => lr.LRS)
-                .ToListAsync();
+                .AsQueryable();
 
+            if (obj is int userId)
+                query = query.Where(lr => lr.USER_ID == userId);
+
+            var data = await query.ToListAsync();
             return _mapper.Map<IEnumerable<LeaveRequest>>(data);
         }
 
@@ -64,7 +68,32 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<LeaveRequest>(existing);
         }
 
-        public Task<LeaveRequest> Create(LeaveRequest entity) => throw new NotImplementedException();
+        public async Task<LeaveRequest> Create(LeaveRequest entity)
+        {
+            var pendingStatus = await _context.LR_STATUS
+                .FirstOrDefaultAsync(s => s.NAME == LeaveRequestStatus_Constants.Pending);
+
+            if (pendingStatus is null)
+                throw new InvalidOperationException($"Status '{LeaveRequestStatus_Constants.Pending}' not found in system.");
+
+            var newLeaveRequest = new LEAVE_REQUEST
+            {
+                USER_ID = entity.UserId,
+                CONTENT = entity.Content,
+                DATE_CREATE = entity.DateCreate,
+                LRS_ID = pendingStatus.LRS_ID
+            };
+
+            _context.LEAVE_REQUEST.Add(newLeaveRequest);
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<LeaveRequest>(
+                await _context.LEAVE_REQUEST
+                    .Include(lr => lr.USER)
+                    .Include(lr => lr.LRS)
+                    .FirstOrDefaultAsync(lr => lr.LR_ID == newLeaveRequest.LR_ID)
+            );
+        }
         public Task Delete(object id) => throw new NotImplementedException();
     }
 }
