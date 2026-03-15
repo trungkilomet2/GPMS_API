@@ -35,6 +35,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var entity = _mapper.Map<PRODUCTION>(production);
             _context.PRODUCTION.Add(entity);
             await _context.SaveChangesAsync();
+
             return await GetProductionDetail(entity.PRODUCTION_ID) ?? throw new Exception("Failed to create production.");
         }
 

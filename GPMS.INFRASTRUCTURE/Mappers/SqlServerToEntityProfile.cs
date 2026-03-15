@@ -134,8 +134,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.P_START_DATE))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.P_END_DATE))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PS_ID))
-                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PS != null ? src.PS.NAME : null))
-                .ForMember(dest => dest.RejectReason, opt => opt.MapFrom(src => src.PRODUCTION_REJECT_REASON != null ? src.PRODUCTION_REJECT_REASON.REASON : null))
                 .ReverseMap()
                 .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.PM_ID, opt => opt.MapFrom(src => src.PmId))

@@ -32,7 +32,6 @@ namespace GMPS.API.Controllers
                         OrderId = dto.OrderId,
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
-
                     return Ok(new RestDTO<Production>
                     {
                         Data = result,
@@ -40,7 +39,6 @@ namespace GMPS.API.Controllers
                         {
                             new LinkDTO(Url.Action(null,"production/create",result,Request.Scheme!),"self","POST")
                         }
-
                     });
                 }
                 else
