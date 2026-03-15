@@ -176,6 +176,157 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // GET api/leaverequest/my-leave-request-history
+        [HttpGet("my-leave-request-history", Name = "Get my leave request history")]
+        [Authorize(Roles = "Owner,PM,Team_Leader,Worker")]
+        public async Task<ActionResult<RestDTO<IEnumerable<LeaveRequestListDTO>>>> GetMyLeaveRequestHistory([FromQuery] LeaveRequestRequestDTO input)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var requesterId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
+                    "Getting leave request history for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, DateCreateFrom: {DateCreateFrom}, DateCreateTo: {DateCreateTo}",
+                    requesterId, input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
+
+                if (!string.IsNullOrEmpty(input.Status) &&
+                    input.Status != LeaveRequestStatus_Constants.Pending &&
+                    input.Status != LeaveRequestStatus_Constants.Approved &&
+                    input.Status != LeaveRequestStatus_Constants.Denied)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "UserId {UserId} provided invalid Status value '{Status}'", requesterId, input.Status);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}'." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (input.DateCreateFrom.HasValue && input.DateCreateTo.HasValue
+                    && input.DateCreateFrom > input.DateCreateTo)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "UserId {UserId}: DateCreateFrom {DateCreateFrom} is greater than DateCreateTo {DateCreateTo}",
+                        requesterId, input.DateCreateFrom, input.DateCreateTo);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "Invalid model state while getting leave request history for UserId {UserId}", requesterId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                var result = await _leaveRequestRepo.GetLeaveRequestsByUserId(requesterId);
+
+                if (!string.IsNullOrEmpty(input.Status))
+                    result = result.Where(lr => lr.StatusName != null &&
+                        lr.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+
+                if (input.DateCreateFrom.HasValue)
+                    result = result.Where(lr => lr.DateCreate >= input.DateCreateFrom.Value.Date);
+
+                if (input.DateCreateTo.HasValue)
+                    result = result.Where(lr => lr.DateCreate < input.DateCreateTo.Value.Date.AddDays(1));
+
+                var recordCount = result.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
+
+                if (recordCount > 0 && input.PageIndex >= totalPages)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
+                        "UserId {UserId}: PageIndex {PageIndex} out of range. Total pages: {TotalPages}",
+                        requesterId, input.PageIndex, totalPages);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(lr => new LeaveRequestListDTO
+                    {
+                        Id = lr.Id,
+                        UserId = lr.UserId,
+                        UserFullName = lr.UserFullName,
+                        Content = lr.Content,
+                        DateCreate = lr.DateCreate,
+                        DateReply = lr.DateReply,
+                        Status = lr.StatusName
+                    });
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
+                    "Returned {Count} leave request history records for UserId {UserId} successfully", data.Count(), requesterId);
+
+                return Ok(new RestDTO<IEnumerable<LeaveRequestListDTO>>
+                {
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
+                    Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "LeaveRequest", new { input.PageIndex, input.PageSize }, Request.Scheme)!, "self", "GET")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Get, ex,
+                    "Error occurred while getting leave request history for current user");
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
         // GET api/leaverequest/leave-request-detail/{id}
         [HttpGet("leave-request-detail/{id}", Name = "Get leave request detail by id")]
         [Authorize(Roles = "Owner,PM,Team_Leader,Worker")]
