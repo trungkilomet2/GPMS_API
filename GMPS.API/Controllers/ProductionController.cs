@@ -4,6 +4,7 @@ using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 
@@ -14,10 +15,12 @@ namespace GMPS.API.Controllers
     public class ProductionController : ControllerBase
     {
         private readonly IProductionRepositories _productionService;
+        private readonly ILogger<Production> _logger;
 
-        public ProductionController(IProductionRepositories productionService)
+        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger)
         {
             _productionService = productionService;
+            _logger = logger;
         }
 
         [HttpPost("production/create")]
@@ -33,6 +36,7 @@ namespace GMPS.API.Controllers
                         OrderId = dto.OrderId,
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
+                    _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
                     return Ok(new RestDTO<Production>
                     {
                         Data = result,
@@ -44,14 +48,34 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    var detail = new ValidationProblemDetails(ModelState);
-                    detail.Status = 400;
-                    return BadRequest(detail);
+                    var details = new ValidationProblemDetails(ModelState);
+                    details.Type =
+                    "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                    details.Status = StatusCodes.Status400BadRequest;
+                    return new BadRequestObjectResult(details);
                 }
+            }
+            catch (ValidationException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                exceptionDetails);
             }
             catch (Exception ex)
             {
-                return null;
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status401Unauthorized;
+                exceptionDetails.Type =
+                "https://tools.ietf.org/html/rfc7231#section-6.6.1";
+                return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                exceptionDetails);
             }
         }
 

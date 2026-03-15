@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -11,7 +12,6 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseProductionRepositories _productionRepo;
         private readonly IBaseRepositories<Role> _roleRepositories;
         private readonly IBaseRepositories<Production> _prdRepo;
-
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, IBaseProductionRepositories prdRepo)
@@ -23,7 +23,21 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<Production> CreateProduction(Production production)
         {
-            if (production is null) throw new Exception("Production data is required.");
+            bool isChecked = true;
+            if (production is  null)
+            {
+                throw new ValidationException("Production data is required.");
+                isChecked = false;
+            }
+
+
+
+
+
+            if(!isChecked)
+            {
+                return null;
+            }
 
             //    User isPmExist = _roleRepositories.GetById(production.PmId);
             return await _prdRepo.Create(production);
