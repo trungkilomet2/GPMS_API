@@ -5,6 +5,7 @@ using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using System.Net;
 
 namespace GMPS.API.Controllers
 {
@@ -44,6 +45,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     var detail = new ValidationProblemDetails(ModelState);
+                    detail.Status = 400;
                     return BadRequest(detail);
                 }
             }

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerProductionRepository : IBaseRepositories<Production>
+    public class SqlServerProductionRepository : IBaseRepositories<Production>,IBaseProductionRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -164,9 +164,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .ThenInclude(p => p.PPS)
             .Include(x => x.PRODUCTION_REJECT_REASON);
 
-
-
-
-
+        public Task<Production> CreateProduction(Production production)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
