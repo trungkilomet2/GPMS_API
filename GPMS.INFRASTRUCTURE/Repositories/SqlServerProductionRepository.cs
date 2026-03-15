@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerProductionRepository : IBaseRepositories<Production>,IBaseProductionRepositories
+    public class SqlServerProductionRepository : IBaseRepositories<Production>, IBaseProductionRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -21,12 +21,22 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public Task<IEnumerable<Production>> GetAll(object? obj)
         {
-            throw new NotImplementedException();
+            if (obj is null)
+            {
+                var data = _context.PRODUCTION;
+                return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
+            }
+            throw new Exception("Đã có lỗi xảy ra trong hệ thống");
         }
 
         public Task<Production> GetById(object id)
         {
-            throw new NotImplementedException();
+            if (id is int)
+            {
+                var data = _context.PRODUCTION.Where(p => p.PRODUCTION_ID == (int)id).FirstOrDefault();
+                return data is null ? Task.FromResult<Production>(null) : Task.FromResult(_mapper.Map<Production>(data));
+            }
+            throw new Exception("Đã có lỗi xảy ra trong hệ thống");
         }
 
         public async Task<Production> Create(Production entity)
@@ -47,8 +57,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var production_database = _mapper.Map<PRODUCTION>(entity);
             _context.PRODUCTION.Add(production_database);
             await _context.SaveChangesAsync();
-
-            return await GetProductionDetail(production_database.PRODUCTION_ID) ?? throw new Exception("Failed to create production.");
+            return await GetById(production_database.PRODUCTION_ID) ?? throw new Exception("Xảy ra lỗi khi tạo đơn hàng");
         }
 
         public Task<Production> Update(Production entity)

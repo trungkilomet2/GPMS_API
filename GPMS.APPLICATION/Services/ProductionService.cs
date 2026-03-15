@@ -48,7 +48,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Chỉ Owner mới được tạo Production");
             }
-
+            
             // Kiêm tra đơn hàng trong hệ thống
             Order check_order_system = await _orderRepo.GetById(production.OrderId);
             if (check_order_system is null)
@@ -57,15 +57,18 @@ namespace GPMS.APPLICATION.Services
             }
             if (check_order_system.Status != OrderStatus_Constants.Approved_ID)
             {
-                throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất");
+                throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất - Không ở trạng thái Chấp Nhận");
             }
-
-            //    User isPmExist = _roleRepositories.GetById(production.PmId);
-            return await _prdRepo.Create(production);
+            var new_production = await _prdRepo.Create(production);
+            return new_production is null ? throw new Exception("Tạo đơn hàng không thành công") : new_production;
         }
 
 
-        public async Task<IEnumerable<Production>> GetProductionList() => await _productionRepo.GetProductionList();
+        public async Task<IEnumerable<Production>> GetProductionList()
+        {
+
+            => await _productionRepo.GetProductionList();
+        }
 
         public async Task<Production> GetProductionDetail(int productionId)
             => await _productionRepo.GetProductionDetail(productionId) ?? throw new Exception($"Production with id '{productionId}' not found.");

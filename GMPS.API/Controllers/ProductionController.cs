@@ -30,6 +30,7 @@ namespace GMPS.API.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    // Tạo đơn hàng với trạng thái mặc định là "Chờ Xét Duyệt"s
                     var result = await _productionService.CreateProduction(new Production
                     {
                         PmId = dto.PmId,
@@ -78,8 +79,12 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("production/list")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetList()
-            => Ok(await _productionService.GetProductionList());
+        public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
+        {
+
+
+            return Ok(await _productionService.GetProductionList());
+        }
 
         [HttpGet("production/detail/{id:int}")]
         public async Task<ActionResult<Production>> GetDetail(int id)
