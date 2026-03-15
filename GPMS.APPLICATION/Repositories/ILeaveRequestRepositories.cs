@@ -9,6 +9,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<LeaveRequest>> GetAllLeaveRequests();
         Task<IEnumerable<LeaveRequest>> GetLeaveRequestsByUserId(int userId);
         Task<LeaveRequest> GetLeaveRequestById(int id);
+        Task<LeaveRequest> CreateLeaveRequest(int userId, string content);
         Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent);
         Task<LeaveRequest> ApproveLeaveRequest(int id);
     }
