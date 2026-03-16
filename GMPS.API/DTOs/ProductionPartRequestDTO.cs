@@ -13,10 +13,10 @@ namespace GMPS.API.DTOs
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
 
-        [Range(0.01, double.MaxValue)]
+        [Range(100, double.MaxValue)]
         public decimal Cpu { get; set; }
 
-        [Range(1, int.MaxValue)]
+        [Range(1, 3)]
         public int StatusId { get; set; }
     }
 
