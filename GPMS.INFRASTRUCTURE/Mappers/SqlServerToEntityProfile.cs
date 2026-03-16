@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using GPMS.APPLICATION.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,7 +135,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.P_START_DATE))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.P_END_DATE))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PS_ID))
-                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.ORDER))
                 .ReverseMap()
                 .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.PM_ID, opt => opt.MapFrom(src => src.PmId))
@@ -142,7 +142,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.P_START_DATE, opt => opt.MapFrom(src => src.StartDate))
                 .ForMember(dest => dest.P_END_DATE, opt => opt.MapFrom(src => src.EndDate))
                 .ForMember(dest => dest.PS_ID, opt => opt.MapFrom(src => src.StatusId))
-                .ForMember(dest => dest.ORDER, opt => opt.MapFrom(src => src.Order))
                 ;
 
 
@@ -155,6 +154,16 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.REASON))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
                 .ReverseMap();
+
+
+
+
+
+
+
+
+
+
         }
     }
 }

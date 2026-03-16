@@ -1,10 +1,13 @@
-﻿using GMPS.API.DTOs;
+﻿using AutoMapper;
+using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -18,16 +21,18 @@ namespace GMPS.API.Controllers
     public class ProductionController : ControllerBase
     {
         private readonly IProductionRepositories _productionService;
+        private readonly IMapper _mapper;
         private readonly ILogger<Production> _logger;
 
-        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger)
+        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger, IMapper mapper)
         {
+            _mapper = mapper;
             _productionService = productionService;
             _logger = logger;
         }
 
         [HttpPost("production/create")]
-        [Authorize(Roles = "Admin,Owner")]
+        //    [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
@@ -42,6 +47,7 @@ namespace GMPS.API.Controllers
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
                     _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
+                    var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
                     return Ok(new RestDTO<Production>
                     {
                         Data = result,
@@ -83,18 +89,24 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("production/list")]
-      //  [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
+        //  [Authorize(Roles = "Admin,Owner")]
+        public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
-            var data = await _productionService.GetProductionList();
+            var data = await _productionService.GetProductionListViews();
+
+            if (data.Count() == 0)
+            {
+                return NoContent();
+            }
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
-                        .Take(input.PageSize).ToList();
+                        .Take(input.PageSize);
 
-            return Ok(new RestDTO<IEnumerable<Production>>
+
+            return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
-                Data = result,
+                Data = null,
                 PageIndex = input.PageIndex,
                 PageSize = input.PageSize,
                 RecordCount = data.Count(),
