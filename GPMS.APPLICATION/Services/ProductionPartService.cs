@@ -28,8 +28,8 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
         {
             await EnsureProductionExists(productionId);
-            var parts = await _partRepo.GetByProductionId(productionId);
-            return await BuildViews(parts);
+            var list_parts_in_productions = await _partRepo.GetAll(productionId);
+            return await BuildViews(list_parts_in_productions);
         }
 
         public async Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partId)
@@ -39,7 +39,7 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Part id phải > 0");
             }
 
-            var part = await _partRepo.GetDetailById(partId);
+            var part = await _partRepo.GetById(partId);
 
             if (part is null)
             {
@@ -54,21 +54,23 @@ namespace GPMS.APPLICATION.Services
             await EnsureProductionExists(productionId);
 
             var validatedParts = (parts ?? Enumerable.Empty<ProductionPart>()).ToList();
-            if (!validatedParts.Any())
-            {
-                throw new ValidationException("Danh sách production part không được rỗng");
-            }
+
+            //if (!validatedParts.Any())
+            //{
+            //    throw new ValidationException("Danh sách production part không được rỗng");
+            //}
 
             foreach (var part in validatedParts)
             {
                 await ValidatePartInput(productionId, part);
             }
-            
-            var created = await _partRepo.CreateMany(productionId, validatedParts);
-            
-            _unitOfWork.ExecuteInTransactionAsync(async () => await _partRepo.CreateMany(productionId, validatedParts));
-       
-            return await BuildViews(created);
+
+            _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                foreach (var part in validatedParts)
+                    _partRepo.Create(part);
+            });
+            return await BuildViews(validatedParts);
         }
 
         public async Task<ProductionPartDetailViewDTO> UpdatePart(int partId, ProductionPart part)
@@ -86,7 +88,7 @@ namespace GPMS.APPLICATION.Services
 
             var productionId = part.ProductionId <= 0 ? existing.ProductionId : part.ProductionId;
             await ValidatePartInput(productionId, part);
-            
+
             existing.PartName = part.PartName;
             existing.TeamLeaderId = part.TeamLeaderId;
             existing.Cpu = part.Cpu;
@@ -94,7 +96,7 @@ namespace GPMS.APPLICATION.Services
             existing.StartDate = part.StartDate;
             existing.EndDate = part.EndDate;
 
-            var updated = await _partRepo.UpdatePart(existing);
+            var updated = await _partRepo.Update(existing);
             return (await BuildViews(new[] { updated })).First();
         }
 
@@ -141,7 +143,7 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Production part không tồn tại trong hệ thống");
             }
 
-            await _partRepo.DeletePart(partId);
+            await _partRepo.Delete(partId);
         }
 
         private async Task EnsureProductionExists(int productionId)
@@ -207,7 +209,7 @@ namespace GPMS.APPLICATION.Services
             foreach (var part in parts)
             {
                 // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
-                var detail = await _partRepo.GetDetailById(part.Id);
+                var detail = await _partRepo.GetById(part.Id);
                 // Lấy thông tin của Team Leader
                 var leader = await _userRepo.GetById(detail.TeamLeaderId);
                 // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
@@ -215,7 +217,7 @@ namespace GPMS.APPLICATION.Services
                 // Lấy danh sách người dùng được giao
                 var assigneeUsers = new List<User>();
                 foreach (var assignee in assignees)
-                {   
+                {
                     // Lấy thống tin của người dùng
                     var user = await _userRepo.GetById(assignee);
                     if (user is not null)
