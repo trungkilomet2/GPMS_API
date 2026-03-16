@@ -104,7 +104,7 @@ namespace GMPS.API.Controllers
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize);
-
+            _logger.LogInformation(CustomLogEvents.ProductionController_Get,$"Đã lấy được ({data.Count()}) production",DateTime.UtcNow);
             return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
                 Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
@@ -117,6 +117,8 @@ namespace GMPS.API.Controllers
                 }
             });
         }
+
+        //Get: Lấy thông tin chi tiết của production đấy
 
         [HttpGet("production/detail/{production_id:int}")]
         public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> GetDetail([Required] int production_id)
@@ -156,6 +158,7 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // HttpPatch : Yêu Cầu Người dùng Cập nhật Lại đơn hàng
         [HttpPatch("production/revision-request/{id:int}")]
         public async Task<ActionResult<Production>> RequestRevision(int production_id)
         {
@@ -173,7 +176,7 @@ namespace GMPS.API.Controllers
             {
                 var data = await _productionService.RequestProductionRevision(production_id);
                 if (data is null) NoContent();
-                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate})");
+                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $" Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate})");
                 return Ok(new RestDTO<ProductionDetailDTO>
                 {
                     Data = _mapper.Map<ProductionDetailDTO>(data),
