@@ -24,7 +24,7 @@ namespace GMPS.API.Controllers
         private readonly IMapper _mapper;
         private readonly ILogger<Production> _logger;
 
-        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger,IMapper mapper)
+        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger, IMapper mapper)
         {
             _mapper = mapper;
             _productionService = productionService;
@@ -32,7 +32,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("production/create")]
-    //    [Authorize(Roles = "Admin,Owner")]
+        //    [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
@@ -89,18 +89,24 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("production/list")]
-      //  [Authorize(Roles = "Admin,Owner")]
+        //  [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
             var data = await _productionService.GetProductionListViews();
+
+            if (data.Count() == 0)
+            {
+                return NoContent();
+            }
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize);
 
+
             return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
-                Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
+                Data = null,
                 PageIndex = input.PageIndex,
                 PageSize = input.PageSize,
                 RecordCount = data.Count(),
