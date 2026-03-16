@@ -9,19 +9,17 @@ namespace GMPS.API.Mapper
         public MapperProfile()
         {
 
-            CreateMap<ListProductionDTO, ProductionDetailViewDTO>()
-                .ForMember(dest => dest.Production.Id, opt => opt.MapFrom(src => src.Id))
-                .ReverseMap();
+            //CreateMap<ListProductionDTO, ProductionDetailViewDTO>()
+            //    .ForMember(dest => dest.Production.Id, opt => opt.MapFrom(src => src.Id))
+            //    .ReverseMap();
 
-
-
+          
 
 
 
 
 
         }
-
 
     }
 }

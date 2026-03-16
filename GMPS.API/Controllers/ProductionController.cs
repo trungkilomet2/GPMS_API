@@ -93,11 +93,10 @@ namespace GMPS.API.Controllers
         public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
-            var data = await _productionService.GetProductionPlanViews();
-
+            var data = await _productionService.GetProductionListViews();
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
-                        .Take(input.PageSize).ToList();
+                        .Take(input.PageSize);
 
             return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {

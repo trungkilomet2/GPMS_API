@@ -24,7 +24,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             if (obj is null)
             {
-                var data = _context.PRODUCTION.Include(p => p.ORDER);
+                var data = _context.PRODUCTION.Include(p => p.ORDER).Include(p=> p.PM);
                 return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
             }
             throw new Exception("Đã có lỗi xảy ra trong hệ thống");

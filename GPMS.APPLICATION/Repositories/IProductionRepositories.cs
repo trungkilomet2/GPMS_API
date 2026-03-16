@@ -23,10 +23,10 @@ namespace GPMS.APPLICATION.Repositories
         Task<Production> DenyProductionPlan(int productionId, int userId, string reason);
 
 
-
         //The new DTO
         Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId);
         Task<IEnumerable<ProductionDetailViewDTO>> GetPendingProductionPlanViews();
+        Task<IEnumerable<ProductionDetailViewDTO>> GetProductionListViews();
         Task<IEnumerable<ProductionDetailViewDTO>> GetProductionPlanViews();
 
 

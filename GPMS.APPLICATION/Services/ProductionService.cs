@@ -171,5 +171,24 @@ namespace GPMS.APPLICATION.Services
             }
             return result;
         }
+
+        public async Task<IEnumerable<ProductionDetailViewDTO>> GetProductionListViews()
+        {
+            var productions = await _prdRepo.GetAll(null);
+            var result = new List<ProductionDetailViewDTO>();
+            foreach (var production in productions)
+            {
+                var pm = await _userRepositories.GetById(production.PmId);
+                var order = await _orderRepo.GetById(production.OrderId);
+                result.Add(new ProductionDetailViewDTO
+                {
+                    Production = production,
+                    ProjectManager = pm,
+                    Order = order
+                });
+            }
+            return result;
+
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using GPMS.APPLICATION.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -153,6 +154,16 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.REASON))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
                 .ReverseMap();
+
+
+
+
+
+
+
+
+
+
         }
     }
 }
