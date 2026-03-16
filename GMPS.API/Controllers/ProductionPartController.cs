@@ -30,7 +30,8 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
-        [HttpGet("production/{productionId:int}/parts")]
+        // GET: Lấy tất cả Production Part của Production ID đấy
+        [HttpGet("production/get-list-parts/{productionId:int}")]
         public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartDetailDTO>>>> GetParts(
             [Range(1, int.MaxValue)] int productionId,
             [FromQuery] RequestDTO<ProductionPart> input)
@@ -76,7 +77,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpGet("parts/{partId:int}/assign-detail")]
+        // GET: Xem thông tin chi tiết Assign Của Production Part Đấy, bao gồm cả thông tin về các worker đã được phân công cho phần đó
+        [HttpGet("parts/assign-detail/{partId:int}")]
         public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> GetAssignDetail([Range(1, int.MaxValue)] int partId)
         {
             if (!ModelState.IsValid)
@@ -111,7 +113,9 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("production/{productionId:int}/parts")]
+        // GET : Tạo ra part của production đấy, có thể tạo nhiều part cùng lúc, trả về thông tin chi tiết của các part vừa được tạo ra
+        // Truyền vào một IEnumerable danh sách cùng một lúc
+        [HttpPost("production/create-parts/{productionId:int}")]
         public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartDetailDTO>>>> CreateParts(
             [Range(1, int.MaxValue)] int productionId,
             [FromBody] CreateProductionPartListDTO dto)
@@ -160,7 +164,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPut("parts/{partId:int}")]
+        // PUT: Cập nhật thông tin của MỘT Production Part (ví dụ: thay đổi số lượng, trạng thái, v.v.)
+        [HttpPut("parts/update/{partId:int}")]
         public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> UpdatePart(
             [Range(1, int.MaxValue)] int partId,
             [FromBody] UpdateProductionPartDTO dto)
@@ -206,7 +211,10 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPatch("parts/{partId:int}/assign-workers")]
+        // PATCH: Phân công Production Part cho một nhóm Worker,
+        // truyền vào một list workerId cùng một lúc,
+        // trả về thông tin chi tiết của part sau khi đã được phân công
+        [HttpPatch("parts/update-assign-workers/{partId:int}")]
         public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> AssignWorkers(
                     [Range(1, int.MaxValue)] int partId,
                     [FromBody] AssignProductionPartWorkersDTO dto)
@@ -242,8 +250,8 @@ namespace GMPS.API.Controllers
                 });
             }
         }
-
-        [HttpDelete("parts/{partId:int}")]
+        //GET: Xóa một producion part trong một production (nếu có thể, tùy vào nghiệp vụ hệ thống có cho phép hay không)
+        [HttpDelete("parts/delete/{partId:int}")]
         public async Task<ActionResult> DeletePart([Range(1, int.MaxValue)] int partId)
         {
             if (!ModelState.IsValid)
