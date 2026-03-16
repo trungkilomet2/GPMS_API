@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace GPMS.APPLICATION.Services
@@ -48,7 +49,6 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Chỉ Owner mới được tạo Production");
             }
-            
             // Kiêm tra đơn hàng trong hệ thống
             Order check_order_system = await _orderRepo.GetById(production.OrderId);
             if (check_order_system is null)
@@ -69,13 +69,29 @@ namespace GPMS.APPLICATION.Services
             var data = await _productionRepo.GetProductionList();
             return data;
         }
-
-        public async Task<Production> GetProductionDetail(int productionId)
-            => await _productionRepo.GetProductionDetail(productionId) ?? throw new Exception($"Production with id '{productionId}' not found.");
+        // OK -1
+        public async Task<ProductionDetailViewDTO> GetProductionDetail(int productionId)
+        {
+            var production_detail = await _prdRepo.GetById(productionId);
+            
+            if(production_detail is null)
+            {
+                throw new ValidationException($"Production with id '{productionId}' not found.");
+            }
+            var pm = await _userRepositories.GetById(production_detail.PmId);
+            var order = await _orderRepo.GetById(production_detail.OrderId);
+            return new ProductionDetailViewDTO
+            {
+                Production = production_detail,
+                ProjectManager = pm,
+                Order = order
+            };
+        }
 
         // Yêu cầu chỉnh sửa kế hoạch cho sản xuất cho hợp lý
         public async Task<Production> RequestProductionRevision(int productionId)
-        {
+        {   
+            // Lấy toàn bộ thông tin của production đấy 
             var production = await GetProductionDetail(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
             production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
@@ -172,6 +188,7 @@ namespace GPMS.APPLICATION.Services
             return result;
         }
 
+        //Ussing --------------------------------
         public async Task<IEnumerable<ProductionDetailViewDTO>> GetProductionListViews()
         {
             var productions = await _prdRepo.GetAll(null);
@@ -188,7 +205,6 @@ namespace GPMS.APPLICATION.Services
                 });
             }
             return result;
-
         }
     }
 }

@@ -24,6 +24,7 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<Order, ListOrderProductionDTO>();
 
+            CreateMap<ProductionDetailViewDTO, ProductionDetailDTO>();
 
 
         }

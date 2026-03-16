@@ -12,7 +12,8 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<Production> CreateProduction(Production production);
         Task<IEnumerable<Production>> GetProductionList();
-        Task<Production> GetProductionDetail(int productionId);
+        // Change DTO -1
+        Task<ProductionDetailViewDTO> GetProductionDetail(int productionId);
         Task<Production> RequestProductionRevision(int productionId);
         Task<Production> DenyProduction(int productionId, int userId, string reason);
         Task<Production> UpdateProduction(int productionId, Production production);

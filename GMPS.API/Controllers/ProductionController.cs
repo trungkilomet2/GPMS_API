@@ -13,6 +13,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net;
 using System.Net.WebSockets;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GMPS.API.Controllers
 {
@@ -73,7 +74,7 @@ namespace GMPS.API.Controllers
                 exceptionDetails.Status =
                 StatusCodes.Status400BadRequest;
                 return StatusCode(
-                StatusCodes.Status401Unauthorized,
+                StatusCodes.Status400BadRequest,
                 exceptionDetails);
             }
             catch (Exception ex)
@@ -117,13 +118,85 @@ namespace GMPS.API.Controllers
             });
         }
 
-        [HttpGet("production/detail/{id:int}")]
-        public async Task<ActionResult<Production>> GetDetail(int id)
-            => Ok(await _productionService.GetProductionDetail(id));
+        [HttpGet("production/detail/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> GetDetail([Required] int production_id)
+        {
+            if (production_id < 0)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = "Production ID Nhập vào phải là một số dương";
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+            try
+            {
+
+                var data = await _productionService.GetProductionDetail(production_id);
+                if (data is null) NoContent();
+                return Ok(new RestDTO<ProductionDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionDetailDTO>(data),
+                    Links = new List<LinkDTO>
+                        {
+                            new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
+                        }
+                });
+            }
+            catch (ValidationException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+        }
 
         [HttpPatch("revision-request/{id:int}")]
-        public async Task<ActionResult<Production>> RequestRevision(int id)
-            => Ok(await _productionService.RequestProductionRevision(id));
+        public async Task<ActionResult<Production>> RequestRevision(int production_id)
+        {
+
+            if (production_id < 0)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = "Production ID Nhập vào phải là một số dương";
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+            try
+            {
+
+                var data = await _productionService.GetProductionDetail(production_id);
+                if (data is null) NoContent();
+                return Ok(new RestDTO<ProductionDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionDetailDTO>(data),
+                    Links = new List<LinkDTO>
+                        {
+                            new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
+                        }
+                });
+            }
+            catch (ValidationException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+
+        }
 
         [HttpPatch("production/deny/{id:int}")]
         public async Task<ActionResult<Production>> Deny(int id, [FromBody] RejectProductionDTO dto)
