@@ -11,15 +11,18 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseProductionPartRepositories _partRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
             IBaseProductionPartRepositories partRepo,
             IBaseRepositories<Production> productionRepo,
-            IBaseRepositories<User> userRepo)
+            IBaseRepositories<User> userRepo,
+            IUnitOfWork unitOfWork)
         {
             _partRepo = partRepo;
             _productionRepo = productionRepo;
             _userRepo = userRepo;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -37,6 +40,7 @@ namespace GPMS.APPLICATION.Services
             }
 
             var part = await _partRepo.GetDetailById(partId);
+
             if (part is null)
             {
                 throw new ValidationException("Production part không tồn tại trong hệ thống");
@@ -59,8 +63,11 @@ namespace GPMS.APPLICATION.Services
             {
                 await ValidatePartInput(productionId, part);
             }
-
+            
             var created = await _partRepo.CreateMany(productionId, validatedParts);
+            
+            _unitOfWork.ExecuteInTransactionAsync(async () => await _partRepo.CreateMany(productionId, validatedParts));
+       
             return await BuildViews(created);
         }
 
@@ -79,7 +86,7 @@ namespace GPMS.APPLICATION.Services
 
             var productionId = part.ProductionId <= 0 ? existing.ProductionId : part.ProductionId;
             await ValidatePartInput(productionId, part);
-
+            
             existing.PartName = part.PartName;
             existing.TeamLeaderId = part.TeamLeaderId;
             existing.Cpu = part.Cpu;

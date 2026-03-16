@@ -31,7 +31,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 query = query.Where(x => x.PRODUCTION_ID == productionId);
             }
-
             var data = await query.ToListAsync();
             return data.Select(ToDomain);
         }
@@ -91,7 +90,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             await _context.P_PART.AddRangeAsync(dbParts);
             await _context.SaveChangesAsync();
-
             return await GetByProductionId(productionId);
         }
 
@@ -107,7 +105,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 return null;
             }
-
             dbEntity.PART_NAME = entity.PartName;
             dbEntity.TEAM_LEADER_ID = entity.TeamLeaderId;
             dbEntity.START_DATE = entity.StartDate;
@@ -152,7 +149,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 await DeletePart(partId);
                 return;
             }
-
             throw new Exception("Id không hợp lệ");
         }
 
@@ -163,7 +159,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 return;
             }
-
             _context.P_PART.Remove(dbEntity);
             await _context.SaveChangesAsync();
         }
