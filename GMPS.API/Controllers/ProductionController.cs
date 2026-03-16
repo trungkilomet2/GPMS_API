@@ -106,7 +106,7 @@ namespace GMPS.API.Controllers
 
             return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
-                Data = null,
+                Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
                 PageIndex = input.PageIndex,
                 PageSize = input.PageSize,
                 RecordCount = data.Count(),
