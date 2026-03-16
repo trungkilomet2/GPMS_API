@@ -74,7 +74,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             production_databse.P_END_DATE = entity.EndDate;
             production_databse.PS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
-            return await GetById(entity.Id) ?? throw new Exception("Failed to update production.");
+            return await GetById(entity.Id) ?? throw new DBConcurrencyException("Failed to update production.");
         }
 
         public Task Delete(object id)

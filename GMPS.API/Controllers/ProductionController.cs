@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net;
@@ -170,9 +171,10 @@ namespace GMPS.API.Controllers
                 exceptionDetails);
             }
             try
-            {
-                var data = await _productionService.GetProductionDetail(production_id);
+            {   
+                var data = await _productionService.RequestProductionRevision(production_id);
                 if (data is null) NoContent();
+                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate})");
                 return Ok(new RestDTO<ProductionDetailDTO>
                 {
                     Data = _mapper.Map<ProductionDetailDTO>(data),
@@ -181,6 +183,16 @@ namespace GMPS.API.Controllers
                             new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
                         }
                 });
+            }
+            catch(DBConcurrencyException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
             }
             catch (ValidationException ex)
             {

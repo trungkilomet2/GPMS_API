@@ -87,15 +87,14 @@ namespace GPMS.APPLICATION.Services
                 Order = order
             };
         }
-
         // Yêu cầu chỉnh sửa kế hoạch cho sản xuất cho hợp lý
         public async Task<Production> RequestProductionRevision(int productionId)
         {   
             // Lấy toàn bộ thông tin của production đấy 
-            var production = await GetProductionDetail(productionId);
+            var production = await _prdRepo.GetById(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
             production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
-            return await _productionRepo.UpdateProduction(production);
+            return await _prdRepo.Update(production);
         }
 
         // Từ chối kế hoạch sản xuất với lý do cụ thể, lưu lại lịch sử từ chối
