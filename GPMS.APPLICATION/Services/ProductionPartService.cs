@@ -125,9 +125,10 @@ namespace GPMS.APPLICATION.Services
                     throw new ValidationException($"Worker id '{workerId}' không tồn tại");
                 }
             }
-
-            var updated = await _partRepo.AssignWorkers(partId, workers);
-            return (await BuildViews(new[] { updated })).First();
+            var updated = new ProductionPartDetailViewDTO();
+            //var updated = await _partRepo.AssignWorkers(partId, workers);
+            return null;
+            //return (await BuildViews(new[] { updated })).First();
         }
 
         public async Task DeletePart(int partId)

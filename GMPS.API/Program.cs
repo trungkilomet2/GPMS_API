@@ -115,7 +115,6 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 
 
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
-builder.Services.AddScoped<IBaseProductionPartRepositories, SqlServerProductionPartRepository>();
 
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
