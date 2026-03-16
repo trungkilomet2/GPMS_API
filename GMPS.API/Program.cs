@@ -14,11 +14,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
+
+Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders().AddSimpleConsole().AddDebug();
-
 //--------------------------- Controller Config ---------------------------
 builder.Services.AddControllers(
     options =>

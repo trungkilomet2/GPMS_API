@@ -73,8 +73,8 @@ namespace GPMS.APPLICATION.Services
         public async Task<ProductionDetailViewDTO> GetProductionDetail(int productionId)
         {
             var production_detail = await _prdRepo.GetById(productionId);
-            
-            if(production_detail is null)
+
+            if (production_detail is null)
             {
                 throw new ValidationException($"Production with id '{productionId}' not found.");
             }
@@ -89,7 +89,7 @@ namespace GPMS.APPLICATION.Services
         }
         // Yêu cầu chỉnh sửa kế hoạch cho sản xuất cho hợp lý
         public async Task<Production> RequestProductionRevision(int productionId)
-        {   
+        {
             // Lấy toàn bộ thông tin của production đấy 
             var production = await _prdRepo.GetById(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
@@ -100,7 +100,7 @@ namespace GPMS.APPLICATION.Services
         // Từ chối kế hoạch sản xuất với lý do cụ thể, lưu lại lịch sử từ chối
 
         ///---------------------------------------------- Đang Xem Sett -------------------------------------------
-        
+
         //public async Task<Production> DenyProduction(int productionId, int userId, string reason)
         //{
         //    if (string.IsNullOrWhiteSpace(reason)) throw new Exception("Deny reason is required.");
@@ -115,13 +115,25 @@ namespace GPMS.APPLICATION.Services
         ///----------------------------------------------/////////////////////////////-------------------------------------------
 
 
-        public async Task<Production> UpdatePMProduction(int production_id,int new_pm_id)
+        public async Task<Production> UpdatePMProduction(int production_id, int new_pm_id)
         {
             var existing_production = await _prdRepo.GetById(production_id);
-
-            if(existing_production is not null)
+            if (existing_production is null)
             {
                 throw new ValidationException("Không tồn tại Production trong hệ thống");
+            }
+            if (existing_production.PmId == new_pm_id)
+            {
+                throw new ValidationException("Đơn hàng nay đang giao cho người này quản lý");
+            }
+            var check_user_system = await _userRepositories.GetById(new_pm_id);
+            if (check_user_system is null)
+            {
+                throw new ValidationException("Người dùng không tồn tại trong hệ thống");
+            }
+            if(!check_user_system.Roles.Where(r => r.Name != Roles_Constants.PM).Any() == false)
+            {
+                throw new ValidationException("Người dùng không đủ quyền để quản lý production này");
             }
             existing_production.PmId = new_pm_id;
             return await _productionRepo.UpdateProduction(existing_production);
@@ -132,7 +144,7 @@ namespace GPMS.APPLICATION.Services
             var data = await GetProductionList();
             data.AsQueryable().Where(p => p.StatusId == ProductionStatus_Constants.Pending_ID);
             return data;
-        } 
+        }
 
         public async Task<IEnumerable<Production>> GetProductionPlanList() => await _productionRepo.GetProductionPlanList();
 
@@ -141,14 +153,14 @@ namespace GPMS.APPLICATION.Services
             _ = await GetProductionDetail(productionId);
             await _productionRepo.ReplaceProductionParts(productionId, parts);
             throw new Exception("hmmmm");
-           // return await GetProductionDetail(productionId);
+            // return await GetProductionDetail(productionId);
         }
 
         public async Task<Production> GetProductionPlanDetail(int productionId) => throw new Exception("hmmmm");
 
 
         public async Task<Production> DenyProductionPlan(int productionId, int userId, string reason)
-            =>             throw new Exception("hmmmm");
+            => throw new Exception("hmmmm");
 
         // New Coding for DTOs
         public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
