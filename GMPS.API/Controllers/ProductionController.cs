@@ -1,4 +1,5 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -28,7 +29,7 @@ namespace GMPS.API.Controllers
 
         [HttpPost("production/create")]
     //    [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionDetailViewDTO>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
             {
@@ -42,9 +43,10 @@ namespace GMPS.API.Controllers
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
                     _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
-                    return Ok(new RestDTO<Production>
+                    var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
+                    return Ok(new RestDTO<ProductionDetailViewDTO>
                     {
-                        Data = result,
+                        Data = production_detail_view,
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null,"production/create",result,Request.Scheme!),"self","POST")

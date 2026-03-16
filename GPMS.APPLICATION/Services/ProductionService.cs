@@ -120,5 +120,56 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<Production> DenyProductionPlan(int productionId, int userId, string reason)
             => await DenyProduction(productionId, userId, reason);
+
+        // New Coding for DTOs
+        public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
+        {
+            var production = await GetProductionDetail(productionId);
+            var pm = await _userRepositories.GetById(production.PmId);
+            var order = await _orderRepo.GetById(production.OrderId);
+
+            return new ProductionDetailViewDTO
+            {
+                Production = production,
+                ProjectManager = pm,
+                Order = order
+            };
+        }
+
+        public async Task<IEnumerable<ProductionDetailViewDTO>> GetPendingProductionPlanViews()
+        {
+            var productions = await GetPendingProductionPlans();
+            var result = new List<ProductionDetailViewDTO>();
+            foreach (var production in productions)
+            {
+                var pm = await _userRepositories.GetById(production.PmId);
+                var order = await _orderRepo.GetById(production.OrderId);
+                result.Add(new ProductionDetailViewDTO
+                {
+                    Production = production,
+                    ProjectManager = pm,
+                    Order = order
+                });
+            }
+            return result;
+        }
+
+        public async Task<IEnumerable<ProductionDetailViewDTO>> GetProductionPlanViews()
+        {
+            var productions = await GetProductionPlanList();
+            var result = new List<ProductionDetailViewDTO>();
+            foreach (var production in productions)
+            {
+                var pm = await _userRepositories.GetById(production.PmId);
+                var order = await _orderRepo.GetById(production.OrderId);
+                result.Add(new ProductionDetailViewDTO
+                {
+                    Production = production,
+                    ProjectManager = pm,
+                    Order = order
+                });
+            }
+            return result;
+        }
     }
 }
