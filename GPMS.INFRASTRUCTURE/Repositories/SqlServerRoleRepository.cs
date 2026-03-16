@@ -52,18 +52,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<IEnumerable<Role>>(userRoles.SelectMany(ur => ur).ToList()); 
         }
 
-        // Get Role By User Id
         public async Task<Role> GetById(object id)
         {
-            if(id is int roleId)
-            {
-                var role = _context.ROLE.FirstOrDefault(r => r.ROLE_ID == roleId);
-                if (role != null)
-                {
-                    return await Task.FromResult(_mapper.Map<Role>(role));
-                }
-            }
-            return null;
+            if (id is not int roleId)
+                return null;
+
+            var role = await _context.ROLE.FirstOrDefaultAsync(r => r.ROLE_ID == roleId);
+            return _mapper.Map<Role>(role);
         }
         
 
