@@ -50,7 +50,7 @@ namespace GMPS.API.Controllers
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
                     _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
-                    var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
+                  //  var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
                     return Ok(new RestDTO<Production>
                     {
                         Data = result,
@@ -323,7 +323,6 @@ namespace GMPS.API.Controllers
         //}
 
         #endregion
-
 
 
     }

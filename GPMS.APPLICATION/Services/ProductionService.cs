@@ -10,17 +10,15 @@ namespace GPMS.APPLICATION.Services
 {
     public class ProductionService : IProductionRepositories
     {
-        private readonly IBaseProductionRepositories _productionRepo;
         private readonly IBaseRepositories<Role> _roleRepositories;
         private readonly IBaseRepositories<User> _userRepositories;
         private readonly IBaseRepositories<Production> _prdRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, IBaseProductionRepositories prdRepo,
+        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, 
             IBaseRepositories<Role> roleRepositories, IBaseRepositories<User> userRepositories, IBaseRepositories<Order> orderRepo)
         {
-            _productionRepo = prdRepo;
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
             _roleRepositories = roleRepositories;
@@ -64,11 +62,6 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-        public async Task<IEnumerable<Production>> GetProductionList()
-        {
-            var data = await _productionRepo.GetProductionList();
-            return data;
-        }
         // OK -1
         public async Task<ProductionDetailViewDTO> GetProductionDetail(int productionId)
         {
@@ -93,7 +86,7 @@ namespace GPMS.APPLICATION.Services
             // Lấy toàn bộ thông tin của production đấy 
             var production = await _prdRepo.GetById(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
-            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
+    //        production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
             return await _prdRepo.Update(production);
         }
 
@@ -136,74 +129,18 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Người dùng không đủ quyền để quản lý production này");
             }
             existing_production.PmId = new_pm_id;
-            return await _productionRepo.UpdateProduction(existing_production);
+            return await _prdRepo.Update(existing_production);
         }
-
-        public async Task<IEnumerable<Production>> GetPendingProductionPlans()
-        {
-            var data = await GetProductionList();
-            data.AsQueryable().Where(p => p.StatusId == ProductionStatus_Constants.Pending_ID);
-            return data;
-        }
-
-        public async Task<IEnumerable<Production>> GetProductionPlanList() => await _productionRepo.GetProductionPlanList();
-
-        public async Task<Production> ConfigProductionPlan(int productionId, IEnumerable<ProductionPart> parts)
-        {
-            _ = await GetProductionDetail(productionId);
-            await _productionRepo.ReplaceProductionParts(productionId, parts);
-            throw new Exception("hmmmm");
-            // return await GetProductionDetail(productionId);
-        }
-
-        public async Task<Production> GetProductionPlanDetail(int productionId) => throw new Exception("hmmmm");
-
-
-        public async Task<Production> DenyProductionPlan(int productionId, int userId, string reason)
-            => throw new Exception("hmmmm");
 
         // New Coding for DTOs
         public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
         {
+            if(productionId <= 0)
+            {
+                throw new ValidationException("Production ID truyền vào phải là một số > 0");
+            }
             var production = await GetProductionDetail(productionId);
             throw new Exception("hmmmm");
-
-        }
-
-        public async Task<IEnumerable<ProductionDetailViewDTO>> GetPendingProductionPlanViews()
-        {
-            var productions = await GetPendingProductionPlans();
-            var result = new List<ProductionDetailViewDTO>();
-            foreach (var production in productions)
-            {
-                var pm = await _userRepositories.GetById(production.PmId);
-                var order = await _orderRepo.GetById(production.OrderId);
-                result.Add(new ProductionDetailViewDTO
-                {
-                    Production = production,
-                    ProjectManager = pm,
-                    Order = order
-                });
-            }
-            return result;
-        }
-
-        public async Task<IEnumerable<ProductionDetailViewDTO>> GetProductionPlanViews()
-        {
-            var productions = await GetProductionPlanList();
-            var result = new List<ProductionDetailViewDTO>();
-            foreach (var production in productions)
-            {
-                var pm = await _userRepositories.GetById(production.PmId);
-                var order = await _orderRepo.GetById(production.OrderId);
-                result.Add(new ProductionDetailViewDTO
-                {
-                    Production = production,
-                    ProjectManager = pm,
-                    Order = order
-                });
-            }
-            return result;
         }
 
         //Ussing --------------------------------
