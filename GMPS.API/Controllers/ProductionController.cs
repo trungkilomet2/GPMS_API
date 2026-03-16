@@ -104,7 +104,6 @@ namespace GMPS.API.Controllers
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize);
 
-
             return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
                 Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
@@ -157,10 +156,9 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPatch("revision-request/{id:int}")]
+        [HttpPatch("production/revision-request/{id:int}")]
         public async Task<ActionResult<Production>> RequestRevision(int production_id)
         {
-
             if (production_id < 0)
             {
                 var exceptionDetails = new ProblemDetails();
@@ -173,7 +171,6 @@ namespace GMPS.API.Controllers
             }
             try
             {
-
                 var data = await _productionService.GetProductionDetail(production_id);
                 if (data is null) NoContent();
                 return Ok(new RestDTO<ProductionDetailDTO>

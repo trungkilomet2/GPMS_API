@@ -6,6 +6,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Data;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
@@ -61,9 +62,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return await GetById(production_database.PRODUCTION_ID) ?? throw new Exception("Xảy ra lỗi khi tạo đơn hàng");
         }
 
-        public Task<Production> Update(Production entity)
+        public async Task<Production> Update(Production entity)
         {
-            throw new NotImplementedException();
+            PRODUCTION production_databse = _context.PRODUCTION.FirstOrDefault(p=> p.PRODUCTION_ID == entity.Id);
+            
+            if(production_databse is null ) throw new DBConcurrencyException($"Production with id '{entity.Id}' not found.");
+
+            production_databse.PM_ID = entity.PmId;
+            production_databse.ORDER_ID = entity.OrderId;
+            production_databse.P_START_DATE = entity.StartDate;
+            production_databse.P_END_DATE = entity.EndDate;
+            production_databse.PS_ID = entity.StatusId;
+            await _context.SaveChangesAsync();
+            return await GetById(entity.Id) ?? throw new Exception("Failed to update production.");
         }
 
         public Task Delete(object id)
