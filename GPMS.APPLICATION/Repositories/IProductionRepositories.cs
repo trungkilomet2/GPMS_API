@@ -15,8 +15,12 @@ namespace GPMS.APPLICATION.Repositories
         // Change DTO -1
         Task<ProductionDetailViewDTO> GetProductionDetail(int productionId);
         Task<Production> RequestProductionRevision(int productionId);
-        Task<Production> DenyProduction(int productionId, int userId, string reason);
-        Task<Production> UpdateProduction(int productionId, Production production);
+        
+        // Deny đang chờ để xem set trong nghiệp vụ hệ thống
+        //Task<Production> DenyProduction(int productionId, int userId, string reason);
+        
+        Task<Production> UpdatePMProduction(int production_id, int new_pm_id);
+        
         Task<IEnumerable<Production>> GetPendingProductionPlans();
         Task<IEnumerable<Production>> GetProductionPlanList();
         Task<Production> ConfigProductionPlan(int productionId, IEnumerable<ProductionPart> parts);

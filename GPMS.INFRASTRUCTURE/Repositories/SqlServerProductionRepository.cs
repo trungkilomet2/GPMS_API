@@ -47,14 +47,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (pm_id is null)
             {
                 throw new Exception($"User with id '{entity.PmId}' not found.");
-                return null;
             }
 
             var isOrderExist = await _context.ORDER.AnyAsync(o => o.ORDER_ID == entity.OrderId);
             if (!isOrderExist)
             {
                 throw new Exception($"User with id '{entity.OrderId}' not found.");
-                return null;
             }
             var production_database = _mapper.Map<PRODUCTION>(entity);
             _context.PRODUCTION.Add(production_database);
@@ -65,9 +63,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<Production> Update(Production entity)
         {
             PRODUCTION production_databse = _context.PRODUCTION.FirstOrDefault(p=> p.PRODUCTION_ID == entity.Id);
-            
             if(production_databse is null ) throw new DBConcurrencyException($"Production with id '{entity.Id}' not found.");
-
             production_databse.PM_ID = entity.PmId;
             production_databse.ORDER_ID = entity.OrderId;
             production_databse.P_START_DATE = entity.StartDate;

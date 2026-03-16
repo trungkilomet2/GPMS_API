@@ -113,7 +113,7 @@ namespace GMPS.API.Controllers
                 RecordCount = data.Count(),
                 Links = new List<LinkDTO>
                 {
-                   new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
+             //      new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
                 }
             });
         }
@@ -133,7 +133,6 @@ namespace GMPS.API.Controllers
             }
             try
             {
-
                 var data = await _productionService.GetProductionDetail(production_id);
                 if (data is null) NoContent();
                 return Ok(new RestDTO<ProductionDetailDTO>
@@ -141,7 +140,7 @@ namespace GMPS.API.Controllers
                     Data = _mapper.Map<ProductionDetailDTO>(data),
                     Links = new List<LinkDTO>
                         {
-                            new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
+                    //        new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
                         }
                 });
             }
@@ -171,7 +170,7 @@ namespace GMPS.API.Controllers
                 exceptionDetails);
             }
             try
-            {   
+            {
                 var data = await _productionService.RequestProductionRevision(production_id);
                 if (data is null) NoContent();
                 _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate})");
@@ -180,11 +179,11 @@ namespace GMPS.API.Controllers
                     Data = _mapper.Map<ProductionDetailDTO>(data),
                     Links = new List<LinkDTO>
                         {
-                            new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
+                       //     new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
                         }
                 });
             }
-            catch(DBConcurrencyException ex)
+            catch (DBConcurrencyException ex)
             {
                 var exceptionDetails = new ProblemDetails();
                 exceptionDetails.Detail = ex.Message;
@@ -204,25 +203,110 @@ namespace GMPS.API.Controllers
                 StatusCodes.Status400BadRequest,
                 exceptionDetails);
             }
-
         }
 
         [HttpPatch("production/deny/{id:int}")]
         public async Task<ActionResult<Production>> Deny(int id, [FromBody] RejectProductionDTO dto)
-            => Ok(await _productionService.DenyProduction(id, dto.UserId, dto.Reason));
+        {
+            var exceptionDetails = new ProblemDetails();
+            exceptionDetails.Detail = "Đang Xem Sett Tính Lăng Lày";
+            exceptionDetails.Status =
+            StatusCodes.Status400BadRequest;
+            return StatusCode(
+            StatusCodes.Status400BadRequest,
+            exceptionDetails);
+        }
 
-        [HttpPut("production/update/{id:int}")]
-        public async Task<ActionResult<Production>> Update(int id, [FromBody] UpdateProductionDTO dto)
-            => Ok(await _productionService.UpdateProduction(id, new Production
+        [HttpPut("production/update-pm/{production_id:int}/{new_pm_id:int}")]
+        public async Task<ActionResult<Production>> Update(int production_id, int new_pm_id)
+        {
+            if (production_id < 0)
             {
-                PmId = dto.PmId,
-                OrderId = dto.OrderId,
-                //  StatusId = dto.StatusId
-            }));
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = "Production ID Nhập vào phải là một số dương";
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+            if (new_pm_id < 0)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = "PM ID Nhập vào phải là một số dương";
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+            try
+            {
+                var data = await _productionService.UpdatePMProduction(production_id,new_pm_id);
+                if (data is null) NoContent();
+                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate})");
+                return Ok(new RestDTO<ProductionDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionDetailDTO>(data),
+                    Links = new List<LinkDTO>
+                        {
+                      //      new LinkDTO(Url.Action(null,$"production/detail/{production_id}",data,Request.Scheme!),"self","POST")
+                        }
+                });
+            }
+            catch (DBConcurrencyException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
+            catch (ValidationException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+        }
 
+        // HTTP GET: Xem danh sách Production Plan đang chờ được xem xét
+        // Actor : Chủ Xưởng - Admin : Xem danh sách các Production Plan đang ở trạng thái chờ xét duyệt
         [HttpGet("production-plans/pending")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetPendingPlans()
-            => Ok(await _productionService.GetPendingProductionPlans());
+        public async Task<ActionResult<IEnumerable<Production>>> GetPendingPlans(RequestDTO<Production> input)
+        {
+
+            // Lấy danh sách theo input từ csdl
+            var data = await _productionService.GetPendingProductionPlans();
+
+            if (data.Count() == 0)
+            {
+                return NoContent();
+            }
+            //filter data
+            var result = data.Skip(input.PageIndex * input.PageSize)
+                        .Take(input.PageSize);
+
+            return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
+            {
+                Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
+                PageIndex = input.PageIndex,
+                PageSize = input.PageSize,
+                RecordCount = data.Count(),
+                Links = new List<LinkDTO>
+                {
+                    //      new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
+                }
+            });
+
+            throw new Exception("hmmmmmm");   
+        }
 
         [HttpGet("production-plans")]
         public async Task<ActionResult<IEnumerable<Production>>> GetPlanList()

@@ -98,29 +98,41 @@ namespace GPMS.APPLICATION.Services
         }
 
         // Từ chối kế hoạch sản xuất với lý do cụ thể, lưu lại lịch sử từ chối
-        public async Task<Production> DenyProduction(int productionId, int userId, string reason)
-        {
-            if (string.IsNullOrWhiteSpace(reason)) throw new Exception("Deny reason is required.");
 
-            var production = await GetProductionDetail(productionId);
-            production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.Reject);
-            var updated = await _productionRepo.UpdateProduction(production);
-            await _productionRepo.SaveRejectReason(productionId, userId, reason);
-            return updated;
+        ///---------------------------------------------- Đang Xem Sett -------------------------------------------
+        
+        //public async Task<Production> DenyProduction(int productionId, int userId, string reason)
+        //{
+        //    if (string.IsNullOrWhiteSpace(reason)) throw new Exception("Deny reason is required.");
+
+        //    var production = await GetProductionDetail(productionId);
+        //    production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.Reject);
+        //    var updated = await _productionRepo.UpdateProduction(production);
+        //    await _productionRepo.SaveRejectReason(productionId, userId, reason);
+        //    return updated;
+        //}
+
+        ///----------------------------------------------/////////////////////////////-------------------------------------------
+
+
+        public async Task<Production> UpdatePMProduction(int production_id,int new_pm_id)
+        {
+            var existing_production = await _prdRepo.GetById(production_id);
+
+            if(existing_production is not null)
+            {
+                throw new ValidationException("Không tồn tại Production trong hệ thống");
+            }
+            existing_production.PmId = new_pm_id;
+            return await _productionRepo.UpdateProduction(existing_production);
         }
 
-        public async Task<Production> UpdateProduction(int productionId, Production production)
+        public async Task<IEnumerable<Production>> GetPendingProductionPlans()
         {
-            var existing = await GetProductionDetail(productionId);
-            existing.PmId = production.PmId;
-            existing.OrderId = production.OrderId;
-            existing.StartDate = production.StartDate;
-            existing.EndDate = production.EndDate;
-            existing.StatusId = production.StatusId;
-            return await _productionRepo.UpdateProduction(existing);
-        }
-
-        public async Task<IEnumerable<Production>> GetPendingProductionPlans() => await _productionRepo.GetPendingProductionPlans();
+            var data = await GetProductionList();
+            data.AsQueryable().Where(p => p.StatusId == ProductionStatus_Constants.Pending_ID);
+            return data;
+        } 
 
         public async Task<IEnumerable<Production>> GetProductionPlanList() => await _productionRepo.GetProductionPlanList();
 
@@ -128,27 +140,22 @@ namespace GPMS.APPLICATION.Services
         {
             _ = await GetProductionDetail(productionId);
             await _productionRepo.ReplaceProductionParts(productionId, parts);
-            return await GetProductionDetail(productionId);
+            throw new Exception("hmmmm");
+           // return await GetProductionDetail(productionId);
         }
 
-        public async Task<Production> GetProductionPlanDetail(int productionId) => await GetProductionDetail(productionId);
+        public async Task<Production> GetProductionPlanDetail(int productionId) => throw new Exception("hmmmm");
+
 
         public async Task<Production> DenyProductionPlan(int productionId, int userId, string reason)
-            => await DenyProduction(productionId, userId, reason);
+            =>             throw new Exception("hmmmm");
 
         // New Coding for DTOs
         public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
         {
             var production = await GetProductionDetail(productionId);
-            var pm = await _userRepositories.GetById(production.PmId);
-            var order = await _orderRepo.GetById(production.OrderId);
+            throw new Exception("hmmmm");
 
-            return new ProductionDetailViewDTO
-            {
-                Production = production,
-                ProjectManager = pm,
-                Order = order
-            };
         }
 
         public async Task<IEnumerable<ProductionDetailViewDTO>> GetPendingProductionPlanViews()
