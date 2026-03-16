@@ -11,5 +11,7 @@
         public decimal Cpu { get; set; }
         public int StatusId { get; set; }
         public string? StatusName { get; set; }
+        public IEnumerable<int> AssigneeIds { get; set; } = new List<int>();
+    
     }
 }

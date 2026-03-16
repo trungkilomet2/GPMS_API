@@ -50,7 +50,7 @@ namespace GMPS.API.Controllers
                         StatusId = ProductionStatus_Constants.Pending_ID
                     });
                     _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
-                    var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
+                  //  var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
                     return Ok(new RestDTO<Production>
                     {
                         Data = result,
@@ -325,29 +325,5 @@ namespace GMPS.API.Controllers
         #endregion
 
 
-        [HttpGet("production-plans")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetPlanList()
-            => Ok(await _productionService.GetProductionPlanList());
-
-
-        [HttpPost("production-parts/config/{id:int}")]
-        public async Task<ActionResult<Production>> ConfigPlan(int id, [FromBody] List<ProductionPartDTO> dto)
-            => Ok(await _productionService.ConfigProductionPlan(id, dto.Select(x => new ProductionPart
-            {
-                PartName = x.PartName,
-                TeamLeaderId = x.TeamLeaderId,
-                StartDate = x.StartDate,
-                EndDate = x.EndDate,
-                Cpu = x.Cpu,
-                StatusId = x.StatusId
-            })));
-
-        [HttpGet("production-plans/detail/{id:int}")]
-        public async Task<ActionResult<Production>> GetPlanDetail(int id)
-            => Ok(await _productionService.GetProductionPlanDetail(id));
-
-        [HttpPatch("production-plans/deny/{id:int}")]
-        public async Task<ActionResult<Production>> DenyPlan(int id, [FromBody] RejectProductionDTO dto)
-            => Ok(await _productionService.DenyProductionPlan(id, dto.UserId, dto.Reason));
     }
 }

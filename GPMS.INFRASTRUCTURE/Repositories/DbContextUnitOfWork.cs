@@ -31,6 +31,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 catch
                 {
                     await transaction.RollbackAsync(cts);
+                    throw new Exception("Đã có lỗi xảy ra  - RollBack Data Thành Công");
                 }
             }
         }
