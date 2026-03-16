@@ -35,6 +35,37 @@ namespace GMPS.API.Mapper
             CreateMap<User, ProductionDetailPMDTO>();
             CreateMap<Order, ProductionDetailOrderDTO>();
 
+
+
+
+
+
+            //------------------------ Production Part ----------------------------------------------------------//
+
+            CreateMap<GPMS.APPLICATION.DTOs.ProductionPartDetailViewDTO, ProductionPartDetailDTO>()
+             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Part.Id))
+             .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Part.ProductionId))
+             .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.Part.PartName))
+             .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.Part.TeamLeaderId))
+             .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Part.StartDate))
+             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Part.EndDate))
+             .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.Part.Cpu))
+             .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Part.StatusId))
+             .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Part.StatusName))
+             .ForMember(dest => dest.TeamLeader, opt => opt.MapFrom(src => src.TeamLeader))
+             .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.Assignees));
+
+            CreateMap<User, ProductionPartUserDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+
+
+            //----------------------------------------------------------------------------------------------------//
+
+
+
         }
 
     }

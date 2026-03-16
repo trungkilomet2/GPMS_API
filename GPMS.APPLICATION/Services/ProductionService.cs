@@ -140,7 +140,7 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Production ID truyền vào phải là một số > 0");
             }
             var production = await GetProductionDetail(productionId);
-            throw new Exception("hmmmm");
+            return production;
         }
 
         //Ussing --------------------------------
