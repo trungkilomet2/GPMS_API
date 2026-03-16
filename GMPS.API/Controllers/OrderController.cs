@@ -31,7 +31,7 @@ namespace GMPS.API.Controllers
         // api/order/order-list
         [HttpGet("order-list", Name = "Get all order list")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] OrderRequestDTO input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
         {
             try
             {
@@ -115,9 +115,8 @@ namespace GMPS.API.Controllers
                     result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
 
                 var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-                var isDesc2 = string.Equals(input.SortOrder2, "DESC", StringComparison.OrdinalIgnoreCase);
 
-                var sorted = input.SortColumn?.ToLower() switch
+                result = input.SortColumn?.ToLower() switch
                 {
                     "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
@@ -125,17 +124,6 @@ namespace GMPS.API.Controllers
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
                     _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
                 };
-
-                result = !string.IsNullOrEmpty(input.SortColumn2)
-                    ? input.SortColumn2.ToLower() switch
-                    {
-                        "startdate" => isDesc2 ? sorted.ThenByDescending(o => o.StartDate) : sorted.ThenBy(o => o.StartDate),
-                        "enddate"   => isDesc2 ? sorted.ThenByDescending(o => o.EndDate)   : sorted.ThenBy(o => o.EndDate),
-                        "status"    => isDesc2 ? sorted.ThenByDescending(o => o.StatusName) : sorted.ThenBy(o => o.StatusName),
-                        "quantity"  => isDesc2 ? sorted.ThenByDescending(o => o.Quantity)  : sorted.ThenBy(o => o.Quantity),
-                        _           => isDesc2 ? sorted.ThenByDescending(o => o.OrderName) : sorted.ThenBy(o => o.OrderName)
-                    }
-                    : sorted;
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -208,7 +196,7 @@ namespace GMPS.API.Controllers
         // api/order/my-orders
         [HttpGet("my-orders", Name = "Get order list by customer")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] OrderRequestDTO input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
         {
             try
             {
@@ -296,9 +284,8 @@ namespace GMPS.API.Controllers
                     result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
 
                 var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-                var isDesc2 = string.Equals(input.SortOrder2, "DESC", StringComparison.OrdinalIgnoreCase);
 
-                var sorted = input.SortColumn?.ToLower() switch
+                result = input.SortColumn?.ToLower() switch
                 {
                     "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
@@ -306,17 +293,6 @@ namespace GMPS.API.Controllers
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
                     _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
                 };
-
-                result = !string.IsNullOrEmpty(input.SortColumn2)
-                    ? input.SortColumn2.ToLower() switch
-                    {
-                        "startdate" => isDesc2 ? sorted.ThenByDescending(o => o.StartDate) : sorted.ThenBy(o => o.StartDate),
-                        "enddate"   => isDesc2 ? sorted.ThenByDescending(o => o.EndDate)   : sorted.ThenBy(o => o.EndDate),
-                        "status"    => isDesc2 ? sorted.ThenByDescending(o => o.StatusName) : sorted.ThenBy(o => o.StatusName),
-                        "quantity"  => isDesc2 ? sorted.ThenByDescending(o => o.Quantity)  : sorted.ThenBy(o => o.Quantity),
-                        _           => isDesc2 ? sorted.ThenByDescending(o => o.OrderName) : sorted.ThenBy(o => o.OrderName)
-                    }
-                    : sorted;
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
