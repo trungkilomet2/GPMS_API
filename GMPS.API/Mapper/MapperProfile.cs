@@ -23,8 +23,17 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<Order, ListOrderProductionDTO>();
-
-
+                
+            // ProductionDetail
+            CreateMap<ProductionDetailViewDTO, ProductionDetailDTO>()
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
+                .ForMember(dest => dest.Pm, opt => opt.MapFrom(src => src.ProjectManager))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Production.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Production.EndDate))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
+                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
+            CreateMap<User, ProductionDetailPMDTO>();
+            CreateMap<Order, ProductionDetailOrderDTO>();
 
         }
 
