@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
 
-    public class SqlServerProductionPartRepository : IBaseProductionPartRepositories
+    public class SqlServerProductionPartRepository : IBaseRepositories<ProductionPart>
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -26,23 +26,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<IEnumerable<ProductionPart>> GetAll(object? obj)
         {
             IQueryable<P_PART> query = _context.P_PART.Include(x => x.PPS).Include(x => x.USER);
-
             if (obj is int productionId)
             {
                 query = query.Where(x => x.PRODUCTION_ID == productionId);
             }
             var data = await query.ToListAsync();
-            return data.Select(ToDomain);
-        }
-
-        public async Task<IEnumerable<ProductionPart>> GetByProductionId(int productionId)
-        {
-            var data = await _context.P_PART
-                .Include(x => x.PPS)
-                .Include(x => x.USER)
-                .Where(x => x.PRODUCTION_ID == productionId)
-                .ToListAsync();
-
             return data.Select(ToDomain);
         }
 
@@ -61,16 +49,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return data is null ? null : ToDomain(data);
         }
 
-        public async Task<ProductionPart> GetDetailById(int partId)
-        {
-            var data = await _context.P_PART
-                .Include(x => x.PPS)
-                .Include(x => x.USER)
-                .FirstOrDefaultAsync(x => x.PP_ID == partId);
-
-            return data is null ? null : ToDomain(data);
-        }
-
         public async Task<ProductionPart> Create(ProductionPart entity)
         {
             var dbEntity = _mapper.Map<P_PART>(entity);
@@ -79,26 +57,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return await GetById(dbEntity.PP_ID);
         }
 
-        public async Task<IEnumerable<ProductionPart>> CreateMany(int productionId, IEnumerable<ProductionPart> parts)
-        {
-            var dbParts = parts.Select(x =>
-            {
-                var entity = _mapper.Map<P_PART>(x);
-                entity.PRODUCTION_ID = productionId;
-                return entity;
-            }).ToList();
-
-            await _context.P_PART.AddRangeAsync(dbParts);
-            await _context.SaveChangesAsync();
-            return await GetByProductionId(productionId);
-        }
-
         public async Task<ProductionPart> Update(ProductionPart entity)
-        {
-            return await UpdatePart(entity);
-        }
-
-        public async Task<ProductionPart> UpdatePart(ProductionPart entity)
         {
             var dbEntity = await _context.P_PART.FirstOrDefaultAsync(x => x.PP_ID == entity.Id);
             if (dbEntity is null)
@@ -111,11 +70,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             dbEntity.END_DATE = entity.EndDate;
             dbEntity.CPU = entity.Cpu;
             dbEntity.PPS_ID = entity.StatusId;
-
             await _context.SaveChangesAsync();
             return await GetById(entity.Id);
         }
 
+        // ????????
         public async Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds)
         {
             var dbEntity = await _context.P_PART
@@ -139,28 +98,23 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             }
 
             await _context.SaveChangesAsync();
-            return await GetDetailById(partId);
+            return await GetById(partId);
         }
 
         public async Task Delete(object id)
         {
             if (id is int partId)
             {
-                await DeletePart(partId);
-                return;
+                var dbEntity = await _context.P_PART.FirstOrDefaultAsync(x => x.PP_ID == partId);
+                if (dbEntity is null)
+                {
+                    return;
+                }
+                _context.P_PART.Remove(dbEntity);
+                await _context.SaveChangesAsync();
+
             }
             throw new Exception("Id không hợp lệ");
-        }
-
-        public async Task DeletePart(int partId)
-        {
-            var dbEntity = await _context.P_PART.FirstOrDefaultAsync(x => x.PP_ID == partId);
-            if (dbEntity is null)
-            {
-                return;
-            }
-            _context.P_PART.Remove(dbEntity);
-            await _context.SaveChangesAsync();
         }
 
         private ProductionPart ToDomain(P_PART source)

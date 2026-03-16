@@ -8,13 +8,13 @@ namespace GPMS.APPLICATION.Services
 {
     public class ProductionPartService : IProductionPartRepositories
     {
-        private readonly IBaseProductionPartRepositories _partRepo;
+        private readonly IBaseRepositories<ProductionPart> _partRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
-            IBaseProductionPartRepositories partRepo,
+            IBaseRepositories<ProductionPart> partRepo,
             IBaseRepositories<Production> productionRepo,
             IBaseRepositories<User> userRepo,
             IUnitOfWork unitOfWork)
