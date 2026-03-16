@@ -1,4 +1,5 @@
-﻿using GMPS.API.DTOs;
+﻿using AutoMapper;
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
@@ -6,6 +7,7 @@ using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -19,10 +21,12 @@ namespace GMPS.API.Controllers
     public class ProductionController : ControllerBase
     {
         private readonly IProductionRepositories _productionService;
+        private readonly IMapper _mapper;
         private readonly ILogger<Production> _logger;
 
-        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger)
+        public ProductionController(IProductionRepositories productionService, ILogger<Production> logger,IMapper mapper)
         {
+            _mapper = mapper;
             _productionService = productionService;
             _logger = logger;
         }
@@ -86,7 +90,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("production/list")]
       //  [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<IEnumerable<ListOrderProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
+        public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
             var data = await _productionService.GetProductionPlanViews();
@@ -95,13 +99,9 @@ namespace GMPS.API.Controllers
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize).ToList();
 
-
-
-
-
-            return Ok(new RestDTO<IEnumerable<ListOrderProductionDTO>>
+            return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
             {
-                Data = result,
+                Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
                 PageIndex = input.PageIndex,
                 PageSize = input.PageSize,
                 RecordCount = data.Count(),
