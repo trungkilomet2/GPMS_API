@@ -192,27 +192,31 @@ namespace GPMS.APPLICATION.Services
             }
         }
 
+        // Hàm tổng quát dùng để trả về một Production Part Detail
         private async Task<IEnumerable<ProductionPartDetailViewDTO>> BuildViews(IEnumerable<ProductionPart> parts)
         {
             var result = new List<ProductionPartDetailViewDTO>();
 
             foreach (var part in parts)
             {
+                // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
                 var detail = await _partRepo.GetDetailById(part.Id);
+                // Lấy thông tin của Team Leader
                 var leader = await _userRepo.GetById(detail.TeamLeaderId);
-
+                // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
                 var assignees = detail.AssigneeIds.Distinct().ToList();
-
+                // Lấy danh sách người dùng được giao
                 var assigneeUsers = new List<User>();
                 foreach (var assignee in assignees)
-                {
+                {   
+                    // Lấy thống tin của người dùng
                     var user = await _userRepo.GetById(assignee);
                     if (user is not null)
                     {
                         assigneeUsers.Add(user);
                     }
                 }
-
+                // Thêm Người dùng vào kết quả trả về => Trả về một view gồm 3 khóa ngoại: Part, Team Leader, Assignees
                 result.Add(new ProductionPartDetailViewDTO
                 {
                     Part = detail,
