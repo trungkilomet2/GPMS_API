@@ -29,7 +29,7 @@ namespace GMPS.API.Controllers
 
         [HttpPost("production/create")]
     //    [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<RestDTO<ProductionDetailViewDTO>>> CreateProduction([FromBody] CreateProductionDTO dto)
+        public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
             {
@@ -44,9 +44,9 @@ namespace GMPS.API.Controllers
                     });
                     _logger.LogInformation(CustomLogEvents.ProductionController_Get, $"Create successfully ProductionId = ({result.Id})");
                     var production_detail_view = await _productionService.GetProductionDetailView(result.Id);
-                    return Ok(new RestDTO<ProductionDetailViewDTO>
+                    return Ok(new RestDTO<Production>
                     {
-                        Data = production_detail_view,
+                        Data = result,
                         Links = new List<LinkDTO>
                         {
                             new LinkDTO(Url.Action(null,"production/create",result,Request.Scheme!),"self","POST")
@@ -86,15 +86,20 @@ namespace GMPS.API.Controllers
 
         [HttpGet("production/list")]
       //  [Authorize(Roles = "Admin,Owner")]
-        public async Task<ActionResult<IEnumerable<Production>>> GetList([FromQuery] RequestDTO<Production> input)
+        public async Task<ActionResult<IEnumerable<ListOrderProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             // Lấy danh sách theo input từ csdl
-            var data = await _productionService.GetProductionList();
+            var data = await _productionService.GetProductionPlanViews();
+
             //filter data
             var result = data.Skip(input.PageIndex * input.PageSize)
                         .Take(input.PageSize).ToList();
 
-            return Ok(new RestDTO<IEnumerable<Production>>
+
+
+
+
+            return Ok(new RestDTO<IEnumerable<ListOrderProductionDTO>>
             {
                 Data = result,
                 PageIndex = input.PageIndex,
