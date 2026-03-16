@@ -2,9 +2,6 @@
 
 namespace GMPS.API.Controllers
 {   
-
-
-
     public class ProductionPartController : ControllerBase
     {
         //- Lấy tất cả production part của Production đấy
