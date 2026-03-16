@@ -31,13 +31,54 @@ namespace GMPS.API.Controllers
         // api/order/order-list
         [HttpGet("order-list", Name = "Get all order list")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] OrderRequestDTO input)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
-                    "Getting all orders - PageIndex: {PageIndex}, PageSize: {PageSize}",
-                    input.PageIndex, input.PageSize);
+                    "Getting all orders - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, StartDateFrom: {StartDateFrom}, StartDateTo: {StartDateTo}",
+                    input.PageIndex, input.PageSize, input.Status, input.StartDateFrom, input.StartDateTo);
+
+                var validStatuses = new[]
+                {
+                    OrderStatus_Constants.Pending, OrderStatus_Constants.Modification,
+                    OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
+                };
+
+                if (!string.IsNullOrEmpty(input.Status) && !validStatuses.Contains(input.Status))
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "Invalid Status value '{Status}' provided", input.Status);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "StartDateFrom {StartDateFrom} is greater than StartDateTo {StartDateTo}",
+                        input.StartDateFrom, input.StartDateTo);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "startDateFrom", new[] { "StartDateFrom must be less than or equal to StartDateTo." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -63,8 +104,20 @@ namespace GMPS.API.Controllers
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
 
+                if (!string.IsNullOrEmpty(input.Status))
+                    result = result.Where(o => o.StatusName != null &&
+                        o.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+
+                if (input.StartDateFrom.HasValue)
+                    result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
+
+                if (input.StartDateTo.HasValue)
+                    result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
+
                 var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-                result = input.SortColumn?.ToLower() switch
+                var isDesc2 = string.Equals(input.SortOrder2, "DESC", StringComparison.OrdinalIgnoreCase);
+
+                var sorted = input.SortColumn?.ToLower() switch
                 {
                     "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
@@ -72,6 +125,17 @@ namespace GMPS.API.Controllers
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
                     _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
                 };
+
+                result = !string.IsNullOrEmpty(input.SortColumn2)
+                    ? input.SortColumn2.ToLower() switch
+                    {
+                        "startdate" => isDesc2 ? sorted.ThenByDescending(o => o.StartDate) : sorted.ThenBy(o => o.StartDate),
+                        "enddate"   => isDesc2 ? sorted.ThenByDescending(o => o.EndDate)   : sorted.ThenBy(o => o.EndDate),
+                        "status"    => isDesc2 ? sorted.ThenByDescending(o => o.StatusName) : sorted.ThenBy(o => o.StatusName),
+                        "quantity"  => isDesc2 ? sorted.ThenByDescending(o => o.Quantity)  : sorted.ThenBy(o => o.Quantity),
+                        _           => isDesc2 ? sorted.ThenByDescending(o => o.OrderName) : sorted.ThenBy(o => o.OrderName)
+                    }
+                    : sorted;
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -144,7 +208,7 @@ namespace GMPS.API.Controllers
         // api/order/my-orders
         [HttpGet("my-orders", Name = "Get order list by customer")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] OrderRequestDTO input)
         {
             try
             {
@@ -153,8 +217,49 @@ namespace GMPS.API.Controllers
                     return Unauthorized();
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
-                    "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}",
-                    userId, input.PageIndex, input.PageSize);
+                    "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, StartDateFrom: {StartDateFrom}, StartDateTo: {StartDateTo}",
+                    userId, input.PageIndex, input.PageSize, input.Status, input.StartDateFrom, input.StartDateTo);
+
+                var validStatuses = new[]
+                {
+                    OrderStatus_Constants.Pending, OrderStatus_Constants.Modification,
+                    OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
+                };
+
+                if (!string.IsNullOrEmpty(input.Status) && !validStatuses.Contains(input.Status))
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "UserId {UserId} provided invalid Status value '{Status}'", userId, input.Status);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "UserId {UserId}: StartDateFrom {StartDateFrom} is greater than StartDateTo {StartDateTo}",
+                        userId, input.StartDateFrom, input.StartDateTo);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "startDateFrom", new[] { "StartDateFrom must be less than or equal to StartDateTo." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
 
                 if (!ModelState.IsValid)
                 {
@@ -180,8 +285,20 @@ namespace GMPS.API.Controllers
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
 
+                if (!string.IsNullOrEmpty(input.Status))
+                    result = result.Where(o => o.StatusName != null &&
+                        o.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+
+                if (input.StartDateFrom.HasValue)
+                    result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
+
+                if (input.StartDateTo.HasValue)
+                    result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
+
                 var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-                result = input.SortColumn?.ToLower() switch
+                var isDesc2 = string.Equals(input.SortOrder2, "DESC", StringComparison.OrdinalIgnoreCase);
+
+                var sorted = input.SortColumn?.ToLower() switch
                 {
                     "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
@@ -189,6 +306,17 @@ namespace GMPS.API.Controllers
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
                     _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
                 };
+
+                result = !string.IsNullOrEmpty(input.SortColumn2)
+                    ? input.SortColumn2.ToLower() switch
+                    {
+                        "startdate" => isDesc2 ? sorted.ThenByDescending(o => o.StartDate) : sorted.ThenBy(o => o.StartDate),
+                        "enddate"   => isDesc2 ? sorted.ThenByDescending(o => o.EndDate)   : sorted.ThenBy(o => o.EndDate),
+                        "status"    => isDesc2 ? sorted.ThenByDescending(o => o.StatusName) : sorted.ThenBy(o => o.StatusName),
+                        "quantity"  => isDesc2 ? sorted.ThenByDescending(o => o.Quantity)  : sorted.ThenBy(o => o.Quantity),
+                        _           => isDesc2 ? sorted.ThenByDescending(o => o.OrderName) : sorted.ThenBy(o => o.OrderName)
+                    }
+                    : sorted;
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
