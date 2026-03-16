@@ -63,6 +63,16 @@ namespace GMPS.API.Controllers
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
 
+                var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
+                result = input.SortColumn?.ToLower() switch
+                {
+                    "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
+                    "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
+                    "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
+                    "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
+                    _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
+                };
+
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
 
@@ -169,6 +179,16 @@ namespace GMPS.API.Controllers
 
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+                var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
+                result = input.SortColumn?.ToLower() switch
+                {
+                    "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
+                    "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
+                    "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
+                    "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
+                    _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
+                };
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
