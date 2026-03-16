@@ -1,18 +1,19 @@
-﻿using GPMS.INFRASTRUCTURE.DataContext;
+﻿using CloudinaryDotNet;
+using GMPS.API.Mapper;
+using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.Repositories;
+using GPMS.APPLICATION.Services;
+using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.Mappers;
+using GPMS.INFRASTRUCTURE.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using GPMS.APPLICATION.Repositories;
-using GPMS.APPLICATION.Services;
-using GPMS.INFRASTRUCTURE.Repositories;
-using GPMS.DOMAIN.Entities;
-using GPMS.APPLICATION.ContextRepo;
-using CloudinaryDotNet;
-using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,8 +64,10 @@ builder.Services.AddSwaggerGen(
    });
 // Dependency Injection for Services and Repositories
 
-builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
+// builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly, typeof(MapperProfile).Assembly);
 builder.Services.AddDbContext<GPMS_SYSTEMContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("GPMSDB")));
+
 
 
 builder.Services.AddScoped<IBaseAccountRepositories, SqlServerUserRepository>();

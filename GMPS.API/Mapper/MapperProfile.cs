@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Entities;
 
 namespace GMPS.API.Mapper
 {
@@ -13,9 +14,15 @@ namespace GMPS.API.Mapper
             //    .ForMember(dest => dest.Production.Id, opt => opt.MapFrom(src => src.Id))
             //    .ReverseMap();
 
-          
 
-
+            CreateMap<ProductionDetailViewDTO, ListProductionDTO>()
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
+                .ForMember(dest => dest.PmId, opt => opt.MapFrom(src => src.Production.PmId))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Production.StartDate))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Production.EndDate))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
+                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
+            CreateMap<Order, ListOrderProductionDTO>();
 
 
 

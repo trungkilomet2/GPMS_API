@@ -4,7 +4,7 @@ namespace GMPS.API.DTOs
 {
     public class ListProductionDTO
     {
-        public int Id { get; set; }
+        public int ProductionId { get; set; }
         public int PmId { get; set; }
         public ListOrderProductionDTO Order { get; set; } = new() ;
         public DateOnly? StartDate { get; set; }
@@ -15,7 +15,7 @@ namespace GMPS.API.DTOs
     public class ListOrderProductionDTO
     {   
         public int Id { get; set; }
-        public int OrderName { get; set; }
+        public string OrderName { get; set; }
     }
 
 }
