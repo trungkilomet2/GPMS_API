@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GMPS.API.DTOs
 {
-    public class RequestDTO<T> 
+    public class RequestDTO<T>
     {
 
         [DefaultValue(0)]
