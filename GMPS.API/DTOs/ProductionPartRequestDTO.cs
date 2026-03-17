@@ -16,8 +16,7 @@ namespace GMPS.API.DTOs
         [Range(100, double.MaxValue)]
         public decimal Cpu { get; set; }
 
-        [Range(1, 3)]
-        public int StatusId { get; set; }
+        
     }
 
     public class CreateProductionPartListDTO
@@ -29,6 +28,8 @@ namespace GMPS.API.DTOs
 
     public class UpdateProductionPartDTO : CreateProductionPartItemDTO
     {
+        [Range(1, 3)]
+        public int StatusId { get; set; }
     }
 
     public class AssignProductionPartWorkersDTO

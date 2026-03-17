@@ -64,13 +64,15 @@ namespace GPMS.APPLICATION.Services
             {
                 await ValidatePartInput(productionId, part);
             }
-
-            _unitOfWork.ExecuteInTransactionAsync(async () =>
+            List<ProductionPart> check_parts = new List<ProductionPart>();
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 foreach (var part in validatedParts)
-                    _partRepo.Create(part);
+                {
+                    check_parts.Add(await _partRepo.Create(part));
+                }
             });
-            return await BuildViews(validatedParts);
+            return await BuildViews(check_parts);
         }
 
         public async Task<ProductionPartDetailViewDTO> UpdatePart(int partId, ProductionPart part)
@@ -99,7 +101,8 @@ namespace GPMS.APPLICATION.Services
             var updated = await _partRepo.Update(existing);
             return (await BuildViews(new[] { updated })).First();
         }
-
+        
+        // Hiện tại đang chưa sử dụng
         public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds)
         {
             if (partId <= 0)
@@ -211,6 +214,7 @@ namespace GPMS.APPLICATION.Services
             {
                 // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
                 var detail = await _partRepo.GetById(part.Id);
+                int teamLeaderId = detail.TeamLeaderId;
                 // Lấy thông tin của Team Leader
                 var leader = await _userRepo.GetById(detail.TeamLeaderId);
                 // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
