@@ -24,13 +24,6 @@ namespace GMPS.API.DTOs
         [DefaultValue(null)]
         public string? FilterQuery { get; set; } = null;
 
-        [DefaultValue(null)]
-        public string? Status { get; set; } = null;
-
-        public DateOnly? StartDateFrom { get; set; } = null;
-
-        public DateOnly? StartDateTo { get; set; } = null;
-
         //public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         //{
         //    throw new NotImplementedException(validationContext?.ToString());
