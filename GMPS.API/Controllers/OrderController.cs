@@ -153,6 +153,7 @@ namespace GMPS.API.Controllers
                     .Select(o => new OrderListDTO
                     {
                         Id = o.Id,
+                        UserId = o.UserId,
                         OrderName = o.OrderName,
                         Type = o.Type,
                         Size = o.Size,
@@ -325,6 +326,7 @@ namespace GMPS.API.Controllers
                     .Select(o => new OrderListDTO
                     {
                         Id = o.Id,
+                        UserId = o.UserId,
                         OrderName = o.OrderName,
                         Type = o.Type,
                         Size = o.Size,
