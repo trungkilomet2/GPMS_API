@@ -418,6 +418,7 @@ namespace GMPS.API.Controllers
                 var data = new OrderDetailDTO
                 {
                     Id = order.Id,
+                    UserId = order.UserId,
                     OrderName = order.OrderName,
                     Type = order.Type,
                     Size = order.Size,
