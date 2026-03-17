@@ -31,7 +31,7 @@ namespace GMPS.API.Controllers
         // api/order/order-list
         [HttpGet("order-list", Name = "Get all order list")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] OrderRequestDTO input)
         {
             try
             {
@@ -114,7 +114,8 @@ namespace GMPS.API.Controllers
                 if (input.StartDateTo.HasValue)
                     result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
 
-                var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
+                var isDesc = string.IsNullOrEmpty(input.SortColumn)
+                    || string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
 
                 result = input.SortColumn?.ToLower() switch
                 {
@@ -122,7 +123,8 @@ namespace GMPS.API.Controllers
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
                     "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
-                    _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
+                    "name"      => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName),
+                    _           => isDesc ? result.OrderByDescending(o => o.Id)        : result.OrderBy(o => o.Id)
                 };
 
                 var recordCount = result.Count();
@@ -196,7 +198,7 @@ namespace GMPS.API.Controllers
         // api/order/my-orders
         [HttpGet("my-orders", Name = "Get order list by customer")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] RequestDTO<Order> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] OrderRequestDTO input)
         {
             try
             {
@@ -283,7 +285,8 @@ namespace GMPS.API.Controllers
                 if (input.StartDateTo.HasValue)
                     result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
 
-                var isDesc = string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
+                var isDesc = string.IsNullOrEmpty(input.SortColumn)
+                    || string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
 
                 result = input.SortColumn?.ToLower() switch
                 {
@@ -291,7 +294,8 @@ namespace GMPS.API.Controllers
                     "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
                     "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
                     "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
-                    _           => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName)
+                    "name"      => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName),
+                    _           => isDesc ? result.OrderByDescending(o => o.Id)        : result.OrderBy(o => o.Id)
                 };
 
                 var recordCount = result.Count();
