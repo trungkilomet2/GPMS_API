@@ -94,5 +94,20 @@ namespace GPMS.APPLICATION.Services
 
             return await _orderStatusRepo.RequestOrderModification(orderId, updatedOrder, histories);
         }
+
+        public async Task<Order> DenyOrder(int userId,int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            if (updatedOrder == null)
+                throw new Exception("Failed to update order.");
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
+            if(existing.UserId != userId)
+                throw new Exception("You don't have permission to deny this order.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.DenyOrder(orderId, updatedOrder, histories);
+        }
     }
 }
