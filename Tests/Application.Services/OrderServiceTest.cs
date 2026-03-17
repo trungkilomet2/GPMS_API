@@ -358,4 +358,84 @@ public class OrderServiceTest
 
         Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);
     }
+
+    [Fact]
+    public async Task DenyOrder_ReturnsOrder_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Pending);
+        var updated = BuildFakeOrder();
+
+        _orderBaseRepo.Setup(x => x.GetById(1))
+            .ReturnsAsync(existing);
+
+        _orderStatusRepo.Setup(x => x.DenyOrder(
+            1,
+            updated,
+            It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(updated);
+
+        var service = BuildService();
+
+        var result = await service.DenyOrder(1, 1, updated, new());
+
+        Assert.NotNull(result);
+        Assert.Equal(updated.Id, result.Id);
+    }
+
+    [Fact]
+    public async Task DenyOrder_Throws_WhenUpdatedOrderNull()
+    {
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.DenyOrder(1, 1, null, new()));
+
+        Assert.Equal("Failed to update order.", ex.Message);
+    }
+
+    [Fact]
+    public async Task DenyOrder_Throws_WhenOrderNotFound()
+    {
+        _orderBaseRepo.Setup(x => x.GetById(1))
+            .ReturnsAsync((Order)null);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+
+        Assert.Equal("Order with id '1' not exist in system.", ex.Message);
+    }
+
+    [Fact]
+    public async Task DenyOrder_Throws_WhenUserNotOwner()
+    {
+        var existing = BuildFakeOrder(userId: 99); 
+
+        _orderBaseRepo.Setup(x => x.GetById(1))
+            .ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+
+        Assert.Equal("You don't have permission to deny this order.", ex.Message);
+    }
+
+    [Fact]
+    public async Task DenyOrder_Throws_WhenStatusNotPending()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+
+        _orderBaseRepo.Setup(x => x.GetById(1))
+            .ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+
+        Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);
+    }
 }

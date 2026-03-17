@@ -31,6 +31,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post, "Creating order reject for OrderId {OrderId}", input?.OrderId);
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
                     var newOrderReject = new OrderRejectReason
@@ -38,7 +39,7 @@ namespace GMPS.API.Controllers
                         OrderId = input.OrderId,
                         UserId = userId,
                         Reason = input.Reason,
-                        CreatedAt = input.CreatedAt ?? DateTime.UtcNow
+                        CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
                     var result = await _orderRejectRepo.CreateReason(newOrderReject);
                         _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully created order reject for OrderId {OrderId}", input.OrderId);
