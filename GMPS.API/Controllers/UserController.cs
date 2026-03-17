@@ -370,7 +370,7 @@ namespace GMPS.API.Controllers
                 {
                     var uploadResult = await _cloudinaryService.UploadImageAsync(
                         user.AvartarUrl,
-                        CloudinaryConstrants.Cloudinary_Order_Image_Folder
+                        CloudinaryConstrants.Cloudinary_Profile_Image_Folder
                     );
 
                     imageUrl = uploadResult.Url;
@@ -516,7 +516,7 @@ namespace GMPS.API.Controllers
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
                     {
-                        var uploadResult = await _cloudinaryService.UploadImageAsync(user.AvartarUrl, CloudinaryConstrants.Cloudinary_Order_Image_Folder);
+                        var uploadResult = await _cloudinaryService.UploadImageAsync(user.AvartarUrl, CloudinaryConstrants.Cloudinary_Profile_Image_Folder);
                         imageUrl = uploadResult.Url;
                     }
                     var result = new User
