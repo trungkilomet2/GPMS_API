@@ -6,6 +6,7 @@ using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.INFRASTRUCTURE.Mappers;
 using GPMS.INFRASTRUCTURE.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

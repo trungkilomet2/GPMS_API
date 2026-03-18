@@ -8,7 +8,7 @@ using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 
-namespace GPMS.APPLICATION.Services
+namespace GPMS.INFRASTRUCTURE.EmailAPI
 {
     public class EmailService : IEmailRepositories
     {

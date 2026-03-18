@@ -43,7 +43,7 @@ namespace GMPS.API.Controllers
 
                 var result = await _workerRepo.GetAllEmployees();
 
-                if (!string.IsNullOrEmpty(input.FilterQuery))
+                if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
                 {
                     result = result.Where(u =>
                         (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||

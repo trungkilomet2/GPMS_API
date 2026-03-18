@@ -4,6 +4,7 @@ using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -595,10 +596,16 @@ namespace GMPS.API.Controllers
                         {
                             var subject = $"Đơn hàng mới đã được tạo với Id là - {result.Id}";
                             var body = $@"
-                    <h3>Chi tiết</h3>
-                    <p>Mã đơn hàng: {result.Id}</p>
-                    <p>Tên đơn hàng: {result.OrderName}</p>
-                    <p>Chi tiết xin hãy đăng nhập vào hệ thống</p>";
+                                          <h3>Chi tiết</h3>
+                                           <p>Mã đơn hàng: {result.Id}</p>
+                                           <p>Tên đơn hàng: {result.OrderName}</p>
+                                           <p>Kiểu: {result.Type}</p>
+                                           <p>Kích thước: {result.Size}</p>
+                                           <p>Màu sắc: {result.Color}</p>
+                                           <p>Số lượng: {result.Quantity}</p>
+                                           <p>Giá từng sản phẩm: {result.Cpu}</p>
+                                           <p>Ghi chú: {result.Note}</p>
+                                           <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
 
                             await _emailRepo.SendEmailAsync(anowner.Email, subject, body);
                         }
