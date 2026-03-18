@@ -40,6 +40,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var data = await _context.ORDER
                 .Include(o => o.OS)
+                .Include(o => o.USER)
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
                 .Include(o => o.O_HISTORY_UPDATE)
@@ -205,6 +206,28 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         public async Task<Order> DenyOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            var existing = await _context.ORDER
+                .Include(o => o.O_HISTORY_UPDATE)
+                .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
+            if (existing == null)
+                throw new KeyNotFoundException($"Order '{orderId}' not exist");
+            existing.OS_ID = updatedOrder.Status;
+            foreach (var history in histories)
+            {
+                await _context.O_HISTORY_UPDATE.AddAsync(new O_HISTORY_UPDATE
+                {
+                    ORDER_ID = orderId,
+                    FIELD_NAME = history.FieldName,
+                    OLD_VALUE = history.OldValue,
+                    NEW_VALUE = history.NewValue
+                });
+            }
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(existing);
+        }
+
+        public async Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
         {
             var existing = await _context.ORDER
                 .Include(o => o.O_HISTORY_UPDATE)
