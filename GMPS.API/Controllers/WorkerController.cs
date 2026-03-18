@@ -43,7 +43,6 @@ namespace GMPS.API.Controllers
 
                 var result = await _workerRepo.GetAllEmployees();
 
-                // 👉 filter (optional)
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                 {
                     result = result.Where(u =>
@@ -56,7 +55,6 @@ namespace GMPS.API.Controllers
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
 
-                // 👉 check page invalid
                 if (recordCount > 0 && input.PageIndex >= totalPages)
                 {
                     return NotFound(new
@@ -66,7 +64,6 @@ namespace GMPS.API.Controllers
                     });
                 }
 
-                // 👉 pagination chuẩn
                 var data = result
                     .Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize)
