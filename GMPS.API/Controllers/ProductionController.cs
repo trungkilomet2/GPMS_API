@@ -35,7 +35,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("production/create")]
-        //    [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
