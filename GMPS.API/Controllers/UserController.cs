@@ -503,7 +503,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
+        [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser([FromForm] UpdatedUserDTO? user)
         {
