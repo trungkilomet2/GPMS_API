@@ -172,33 +172,7 @@ builder.Services.AddAuthentication(
         };
     }); ;
 
-builder.Services.AddAuthorization(options =>
-{
-    // User management
-    options.AddPolicy("ManageUsers",         p => p.RequireRole("Admin"));
-    options.AddPolicy("ViewUsers",           p => p.RequireRole("Admin", "Owner"));
-
-    // Worker management
-    options.AddPolicy("ManageWorkers",       p => p.RequireRole("Owner"));
-    options.AddPolicy("ManageWorkerRoles",   p => p.RequireRole("Admin", "Owner", "PM"));
-
-    // Order management
-    options.AddPolicy("ManageOrders",        p => p.RequireRole("Owner"));
-    options.AddPolicy("ViewOrders",          p => p.RequireRole("Customer", "Owner"));
-    options.AddPolicy("CustomerOrders",      p => p.RequireRole("Customer"));
-    options.AddPolicy("ManageOrderReject",   p => p.RequireRole("Owner"));
-
-    // Comments
-    options.AddPolicy("ManageComments",      p => p.RequireRole("Customer", "Owner"));
-
-    // Leave request management
-    options.AddPolicy("ManageLeaveRequests", p => p.RequireRole("Owner", "PM"));
-    options.AddPolicy("ViewLeaveRequests",   p => p.RequireRole("Owner", "PM", "Team_Leader", "Worker"));
-    options.AddPolicy("CreateLeaveRequest",  p => p.RequireRole("Admin", "Owner", "PM", "Team_Leader", "KCS", "Worker"));
-
-    // All authenticated roles
-    options.AddPolicy("AllRoles",            p => p.RequireRole("Admin", "Owner", "PM", "Team_Leader", "Worker", "KCS", "Customer"));
-});
+builder.Services.AddAuthorization();
 
 
 var app = builder.Build();
