@@ -419,6 +419,9 @@ namespace GMPS.API.Controllers
                 {
                     Id = order.Id,
                     UserId = order.UserId,
+                    UserFullName = order.UserFullName,
+                    UserPhone = order.UserPhone,
+                    UserLocation = order.UserLocation,
                     OrderName = order.OrderName,
                     Type = order.Type,
                     Size = order.Size,
@@ -1054,6 +1057,117 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpPost("{orderId}/approve")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> ApproveOrder(int orderId)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Requesting approve for OrderId {OrderId}", orderId);
+                if (orderId <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+                var existingOrder = await _orderRepo.GetOrderDetail(orderId);
+                if (existingOrder is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order with id '{orderId}' not found" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+                if (existingOrder.StatusName == OrderStatus_Constants.Approved ||
+                    existingOrder.StatusName == OrderStatus_Constants.Rejected)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} has already been processed with status '{Status}'", orderId, existingOrder.StatusName);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status409Conflict,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "This order request has already been processed." } }
+                    };
+                    return StatusCode(StatusCodes.Status409Conflict, errorDetails);
+                }
+                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} cannot be approved - current status is '{Status}'", orderId, existingOrder.StatusName);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status403Forbidden,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "Only Chờ Xét Duyệt order can be approved" } }
+                    };
+                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+                }
+                var histories = new List<OHistoryUpdate>
+                {
+                    new OHistoryUpdate
+                    {
+                        OrderId = orderId,
+                        FieldName = "Status",
+                        OldValue = existingOrder.StatusName,
+                        NewValue = OrderStatus_Constants.Approved
+                    }
+                };
+                var updatedOrder = new Order
+                {
+                    Id = orderId,
+                    Status = OrderStatus_Constants.Approved_ID
+                };
+                await _orderRepo.ApproveOrder(orderId, updatedOrder, histories);
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Order {OrderId} approved successfully", orderId);
+
+                return Ok($"Order '{orderId}' has been approved successfully");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Post, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,
+                    "Error occurred while approving OrderId {OrderId}", orderId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                });
             }
         }
     }
