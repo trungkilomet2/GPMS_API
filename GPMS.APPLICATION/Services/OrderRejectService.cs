@@ -45,5 +45,26 @@ namespace GPMS.APPLICATION.Services
             });
             return entity;
         }
+
+        public async Task<OrderRejectReason> CreateReasonModification(OrderRejectReason entity)
+        {
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var existingOrder = await _orderRepo.GetById(entity.OrderId);
+                if (existingOrder == null)
+                {
+                    throw new Exception($"Order with ID {entity.OrderId} does not exist.");
+                }
+                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
+                {
+                    throw new Exception($"Order with ID {entity.OrderId} is not in a pending state and cannot be rejected.");
+                }
+                await _baseOrderRepo.ChangeStatus(entity.OrderId, 2);
+                await _unitOfWork.SaveChangesAsync();
+                await _orderRejectRepo.Create(entity);
+                await _unitOfWork.SaveChangesAsync();
+            });
+            return entity;
+        }
     }
 }

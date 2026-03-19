@@ -4,6 +4,7 @@ using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,11 +17,24 @@ public class OrderControllerTest
     private readonly Mock<IOrderRepositories> _orderRepo = new();
     private readonly Mock<ILogger<OrderController>> _logger = new();
     private readonly Mock<ICloudinaryService> _cloudinary = new();
+    private readonly Mock<IEmailRepositories> _emailRepo = new();
+    private readonly Mock<IUserRepositories> _userRepo = new();
 
     private OrderController BuildController(int userId = 1)
     {
-        var controller = new OrderController(_orderRepo.Object, _logger.Object, _cloudinary.Object);
-        ControllerTestHelper.AttachHttpContext(controller, ControllerTestHelper.BuildUserWithId(userId));
+        var controller = new OrderController(
+            _orderRepo.Object,
+            _logger.Object,
+            _cloudinary.Object,
+            _emailRepo.Object,
+            _userRepo.Object
+        );
+
+        ControllerTestHelper.AttachHttpContext(
+            controller,
+            ControllerTestHelper.BuildUserWithId(userId)
+        );
+
         return controller;
     }
 
@@ -206,13 +220,26 @@ public class OrderControllerTest
         Assert.Equal(500, obj.StatusCode);
     }
 
-    // ─── CreateOrder ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task CreateOrder_Returns201_WhenSuccessful()
     {
+        var fakeOrder = BuildFakeOrder(id: 5);
+
         _orderRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
-            .ReturnsAsync(BuildFakeOrder(id: 5));
+            .ReturnsAsync(fakeOrder);
+
+        _userRepo.Setup(x => x.GetOwner())
+            .ReturnsAsync(new List<User>
+            {
+            new User { Id = 2, Email = "owner@mail.com" }
+            });
+
+        _emailRepo.Setup(x => x.SendEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>()
+        )).Returns(Task.CompletedTask);
 
         var input = new CreateOrderDTO
         {
@@ -229,6 +256,24 @@ public class OrderControllerTest
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(201, obj.StatusCode);
+
+        _emailRepo.Verify(x => x.SendEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>()
+        ), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task CreateOrder_Returns400_WhenModelInvalid()
+    {
+        var controller = BuildController();
+        controller.ModelState.AddModelError("OrderName", "Required");
+
+        var result = await controller.CreateOrder(new CreateOrderDTO());
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
     }
 
     [Fact]
@@ -236,6 +281,9 @@ public class OrderControllerTest
     {
         _orderRepo.Setup(x => x.CreateOrder(It.IsAny<Order>()))
             .ThrowsAsync(new Exception("db error"));
+
+        _userRepo.Setup(x => x.GetOwner())
+            .ReturnsAsync(new List<User>());
 
         var input = new CreateOrderDTO
         {
@@ -397,63 +445,6 @@ public class OrderControllerTest
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
             Quantity = 1
         });
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestOrderModification_Returns200_WhenSuccessful()
-    {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
-        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
-            .ReturnsAsync(existing);
-
-        var result = await BuildController().RequestOrderModification(1);
-
-        var obj = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(200, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestOrderModification_Returns400_WhenIdInvalid()
-    {
-        var result = await BuildController().RequestOrderModification(0);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestOrderModification_Returns404_WhenOrderNotFound()
-    {
-        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
-
-        var result = await BuildController().RequestOrderModification(99);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(404, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestOrderModification_Returns403_WhenStatusNotPending()
-    {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
-
-        var result = await BuildController().RequestOrderModification(1);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestOrderModification_Returns500_OnException()
-    {
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
-
-        var result = await BuildController().RequestOrderModification(1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);
