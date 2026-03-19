@@ -11,5 +11,6 @@ namespace GPMS.APPLICATION.ContextRepo
     {
         Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
         Task<Order> DenyOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
+        Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
     }
 }

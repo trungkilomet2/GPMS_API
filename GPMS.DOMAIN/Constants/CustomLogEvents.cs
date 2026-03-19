@@ -66,5 +66,8 @@ namespace GPMS.DOMAIN.Constants
         public const int WorkerRoleController_Post = 50820;
         public const int WorkerRoleController_Put = 50830;
         public const int WorkerRoleController_Delete = 50840;
+
+        // PERMISSION CONTROLLER
+        public const int PermissionController_Get = 50910;
     }
 }

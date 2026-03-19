@@ -53,7 +53,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetAllOrders())
             .ReturnsAsync(new List<Order> { BuildFakeOrder(1), BuildFakeOrder(2) });
 
-        var result = await BuildController().GetOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
@@ -65,7 +65,7 @@ public class OrderControllerTest
     {
         _orderRepo.Setup(x => x.GetAllOrders()).ThrowsAsync(new Exception("db error"));
 
-        var result = await BuildController().GetOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
@@ -77,7 +77,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetAllOrders())
             .ReturnsAsync(new List<Order> { BuildFakeOrder() });
 
-        var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
+        var input = new OrderRequestDTO { PageIndex = 99, PageSize = 10 };
         var result = await BuildController().GetOrders(input);
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
@@ -92,7 +92,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetOrdersByUserId(1))
             .ReturnsAsync(new List<Order> { BuildFakeOrder() });
 
-        var result = await BuildController(userId: 1).GetMyOrders(new RequestDTO<Order>());
+        var result = await BuildController(userId: 1).GetMyOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
@@ -105,7 +105,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetOrdersByUserId(It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
-        var result = await BuildController().GetMyOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetMyOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
@@ -533,6 +533,93 @@ public class OrderControllerTest
             .ThrowsAsync(new Exception("db error"));
 
         var result = await BuildController().DenyOrder(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── ApproveOrder ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ApproveOrder_Returns200_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.ApproveOrder(
+            It.IsAny<int>(),
+            It.IsAny<Order>(),
+            It.IsAny<List<OHistoryUpdate>>()
+        )).ReturnsAsync(BuildFakeOrder(statusName: OrderStatus_Constants.Approved));
+
+        var result = await BuildController().ApproveOrder(1);
+
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns400_WhenOrderIdInvalid()
+    {
+        var result = await BuildController().ApproveOrder(0);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns404_WhenOrderNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().ApproveOrder(99);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns409_WhenOrderAlreadyApproved()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+
+        var result = await BuildController().ApproveOrder(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(409, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns409_WhenOrderAlreadyRejected()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Rejected);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+
+        var result = await BuildController().ApproveOrder(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(409, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns403_WhenStatusNotPending()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+
+        var result = await BuildController().ApproveOrder(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Returns500_OnException()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().ApproveOrder(1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);

@@ -15,5 +15,6 @@ namespace GPMS.APPLICATION.Repositories
         Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
 
         Task<Order> DenyOrder(int userId,int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
+        Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
     }
 }
