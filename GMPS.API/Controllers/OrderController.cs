@@ -682,6 +682,42 @@ namespace GMPS.API.Controllers
 
                 if (ModelState.IsValid)
                 {
+                    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    var existingOrder = await _orderRepo.GetOrderDetail(orderId);
+
+                    if (existingOrder is null)
+                    {
+                        _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                            "Order {OrderId} not found when adding material", orderId);
+                        var notFoundDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status404NotFound,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                        };
+                        notFoundDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "id", new[] { $"Order with id '{orderId}' not found" } }
+                        };
+                        return StatusCode(StatusCodes.Status404NotFound, notFoundDetails);
+                    }
+
+                    if (existingOrder.UserId != userId)
+                    {
+                        _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                            "User {UserId} attempted to add material to order {OrderId} owned by {OwnerId}",
+                            userId, orderId, existingOrder.UserId);
+                        var forbidDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status403Forbidden,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                        };
+                        forbidDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "authorization", new[] { "You do not have permission to add material to this order" } }
+                        };
+                        return StatusCode(StatusCodes.Status403Forbidden, forbidDetails);
+                    }
+
                     var material = new OMaterial
                     {
                         Name = input.MaterialName,
