@@ -514,6 +514,23 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
+                if (!order.Histories.Any())
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "No history records found for OrderId {OrderId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"No history found for order '{id}'" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,
                     "Returned {Count} history records for OrderId {OrderId}",
                     order.Histories.Count(), id);
