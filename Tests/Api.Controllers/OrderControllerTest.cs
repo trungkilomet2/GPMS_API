@@ -53,7 +53,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetAllOrders())
             .ReturnsAsync(new List<Order> { BuildFakeOrder(1), BuildFakeOrder(2) });
 
-        var result = await BuildController().GetOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
@@ -65,7 +65,7 @@ public class OrderControllerTest
     {
         _orderRepo.Setup(x => x.GetAllOrders()).ThrowsAsync(new Exception("db error"));
 
-        var result = await BuildController().GetOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
@@ -77,7 +77,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetAllOrders())
             .ReturnsAsync(new List<Order> { BuildFakeOrder() });
 
-        var input = new RequestDTO<Order> { PageIndex = 99, PageSize = 10 };
+        var input = new OrderRequestDTO { PageIndex = 99, PageSize = 10 };
         var result = await BuildController().GetOrders(input);
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
@@ -92,7 +92,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetOrdersByUserId(1))
             .ReturnsAsync(new List<Order> { BuildFakeOrder() });
 
-        var result = await BuildController(userId: 1).GetMyOrders(new RequestDTO<Order>());
+        var result = await BuildController(userId: 1).GetMyOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
@@ -105,7 +105,7 @@ public class OrderControllerTest
         _orderRepo.Setup(x => x.GetOrdersByUserId(It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
-        var result = await BuildController().GetMyOrders(new RequestDTO<Order>());
+        var result = await BuildController().GetMyOrders(new OrderRequestDTO());
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
