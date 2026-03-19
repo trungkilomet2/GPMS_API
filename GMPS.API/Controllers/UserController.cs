@@ -7,10 +7,13 @@ using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Enums;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
@@ -23,18 +26,22 @@ namespace GMPS.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRepositories _userRepo;
-
+        private readonly IEmailRepositories _emailRepo;
         private readonly IConfiguration _configuration;
         private readonly ICloudinaryService _cloudinaryService;
-
+        private readonly IMemoryCache _memoryCache;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(IUserRepositories userInterface, IConfiguration configuration, ILogger<UserController> logger, ICloudinaryService cloudinaryService)
+        public UserController(IUserRepositories userInterface, 
+            IConfiguration configuration, ILogger<UserController> logger, 
+            ICloudinaryService cloudinaryService, IMemoryCache memoryCache, IEmailRepositories emailRepo)
         {
             _userRepo = userInterface ?? throw new ArgumentNullException(nameof(userInterface));
             _configuration = configuration;
             _logger = logger;
             _cloudinaryService = cloudinaryService;
+            _memoryCache = memoryCache;
+            _emailRepo = emailRepo ?? throw new ArgumentNullException(nameof(emailRepo));
         }
 
         [HttpGet]
@@ -502,6 +509,12 @@ namespace GMPS.API.Controllers
             }
         }
 
+        private string GenerateOtp()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
+        }
+
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
@@ -513,6 +526,22 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.UserController_Put, "Updating profile for UserId {UserId}", userId);
                 if (ModelState.IsValid)
                 {
+
+                    if (!string.IsNullOrEmpty(user.Email))
+                    {
+                        var otp = GenerateOtp();
+                        _memoryCache.Set(userId + "_email_otp", otp, TimeSpan.FromMinutes(5));
+                        await _emailRepo.SendEmailAsync(
+                            user.Email,
+                            "Xác nhận email",
+                            $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực trong 5 phút."
+                        );
+
+                        return Ok(new
+                        {
+                            message = "OTP đã được gửi về email, vui lòng kiểm tra"
+                        });
+                    }
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
                     {
