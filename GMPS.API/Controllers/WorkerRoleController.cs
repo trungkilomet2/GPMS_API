@@ -30,52 +30,75 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Getting all worker roles");
+                    "Getting all worker roles - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    input.PageIndex, input.PageSize);
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return BadRequest(errorDetails);
+                }
 
                 var result = await _workerroleRepo.GetAllWorkerRoles();
 
-                if (!result.Any())
+                if (!string.IsNullOrEmpty(input.FilterQuery))
                 {
-                    _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                        "No worker roles found");
-
-                    return StatusCode(StatusCodes.Status404NotFound, "No worker roles found");
+                    result = result.Where(x =>
+                        x.Name != null &&
+                        x.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
                 }
 
-                _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Returned {Count} worker roles", result.Count());
+                var recordCount = result.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
 
-                var response = new RestDTO<IEnumerable<WorkerRole>>
+                if (recordCount > 0 && input.PageIndex >= totalPages)
                 {
-                    Data = result,
+                    return NotFound(new
+                    {
+                        message = $"Page {input.PageIndex} not exist",
+                        totalPages
+                    });
+                }
+
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .ToList();
+
+                _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
+                    "Returned {Count} worker roles", data.Count);
+
+                return Ok(new RestDTO<IEnumerable<WorkerRole>>
+                {
+                    Data = data,
                     PageIndex = input.PageIndex,
                     PageSize = input.PageSize,
-                    RecordCount = result.Count(),
+                    RecordCount = recordCount,
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(
-                    Url.Action(null, "WorkerRole", null, Request.Scheme)!,
+                    Url.Action(null, "WorkerRole",
+                        new { input.PageIndex, input.PageSize },
+                        Request.Scheme)!,
                     "self",
                     "GET"
                 )
             }
-                };
-
-                return Ok(response);
+                });
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
                     "Error while getting worker roles");
 
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = 500
+                });
             }
         }
 

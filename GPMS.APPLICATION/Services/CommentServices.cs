@@ -23,13 +23,13 @@ namespace GPMS.APPLICATION.Services
             _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
-        public Task<Comment> CreateComment(int userId, Comment entity)
+        public async Task<Comment> CreateComment(int userId, Comment entity)
         {
-            var exist = _userRepo.GetById(entity.fromUserId);
+            var exist = await _userRepo.GetById(entity.fromUserId);
             if (exist == null) {
                 throw new Exception("User not found");
             }
-             var orderExist = _orderRepo.GetById(entity.toOrderId);
+             var orderExist = await _orderRepo.GetById(entity.toOrderId);
             if (orderExist == null)
             {
                 throw new Exception("Order not found");
@@ -40,7 +40,7 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("Content cannot be empty");
             if (entity.fromUserId !=userId)
                 throw new Exception("You can only create comment for yourself");
-            var data = _commentRepo.Create(entity);
+            var data = await _commentRepo.Create(entity);
             return data;
         }
 
@@ -56,17 +56,22 @@ namespace GPMS.APPLICATION.Services
             if (comment.fromUserId != userId)
                 throw new Exception("You can only delete your own comment");
 
-            if (comment == null)
-                throw new Exception($"Comment with id {CommentId} does not exist");
-
             if (string.IsNullOrWhiteSpace(comment.Content))
                 throw new Exception("Cannot delete empty comment");
 
             await _commentRepo.Delete(CommentId);
         }
 
+        public async Task<Comment> GetCommentById(int CommentId)
+        {
+            if (CommentId <= 0)
+                throw new ArgumentException("Invalid order id");
 
-        public async Task<IEnumerable<Comment>> GetCommentById(int orderId)
+            var data = await _commentRepo.GetById(CommentId);
+            return data;
+        }
+
+        public async Task<IEnumerable<Comment>> GetCommentByOrderId(int orderId)
         {
             if (orderId <= 0)
                 throw new ArgumentException("Invalid order id");

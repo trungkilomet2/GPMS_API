@@ -6,6 +6,7 @@ using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.INFRASTRUCTURE.Mappers;
 using GPMS.INFRASTRUCTURE.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -77,7 +78,7 @@ builder.Services.AddScoped<IBaseRepositories<User>, SqlServerUserRepository>();
 builder.Services.AddScoped<IUserRepositories, UserService>();
 builder.Services.AddScoped<IAccountRepositories, AccountService>();
 builder.Services.AddScoped<IBaseUserRoleRepo, SqlServerUserRoleRepository>();
-
+builder.Services.AddScoped<IEmailRepositories, EmailService>();
 builder.Services.AddScoped<IWorkerRepositories, WorkerService>();
 builder.Services.AddScoped<IBaseWorkerRepository, SqlServerWorkerRepository>();
 

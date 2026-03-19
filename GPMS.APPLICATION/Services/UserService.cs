@@ -18,17 +18,20 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<Role> _roleRepo;
         private readonly IBaseUserRoleRepo _userRoleRepo;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IBaseAccountRepositories _accRepo;
 
         public UserService(
             IBaseRepositories<User> userBaseRepo,
             IBaseRepositories<Role> roleRepo,
             IBaseUserRoleRepo userRoleRepo,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IBaseAccountRepositories accRepo)
         {
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
             _roleRepo = roleRepo ?? throw new ArgumentNullException(nameof(roleRepo));
             _userRoleRepo = userRoleRepo ?? throw new ArgumentNullException(nameof(userRoleRepo));
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _accRepo = accRepo;
         }
 
         public async Task<User> CreateNewUser(User user, List<int> roleIds)
@@ -128,6 +131,16 @@ namespace GPMS.APPLICATION.Services
             }
             user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
+            return data;
+        }
+
+        public Task<IEnumerable<User>> GetOwner()
+        {
+            var data = _accRepo.GetOwner();
+            if (data == null)
+            {
+                throw new KeyNotFoundException("Owner not found");
+            }
             return data;
         }
     }

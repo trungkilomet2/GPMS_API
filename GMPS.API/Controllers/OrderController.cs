@@ -1,8 +1,10 @@
 ﻿using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -20,12 +22,16 @@ namespace GMPS.API.Controllers
         private readonly IOrderRepositories _orderRepo;
         private readonly ILogger<OrderController> _logger;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IEmailRepositories _emailRepo;
+        private readonly IUserRepositories _userRepo;
 
-        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger, ICloudinaryService cloudinaryService)
+        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger, ICloudinaryService cloudinaryService, IEmailRepositories emailRepo, IUserRepositories userRepo)
         {
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
             _logger = logger;
             _cloudinaryService = cloudinaryService;
+            _emailRepo = emailRepo;
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
         // api/order/order-list
@@ -544,7 +550,9 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Creating new order for UserId {UserId}", input?.UserId);
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Creating new order for UserId {UserId}", input?.UserId);
+
                 if (ModelState.IsValid)
                 {
                     var newOrder = new Order
@@ -579,26 +587,56 @@ namespace GMPS.API.Controllers
                             Note = t.Note
                         }).ToList(),
                     };
-                    var result = await _orderRepo.CreateOrder(newOrder);
-                    _logger.LogInformation(CustomLogEvents.OrderController_Post, "Order {OrderId} created successfully for UserId {UserId}", result.Id, input.UserId);
 
-                    return StatusCode(StatusCodes.Status201Created, $"Order '{result.Id}' has been created");
+                    var result = await _orderRepo.CreateOrder(newOrder);
+                    var owner = await _userRepo.GetOwner();
+                    foreach (var anowner in owner.ToList())
+                    {
+                        if (owner != null)
+                        {
+                            var subject = $"Đơn hàng mới đã được tạo với Id là - {result.Id}";
+                            var body = $@"
+                                          <h3>Chi tiết</h3>
+                                           <p>Mã đơn hàng: {result.Id}</p>
+                                           <p>Tên đơn hàng: {result.OrderName}</p>
+                                           <p>Kiểu: {result.Type}</p>
+                                           <p>Kích thước: {result.Size}</p>
+                                           <p>Màu sắc: {result.Color}</p>
+                                           <p>Số lượng: {result.Quantity}</p>
+                                           <p>Giá từng sản phẩm: {result.Cpu}</p>
+                                           <p>Ghi chú: {result.Note}</p>
+                                           <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
+
+                            await _emailRepo.SendEmailAsync(anowner.Email, subject, body);
+                        }
+                    }                   
+
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} created successfully for UserId {UserId}",
+                        result.Id, input.UserId);
+
+                    return StatusCode(StatusCodes.Status201Created,
+                        $"Order '{result.Id}' has been created");
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state while creating order for UserId {UserId}", input?.UserId);
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Invalid model state while creating order for UserId {UserId}",
+                        input?.UserId);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
                     };
+
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.OrderController_Post, ex, "Error occurred while creating order for UserId {UserId}", input?.UserId);
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,
+                    "Error occurred while creating order for UserId {UserId}", input?.UserId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -606,7 +644,9 @@ namespace GMPS.API.Controllers
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    exceptionDetails.Detail);
             }
         }
 
