@@ -196,6 +196,19 @@ public class OrderControllerTest
     }
 
     [Fact]
+    public async Task GetOrderHistory_Returns404_WhenHistoryEmpty()
+    {
+        var order = BuildFakeOrder();
+        order.Histories = new List<OHistoryUpdate>();
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+
+        var result = await BuildController().GetOrderHistory(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
     public async Task GetOrderHistory_Returns500_OnException()
     {
         _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
