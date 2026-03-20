@@ -20,14 +20,15 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetPermissions()
+        public async Task<IActionResult> GetPermissions()
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Getting all permissions");
 
-                var roleMap = _permissionRepo.GetRoleMap();
-                var result = _permissionRepo.GetAll().Select(p => new
+                var roleMap = await _permissionRepo.GetRoleMap();
+                var permissions = await _permissionRepo.GetAll();
+                var result = permissions.Select(p => new
                 {
                     controller = p.Controller,
                     action = p.Action,

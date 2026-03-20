@@ -9,7 +9,7 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface IPermissionRepositories
     {
-        IEnumerable<PermissionEntry> GetAll();
-        Dictionary<string, string> GetRoleMap();
+        Task<IEnumerable<PermissionEntry>> GetAll();
+        Task<Dictionary<string, string>> GetRoleMap();
     }
 }

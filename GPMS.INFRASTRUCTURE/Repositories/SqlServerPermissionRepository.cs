@@ -17,16 +17,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public IEnumerable<PermissionEntry> GetAll()
+        public Task<IEnumerable<PermissionEntry>> GetAll()
         {
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, string> GetRoleMap()
+        public async Task<Dictionary<string, string>> GetRoleMap()
         {
-            return _context.ROLE
+            var roles = await _context.ROLE
                 .AsNoTracking()
-                .ToDictionary(r => r.ROLE_ID.ToString(), r => r.NAME);
+                .ToListAsync();
+            return roles.ToDictionary(r => r.ROLE_ID.ToString(), r => r.NAME);
         }
     }
 }

@@ -78,8 +78,8 @@ namespace GPMS.APPLICATION.Services
             new("LeaveRequest", "DenyLeaveRequest",         "2,3"),
         };
 
-        public IEnumerable<PermissionEntry> GetAll() => _permissions;
+        public Task<IEnumerable<PermissionEntry>> GetAll() => Task.FromResult<IEnumerable<PermissionEntry>>(_permissions);
 
-        public Dictionary<string, string> GetRoleMap() => _roleMap;
+        public Task<Dictionary<string, string>> GetRoleMap() => Task.FromResult(_roleMap);
     }
 }
