@@ -1057,7 +1057,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("deny-order/{orderId}")]
+        [HttpPut("deny-order/{orderId}")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult> DenyOrder(int orderId)
         {
@@ -1163,7 +1163,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("{orderId}/approve")]
+        [HttpPut("{orderId}/approve")]
         [Authorize(Roles = "Owner")]
         public async Task<ActionResult> ApproveOrder(int orderId)
         {
