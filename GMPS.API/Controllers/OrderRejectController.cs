@@ -79,56 +79,6 @@ namespace GMPS.API.Controllers
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
             }
-        }
-
-        [HttpPost("order-deny")]
-        [Authorize(Roles = "Owner")]
-        public async Task<ActionResult> CreateOrderModification([FromBody] CreateOrderRejectDTO? input)
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            try
-            {
-                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Creating order deny for OrderId {OrderId}", input?.OrderId);
-                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                if (ModelState.IsValid)
-                {
-                    var newOrderReject = new OrderRejectReason
-                    {
-                        OrderId = input.OrderId,
-                        UserId = userId,
-                        Reason = input.Reason,
-                        CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
-                    };
-                    var result = await _orderRejectRepo.CreateReason(newOrderReject);
-                    var order = await _orderRepo.GetOrderDetail(input.OrderId);
-                    var user = await _userRepo.GetUserById(order.UserId);
-                    await _emailRepo.SendEmailAsync(user.Email, "Thông báo yêu cầu chỉnh sửa đơn hàng",
-                        $"Đơn hàng với Id: '{input.OrderId}' đã bị yêu cầu chỉnh sửa bởi lý do như sau: {input.Reason}");
-                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully created order reject for OrderId {OrderId}", input.OrderId);
-                    return StatusCode(StatusCodes.Status201Created, $"Order deny with OrderId '{result.OrderId}' has been created");
-                }
-                else
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state for creating order reject for OrderId {OrderId}", input?.OrderId);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(CustomLogEvents.Error_Post, ex, "Error occurred while creating order reject for OrderId {OrderId}", input?.OrderId);
-                var exceptionDetails = new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
-            }
-        }
+        }        
     }
 }

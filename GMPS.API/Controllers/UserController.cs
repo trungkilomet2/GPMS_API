@@ -440,7 +440,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("view-profile")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
-        [Authorize(Roles = "Admin,Customer,Owner,PM,Team_Leader,Worker,KCS")]
+        [Authorize(Roles = "Admin,Customer,Owner,PM,Team Leader,Worker,KCS")]
         public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -516,7 +516,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Team_Leader,KCS,Worker,PM,Customer")]
+        [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser([FromForm] UpdatedUserDTO? user)
         {
