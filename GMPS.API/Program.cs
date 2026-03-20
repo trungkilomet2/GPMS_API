@@ -108,7 +108,7 @@ builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 //onworking
-//builder.Services.AddScoped<IPermissionRepositories, PermissionService>();
+builder.Services.AddScoped<IPermissionRepositories, PermissionService>();
 
 builder.Services.AddScoped<IBaseRepositories<Production>, SqlServerProductionRepository>();
 
