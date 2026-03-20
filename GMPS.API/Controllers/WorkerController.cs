@@ -57,11 +57,7 @@ namespace GMPS.API.Controllers
 
                 if (recordCount > 0 && input.PageIndex >= totalPages)
                 {
-                    return NotFound(new
-                    {
-                        message = $"Page {input.PageIndex} not exist",
-                        totalPages
-                    });
+                    return StatusCode(StatusCodes.Status404NotFound, "Page {input.PageIndex} not exist");
                 }
 
                 var data = result
