@@ -112,11 +112,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 }
                 _context.P_PART.Remove(dbEntity);
                 await _context.SaveChangesAsync();
-
             }
-            throw new Exception("Id không hợp lệ");
         }
-
         private ProductionPart ToDomain(P_PART source)
         {
             var part = _mapper.Map<ProductionPart>(source);
