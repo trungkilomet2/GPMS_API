@@ -213,7 +213,8 @@ namespace GPMS.APPLICATION.Services
         {
             var result = new List<ProductionPartDetailViewDTO>();
 
-            foreach (var part in parts)
+            foreach (
+                var part in parts)
             {
                 // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
                 var detail = await _partRepo.GetById(part.Id);

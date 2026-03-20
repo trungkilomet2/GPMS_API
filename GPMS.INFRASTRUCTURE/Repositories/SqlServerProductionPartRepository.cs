@@ -5,6 +5,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -81,6 +82,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .Include(x => x.USER)
                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
+            
             if (dbEntity is null)
             {
                 return null;
@@ -128,13 +130,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                  .FirstOrDefaultAsync(x => x.PP_ID == partId);
             if (dbEntity is null)
             {
-                return null;
+                throw new ValidationException("Production Part không tồn tại.");
             }
             var user = dbEntity.USER.FirstOrDefault(x => x.USER_ID == workerId);
+           
             if (user is not null)
             {
                 dbEntity.USER.Remove(user);
                 await _context.SaveChangesAsync();
+            }else
+            {
+                throw new ValidationException("Không tồn tại User trong Production Part");
             }
             return await GetById(partId);
         }
