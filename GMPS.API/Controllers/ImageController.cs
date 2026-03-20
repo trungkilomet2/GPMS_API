@@ -27,17 +27,6 @@ namespace GMPS.API.Controllers
             var result = await _cloudinaryService.UploadImageAsync(image.File,CloudinaryConstrants.Cloudinary_Order_Image_Folder);
             return Ok(result);
         }
-        [HttpPost("supplied-image-upload")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadSuppliedImage([FromForm] UploadInputImage image)
-        {
-            if (image == null || image.File.Length == 0)
-            {
-                return BadRequest("File is empty");
-            }
-            var result = await _cloudinaryService.UploadImageAsync(image.File, CloudinaryConstrants.Cloudinary_Supplied_Image_Folder);
-            return Ok(result);
-        }
 
         [HttpGet("url-images")]
         public async Task<IActionResult> GetUrlImage(string publicId)
