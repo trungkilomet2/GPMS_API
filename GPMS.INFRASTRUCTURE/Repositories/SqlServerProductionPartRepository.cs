@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
 
-    public class SqlServerProductionPartRepository : IBaseRepositories<ProductionPart>
+    public class SqlServerProductionPartRepository : IBaseRepositories<ProductionPart>,IBaseProductionPartAssignRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -119,6 +119,24 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var part = _mapper.Map<ProductionPart>(source);
             part.AssigneeIds = source.USER.Select(x => x.USER_ID).ToList();
             return part;
+        }
+
+        public async Task<ProductionPart> RemoveWorker(int partId, int workerId)
+        {
+            var dbEntity = await _context.P_PART
+                 .Include(x => x.USER)
+                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
+            if (dbEntity is null)
+            {
+                return null;
+            }
+            var user = dbEntity.USER.FirstOrDefault(x => x.USER_ID == workerId);
+            if (user is not null)
+            {
+                dbEntity.USER.Remove(user);
+                await _context.SaveChangesAsync();
+            }
+            return await GetById(partId);
         }
     }
 }

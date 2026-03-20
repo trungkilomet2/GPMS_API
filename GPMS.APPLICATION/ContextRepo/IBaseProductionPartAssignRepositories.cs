@@ -13,12 +13,6 @@ namespace GPMS.APPLICATION.ContextRepo
         Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds);
         // Remove Worker From Task  
         Task<ProductionPart> RemoveWorker(int partId, int workerId);
-        // Create Work Log For Worker
-        Task<ProductionPartWorkLog> CreateWorkLog(ProductionPartWorkLog entity);
-        // 
-        Task<ProductionPartWorkLog> GetWorkLogById(int workLogId);
-        Task<int> MarkWorkLogsReadOnlyAfterDate(DateOnly date);
-        Task<ProductionPartWorkLog> MarkWorkLogAsPaid(int workLogId);
 
     }
 }
