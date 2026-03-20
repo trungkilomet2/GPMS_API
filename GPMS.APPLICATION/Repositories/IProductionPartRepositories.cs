@@ -9,7 +9,11 @@ namespace GPMS.APPLICATION.Repositories
         Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partId);
         Task<IEnumerable<ProductionPartDetailViewDTO>> CreateParts(int productionId, IEnumerable<ProductionPart> parts);
         Task<ProductionPartDetailViewDTO> UpdatePart(int partId, ProductionPart part);
-        Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds);
         Task DeletePart(int partId);
+
+        // P_Part =============> Assignment    
+        Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds);
+        Task<ProductionPartDetailViewDTO> RemoveWorker(int partId, int workerId);
+
     }
 }

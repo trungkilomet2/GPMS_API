@@ -254,6 +254,7 @@ namespace GMPS.API.Controllers
                 });
             }
         }
+
         //GET: Xóa một producion part trong một production (nếu có thể, tùy vào nghiệp vụ hệ thống có cho phép hay không)
         [HttpDelete("parts/delete/{partId:int}")]
         public async Task<ActionResult> DeletePart([Range(1, int.MaxValue)] int partId)
@@ -286,5 +287,48 @@ namespace GMPS.API.Controllers
                 });
             }
         }
+
+
+
+        [HttpDelete("parts/remove-workers/{partId:int}/{workerId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> RemoveWorker(
+            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int workerId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ValidationProblemDetails(ModelState));
+            }
+
+            try
+            {
+                var data = await _productionPartService.RemoveWorker(partId, workerId);
+                return Ok(new RestDTO<ProductionPartDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionPartDetailDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove worker {WorkerId} from part {PartId}", workerId, partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        }
+
+
+
+
     }
 }

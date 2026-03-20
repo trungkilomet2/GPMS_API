@@ -9,6 +9,7 @@ namespace GPMS.APPLICATION.Services
     public class ProductionPartService : IProductionPartRepositories
     {
         private readonly IBaseRepositories<ProductionPart> _partRepo;
+        private readonly IBaseProductionPartAssignRepositories _partAssignRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
         private readonly IUnitOfWork _unitOfWork;
@@ -17,12 +18,14 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<ProductionPart> partRepo,
             IBaseRepositories<Production> productionRepo,
             IBaseRepositories<User> userRepo,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IBaseProductionPartAssignRepositories partAssignRepo)
         {
             _partRepo = partRepo;
             _productionRepo = productionRepo;
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
+            _partAssignRepo = partAssignRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -128,10 +131,10 @@ namespace GPMS.APPLICATION.Services
                     throw new ValidationException($"Worker id '{workerId}' không tồn tại");
                 }
             }
-            var updated = new ProductionPartDetailViewDTO();
-            //var updated = await _partRepo.AssignWorkers(partId, workers);
-            return null;
-            //return (await BuildViews(new[] { updated })).First();
+       //     var updated = new ProductionPartDetailViewDTO();
+            var updated = await _partAssignRepo.AssignWorkers(partId, workers);
+         //   return null;
+            return (await BuildViews(new[] { updated })).First();
         }
 
         public async Task DeletePart(int partId)
@@ -241,5 +244,21 @@ namespace GPMS.APPLICATION.Services
 
             return result;
         }
+
+        public async Task<ProductionPartDetailViewDTO> RemoveWorker(int partId, int workerId)
+        {
+            if (partId <= 0 || workerId <= 0)
+            {
+                throw new ValidationException("Part id và worker id phải > 0");
+            }
+            var updated = await _partAssignRepo.RemoveWorker(partId, workerId);
+            if (updated is null)
+            {
+                throw new ValidationException("Production part không tồn tại trong hệ thống");
+            }
+            return (await BuildViews(new[] { updated })).First();
+        }
+
+       
     }
 }
