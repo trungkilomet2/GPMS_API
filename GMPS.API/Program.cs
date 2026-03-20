@@ -65,7 +65,8 @@ builder.Services.AddSwaggerGen(
               }
          });
    });
-// Dependency Injection for Services and Repositories
+// add cache
+builder.Services.AddMemoryCache();
 
 // builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(SqlServerToEntityProfile).Assembly, typeof(MapperProfile).Assembly);
