@@ -9,7 +9,7 @@ namespace GMPS.API.DTOs
         [StringLength(100, ErrorMessage = "MaterialName cannot exceed 100 characters")]
         public string MaterialName { get; set; }
 
-        [StringLength(255, ErrorMessage = "Image path cannot exceed 255 characters")]
+        [StringLength(2048, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
 
         [Required(ErrorMessage = "Value is required")]
