@@ -672,8 +672,9 @@ namespace GMPS.API.Controllers
 
         // api/order/{orderId}/materials
         [HttpPost("{orderId}/materials", Name = "Add material to order")]
+        [Consumes("multipart/form-data")]
         [Authorize(Roles = "Customer")]
-        public async Task<ActionResult> AddMaterial(int orderId, [FromBody] CreateMaterialDTO? input)
+        public async Task<ActionResult> AddMaterial(int orderId, [FromForm] CreateMaterialDTO? input, IFormFile? imageFile)
         {
             try
             {
@@ -718,10 +719,19 @@ namespace GMPS.API.Controllers
                         return StatusCode(StatusCodes.Status403Forbidden, forbidDetails);
                     }
 
+                    string? imageUrl = null;
+                    if (imageFile != null && imageFile.Length > 0)
+                    {
+                        var uploadResult = await _cloudinaryService.UploadImageAsync(
+                            imageFile,
+                            CloudinaryConstrants.Cloudinary_Supplied_Image_Folder);
+                        imageUrl = uploadResult.Url;
+                    }
+
                     var material = new OMaterial
                     {
                         Name = input.MaterialName,
-                        Image = input.Image,
+                        Image = imageUrl ?? input.Image,
                         Value = input.Value,
                         Uom = input.Uom,
                         Note = input.Note
