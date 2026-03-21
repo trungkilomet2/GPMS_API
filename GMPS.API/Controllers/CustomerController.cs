@@ -103,7 +103,7 @@ namespace GMPS.API.Controllers
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
                         Errors = { { "CustomerId", new[] { $"No orders found for customer '{CustomerId}'." } } }
                     };
-                    return StatusCode(StatusCodes.Status404NotFound,$"No orders found for customer '{CustomerId}'");
+                    return StatusCode(StatusCodes.Status404NotFound,errorDetails.Errors);
                 }
 
                 var data = orders.Select(o => new OrderListDTO
