@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GMPS.API.Controllers
 {
@@ -45,12 +46,6 @@ namespace GMPS.API.Controllers
                     );
                 }
                 var recordCount = data.Count();
-                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
-
-                if (recordCount > 0 && input.PageIndex >= totalPages)
-                {
-                    return StatusCode(StatusCodes.Status404NotFound, "Page {input.PageIndex} not exist");
-                }
                 var customer = data.Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize).Select(c => new CustomerDTO
                 {
@@ -84,6 +79,76 @@ namespace GMPS.API.Controllers
                 };
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
                     "Error while getting customer");
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpGet("get-order-by-customer/{CustomerId}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> GetOrderByCustomer(int CustomerId)
+        {            
+
+            try
+            {
+                _logger.LogInformation("Getting orders for customer {UserId}", CustomerId);
+
+                var orders = await _customerService.GetOrdersByCustomerId(CustomerId);
+
+                if (orders == null || !orders.Any())
+                {
+                    _logger.LogInformation("No orders found for customer {UserId}", CustomerId);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                        Errors = { { "CustomerId", new[] { $"No orders found for customer '{CustomerId}'." } } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound,$"No orders found for customer '{CustomerId}'");
+                }
+
+                var data = orders.Select(o => new OrderListDTO
+                {
+                    Id = o.Id,
+                    OrderName = o.OrderName,
+                    Size = o.Size,
+                    Type = o.Type,
+                    Color = o.Color,
+                    Quantity = o.Quantity,
+                    Cpu = o.Cpu,
+                    StartDate = o.StartDate,
+                    EndDate = o.EndDate,
+                    Image = o.Image,
+                    Status = o.StatusName
+                }).ToList();
+
+                var response = new RestDTO<IEnumerable<OrderListDTO>>
+                {
+                    Data = data,
+                    Links = new List<LinkDTO>
+            {
+                new LinkDTO(
+                    Url.Action(null, "Customer",
+                    null,
+                    Request.Scheme)!,
+                    "self",
+                    "GET"
+                )
+            }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Get, ex,
+                    "Error occurred while getting order", CustomerId);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }

@@ -28,5 +28,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var data = await _context.USER.Include(r => r.ROLE).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Customer)).ToListAsync();
             return _mapper.Map<IEnumerable<User>>(data);
         }
+
+        public async Task<IEnumerable<Order>> GetOrdersByCustomerId(int customerId)
+        {
+            var data = await _context.ORDER.Include(o => o.OS).Where(o => o.USER_ID == customerId).ToListAsync();
+            return _mapper.Map<IEnumerable<Order>>(data);
+        }
     }
 }
