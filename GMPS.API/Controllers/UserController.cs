@@ -510,17 +510,17 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("request-update-email")]
-        public async Task<IActionResult> RequestUpdateEmail([FromBody] string email)
+        public async Task<IActionResult> RequestUpdateEmail([FromBody] VerifyEmail? email)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
             var otp = GenerateOtp();
 
             _memoryCache.Set($"{userId}_email_otp", otp, TimeSpan.FromMinutes(5));
-            _memoryCache.Set($"{userId}_email_new", email, TimeSpan.FromMinutes(5));
+            _memoryCache.Set($"{userId}_email_new", email.Email, TimeSpan.FromMinutes(5));
 
             await _emailRepo.SendEmailAsync(
-                email,
+                email.Email,
                 "Xác nhận email",
                 $"Mã OTP của bạn là: <b>{otp}</b>"
             );
