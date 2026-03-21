@@ -45,7 +45,7 @@ namespace GPMS.APPLICATION.Services
             }
             if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner)).Count() == 0)
             {
-                throw new ValidationException("Chỉ Owner mới được tạo Production");
+                throw new ValidationException("Chỉ Owner và PM mới được quản lý Production");
             }
             // Kiêm tra đơn hàng trong hệ thống
             Order check_order_system = await _orderRepo.GetById(production.OrderId);
@@ -124,7 +124,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Người dùng không tồn tại trong hệ thống");
             }
-            if(!check_user_system.Roles.Where(r => r.Name != Roles_Constants.PM).Any() == false)
+            if (!check_user_system.Roles.Any(r => r.Name == Roles_Constants.PM || r.Name == Roles_Constants.Owner))
             {
                 throw new ValidationException("Người dùng không đủ quyền để quản lý production này");
             }

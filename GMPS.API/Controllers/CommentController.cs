@@ -41,7 +41,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
                     "Getting comments for OrderId {OrderId}", orderId);
 
-                var result = await _commentRepo.GetCommentById(orderId);
+                var result = await _commentRepo.GetCommentByOrderId(orderId);
                 if (!result.Any())
                     {
                     _logger.LogInformation(CustomLogEvents.CommentController_Get,
@@ -153,7 +153,7 @@ namespace GMPS.API.Controllers
                 if (ModelState.IsValid)
                 {
                     var commentExists = await _commentRepo.GetCommentById(CommentId);
-                    if(!commentExists.Any())
+                    if(commentExists == null)
                     {
                         _logger.LogWarning(CustomLogEvents.CommentController_Put,
                             "Comment {CommentId} not found for update", CommentId);
@@ -161,12 +161,12 @@ namespace GMPS.API.Controllers
                     }
                     _logger.LogInformation(CustomLogEvents.CommentController_Put,
                         "Updating comment {CommentId}", CommentId);
-
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
                     {
                         Id = CommentId,
                         Content = comment.Content,
-                        SendDateTime = DateTime.UtcNow
+                        SendDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
 
                     var updated = await _commentRepo.UpdateComment(newComment, userId);
@@ -213,7 +213,7 @@ namespace GMPS.API.Controllers
             try
             {
                 var commentExists = await _commentRepo.GetCommentById(CommentId);
-                if (!commentExists.Any())
+                if (commentExists == null)
                 {
                     _logger.LogWarning(CustomLogEvents.CommentController_Put,
                         "Comment {CommentId} not found for update", CommentId);

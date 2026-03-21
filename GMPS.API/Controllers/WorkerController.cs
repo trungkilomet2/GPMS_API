@@ -24,67 +24,93 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-employees")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetEmployees()
+        public async Task<IActionResult> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Getting all employees");
+                    "Getting all employees - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    input.PageIndex, input.PageSize);
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return BadRequest(errorDetails);
+                }
 
                 var result = await _workerRepo.GetAllEmployees();
 
-                if (!result.Any())
+                if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
                 {
-                    _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                        "No employees found");
-
-                    return StatusCode(StatusCodes.Status404NotFound, "No employees found");
+                    result = result.Where(u =>
+                        (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserName != null && u.UserName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
+                    );
                 }
 
-                var employees = result.Select(u => new EmployeeDTO
+                var recordCount = result.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
+
+                if (recordCount > 0 && input.PageIndex >= totalPages)
                 {
-                    Id = u.Id,
-                    UserName = u.UserName,
-                    FullName = u.FullName,
-                    PhoneNumber = u.PhoneNumber,
-                    Email = u.Email,
-                    Role = string.Join(", ", u.Roles.Select(r => r.Name)),
-                    WorkerRole = string.Join(", ", u.WorkerRoles.Select(w => w.Name)),
-                    Status = u.Status?.Name ?? "Unknown"
-                });
+                    return NotFound(new
+                    {
+                        message = $"Page {input.PageIndex} not exist",
+                        totalPages
+                    });
+                }
+
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(u => new EmployeeDTO
+                    {
+                        Id = u.Id,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Email = u.Email,
+                        Role = string.Join(", ", u.Roles.Select(r => r.Name)),
+                        WorkerRole = string.Join(", ", u.WorkerRoles.Select(w => w.Name)),
+                        Status = u.Status?.Name ?? "Unknown"
+                    })
+                    .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned {Count} employees", result.Count());
+                    "Returned {Count} employees", data.Count);
 
-                var response = new RestDTO<IEnumerable<EmployeeDTO>>
+                return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
                 {
-                    Data = employees,
-                    RecordCount = result.Count(),
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(
-                    Url.Action(null, "Worker", null, Request.Scheme)!,
+                    Url.Action(null, "Worker",
+                        new { input.PageIndex, input.PageSize },
+                        Request.Scheme)!,
                     "self",
                     "GET"
                 )
             }
-                };
-
-                return Ok(response);
+                });
             }
             catch (Exception ex)
             {
-                var exceptionDetails = new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
                     "Error while getting employees");
 
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = 500
+                });
             }
         }
 

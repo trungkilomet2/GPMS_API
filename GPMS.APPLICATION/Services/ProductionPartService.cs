@@ -105,7 +105,7 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { updated })).First();
         }
 
-        // Hiện tại đang chưa sử dụng
+  
         public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds)
         {
             if (partId <= 0)

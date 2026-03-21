@@ -13,6 +13,5 @@ namespace GMPS.API.DTOs
         [StringLength(500, MinimumLength = 5, ErrorMessage = "Reason must be between 5 and 500 characters")]
         public string? Reason { get; set; }
 
-        public DateTime? CreatedAt { get; set; }
     }
 }

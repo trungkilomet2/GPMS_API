@@ -658,6 +658,23 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "Denying LeaveRequestId {LeaveRequestId}", id);
 
+                if (input is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                        "Request body is null while denying LeaveRequestId {LeaveRequestId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "body", new[] { "Request body is required." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
                 if (id <= 0)
                 {
                     _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,

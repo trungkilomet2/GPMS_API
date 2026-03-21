@@ -73,6 +73,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<User>(data);
         }
 
+        public async Task<IEnumerable<User>> GetOwner()
+        {
+            var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
+                              .Include(u => u.WR).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).ToListAsync();
+            return _mapper.Map<IEnumerable<User>>(data);
+        }
+
         public async Task<User> Login(string UserName, string password)
         {
             var data = await _context.USER.Where(u => u.USERNAME.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();

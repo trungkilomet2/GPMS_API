@@ -9,7 +9,8 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface ICommentRepositories
     {
-        Task<IEnumerable<Comment>> GetCommentById(int orderId);  
+        Task<IEnumerable<Comment>> GetCommentByOrderId(int orderId);  
+        Task<Comment> GetCommentById(int CommentId);
         Task<Comment> CreateComment(int userId,Comment entity);
         Task<Comment> UpdateComment(Comment entity, int userId);
         Task DeleteComment(int id, int userId);

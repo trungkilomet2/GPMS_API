@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -139,7 +140,7 @@ namespace GMPS.API.Controllers
                     StartDate = x.StartDate,
                     EndDate = x.EndDate,
                     Cpu = x.Cpu,
-                    StatusId = x.StatusId
+                    StatusId = ProductionPart_Constrants.ToDo_ID
                 });
 
                 var data = await _productionPartService.CreateParts(productionId, parts);

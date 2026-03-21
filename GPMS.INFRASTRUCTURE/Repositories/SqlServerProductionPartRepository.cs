@@ -39,7 +39,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             if (id is not int partId)
             {
-                throw new Exception("Id không hợp lệ");
+                throw new ValidationException("Id đầu vào không hợp lệ");
             }
 
             var data = await _context.P_PART
@@ -52,10 +52,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<ProductionPart> Create(ProductionPart entity)
         {
-            var dbEntity = _mapper.Map<P_PART>(entity);
-            _context.P_PART.Add(dbEntity);
-            await _context.SaveChangesAsync();
-            return await GetById(dbEntity.PP_ID);
+            try
+            {
+
+                var dbEntity = _mapper.Map<P_PART>(entity);
+                await _context.P_PART.AddAsync(dbEntity);
+                await _context.SaveChangesAsync();
+                return await GetById(dbEntity.PP_ID);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Đã có lỗi xảy ra trong hệ thống: {ex.Message}");
+            }
         }
 
         public async Task<ProductionPart> Update(ProductionPart entity)
@@ -63,7 +71,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var dbEntity = await _context.P_PART.FirstOrDefaultAsync(x => x.PP_ID == entity.Id);
             if (dbEntity is null)
             {
-                return null;
+                throw new ValidationException("Không tồn tại Production Part trong hệ thống");
             }
             dbEntity.PART_NAME = entity.PartName;
             dbEntity.TEAM_LEADER_ID = entity.TeamLeaderId;
@@ -111,7 +119,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 var dbEntity = await _context.P_PART.FirstOrDefaultAsync(x => x.PP_ID == partId);
                 if (dbEntity is null)
                 {
-                    return;
+                   throw new ValidationException("Không tồn tại Production Part trong hệ thống");
                 }
                 _context.P_PART.Remove(dbEntity);
                 await _context.SaveChangesAsync();
