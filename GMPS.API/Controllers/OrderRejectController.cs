@@ -53,7 +53,7 @@ namespace GMPS.API.Controllers
                     var order = await _orderRepo.GetOrderDetail(input.OrderId);
                     var user = await _userRepo.GetUserById(order.UserId);
                     await _emailRepo.SendEmailAsync(user.Email, "Thông báo từ chối đơn hàng", 
-                        $"Đơn hàng với Id: '{input.OrderId}' đã bị từ chối bởi lý do như sau: {input.Reason}");
+                        $"Đơn hàng với Id: '{input.OrderId}' đã bị từ chối bởi lý do như sau: {input.Reason}", EmailType.OrderNotification);
                     _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully created order reject for OrderId {OrderId}", input.OrderId);
                     return StatusCode(StatusCodes.Status201Created, $"Order reject with OrderId '{result.OrderId}' has been created");
                 }

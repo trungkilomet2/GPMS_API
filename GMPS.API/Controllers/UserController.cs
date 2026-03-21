@@ -509,29 +509,43 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("request-update-email")]
-        public async Task<IActionResult> RequestUpdateEmail([FromBody] VerifyEmail? email)
+        [HttpPost("sent-otp-email")]
+        public async Task<IActionResult> SendOTPEmail([FromBody] VerifyEmailDTO email)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (string.IsNullOrEmpty(email?.Email))
+                return BadRequest("Email không hợp lệ");
 
-            var otp = GenerateOtp();
-
-            _memoryCache.Set($"{userId}_email_otp", otp, TimeSpan.FromMinutes(5));
-            _memoryCache.Set($"{userId}_email_new", email.Email, TimeSpan.FromMinutes(5));
-
-            await _emailRepo.SendEmailAsync(
-                email.Email,
-                "Xác nhận email",
-                $"Mã OTP của bạn là: <b>{otp}</b>"
-            );
-
+            await _emailRepo.SendEmailAsync(email.Email,null,null,EmailType.Verification);
+            _logger.LogInformation(CustomLogEvents.UserController_Post, "OTP email sent to {Email}", email.Email);
             return StatusCode(StatusCodes.Status200OK,"OTP đã được gửi");
         }
 
-        private string GenerateOtp()
+        [HttpPost("verify-email")]
+        public IActionResult VerifyEmail([FromBody] VerifyOtpDTO model)
         {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
+            var cachedOtp = _memoryCache.Get<string>($"{model.Email}_otp");
+
+            if (cachedOtp == null)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
+                var errorDetails = new ValidationProblemDetails(ModelState);
+                errorDetails.Status = StatusCodes.Status400BadRequest;
+                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                return BadRequest(errorDetails.Errors);
+            }
+
+            if (model.Otp != cachedOtp)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
+                var errorDetails = new ValidationProblemDetails(ModelState);
+                errorDetails.Status = StatusCodes.Status400BadRequest;
+                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                return BadRequest(errorDetails.Errors);
+            }
+            _memoryCache.Set($"{model.Email}_verified", true, TimeSpan.FromMinutes(10));
+            _memoryCache.Remove($"{model.Email}_otp");
+
+            return StatusCode(StatusCodes.Status200OK,"Xác thực email thành công");
         }
 
         [HttpPut("update-profile")]
@@ -548,27 +562,18 @@ namespace GMPS.API.Controllers
 
                     if (!string.IsNullOrEmpty(user.Email))
                     {
-                        var cachedOtp = _memoryCache.Get<string>($"{userId}_email_otp");
-                        var cachedEmail = _memoryCache.Get<string>($"{userId}_email_new");
+                        var isVerified = _memoryCache.Get<bool?>($"{user.Email}_verified");
 
-                        if (cachedOtp == null || cachedEmail == null)
+                        if(isVerified != true)
                         {
-                            _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
+                            _logger.LogWarning(CustomLogEvents.UserController_Put, "Email not verified for UserId {UserId}", userId);
                             var errorDetails = new ValidationProblemDetails(ModelState);
                             errorDetails.Status = StatusCodes.Status400BadRequest;
                             errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                            return BadRequest(errorDetails.Errors);
+                            errorDetails.Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.";
+                            return StatusCode(StatusCodes.Status400BadRequest,errorDetails.Detail);
                         }
-
-                        if (user.Otp != cachedOtp)
-                        {
-                            _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
-                            var errorDetails = new ValidationProblemDetails(ModelState);
-                            errorDetails.Status = StatusCodes.Status400BadRequest;
-                            errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                            return BadRequest(errorDetails.Errors);
-                        }
-                        
+                        _memoryCache.Remove($"{user.Email}_verified");
                     }
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
@@ -586,8 +591,7 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
-                    _memoryCache.Remove($"{userId}_email_otp");
-                    _memoryCache.Remove($"{userId}_email_new");
+                    _memoryCache.Remove($"{user.Email}_email_otp");
                     _logger.LogInformation(CustomLogEvents.UserController_Put, "Profile updated successfully for UserId {UserId}", userId);
 
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
