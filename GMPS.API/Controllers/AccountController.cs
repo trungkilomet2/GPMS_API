@@ -3,8 +3,10 @@ using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,13 +23,15 @@ namespace GMPS.API.Controllers
         private readonly IAccountRepositories _accountRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AccountController> _logger;
-        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger)
+        private readonly IEmailRepositories _emailRepo;
+        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger,
+            IEmailRepositories emailRepo)
         {
             _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
             _configuration = configuration;
             _logger = logger;
+            _emailRepo = emailRepo;
         }
-
         //Information
         // Warning
         // Error
@@ -119,6 +123,12 @@ namespace GMPS.API.Controllers
                     newUser.UserName = input.UserName;
                     newUser.FullName = input.FullName;
                     newUser.PasswordHash = input.Password;
+                    newUser.Email = input.Email;
+
+                   await _emailRepo.SendEmailAsync(input.Email, null, null, EmailType.Verification);
+
+
+
 
                     var result = await _accountRepo.Register(newUser);
 

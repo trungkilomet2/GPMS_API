@@ -22,6 +22,10 @@ namespace GMPS.API.DTOs
         public string Password { get; set; }
         [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
         public string RePassword { get; set; }
+        
+        [Required]        
+        [EmailAddress]
+        public string? Email { get; set; }
 
     }
 }

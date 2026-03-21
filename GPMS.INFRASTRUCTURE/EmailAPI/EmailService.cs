@@ -43,19 +43,15 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                 case EmailType.Verification:
                     var otp = GenerateOtp();
                     _memoryCache.Set(toEmail + "_otp", otp, TimeSpan.FromMinutes(5));
-
                     subject = "Xác nhận email";
                     body = $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực 5 phút.";
                     break;
-
                 case EmailType.PasswordReset:
                     subject = "Password Reset Request";
                     break;
-
                 case EmailType.OrderNotification:
                     subject = "Order Notification";
                     break;
-
                 default:
                     subject = "General Notification";
                     break;
@@ -73,5 +69,6 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
 
             await smtpClient.SendMailAsync(mail);
         }
+
     }
 }
