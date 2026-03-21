@@ -119,8 +119,9 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 
 
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
-
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
+
+builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
