@@ -1080,7 +1080,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
                     "Deny request for OrderId {OrderId} submitted successfully", orderId);
 
-                return Ok($"Modification request for order '{orderId}' submitted successfully");
+                return Ok($"Deny request for order '{orderId}' submitted successfully");
             }
             catch (KeyNotFoundException ex)
             {
