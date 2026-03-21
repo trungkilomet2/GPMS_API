@@ -78,6 +78,9 @@ columnOptions.TimeStamp.ColumnName = "TIMPESTAMP";
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Console()
     .WriteTo.MSSqlServer(
         connectionString: builder.Configuration.GetConnectionString("GPMSDB"),
@@ -90,7 +93,6 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
 // add cache
 builder.Services.AddMemoryCache();
 
