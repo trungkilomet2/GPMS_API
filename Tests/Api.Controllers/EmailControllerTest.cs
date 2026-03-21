@@ -1,5 +1,6 @@
 ﻿using GMPS.API.Controllers;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.Repositories;
 using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,10 +19,11 @@ namespace GPMS.TEST.Api.Controllers
         private readonly Mock<IEmailRepositories> _emailRepo = new();
         private readonly Mock<IMemoryCache> _cache = new();
         private readonly Mock<ILogger<EmailController>> _logger = new();
+        private readonly Mock<IUserRepositories> _userRepo = new();
 
         private EmailController BuildController()
         {
-            return new EmailController(_cache.Object, _emailRepo.Object, _logger.Object);
+            return new EmailController(_cache.Object, _emailRepo.Object, _logger.Object, _userRepo.Object);
         }
 
 
