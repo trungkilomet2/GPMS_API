@@ -320,12 +320,14 @@ public class OrderControllerTest
     [Fact]
     public async Task AddMaterial_Returns201_WhenSuccessful()
     {
+        _orderRepo.Setup(x => x.GetOrderDetail(1))
+            .ReturnsAsync(BuildFakeOrder(1, userId: 1));
         _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
             .ReturnsAsync(new OMaterial { Id = 10, Name = "Cotton", OrderId = 1 });
 
         var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
 
-        var result = await BuildController().AddMaterial(1, input);
+        var result = await BuildController().AddMaterial(1, input, null);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(201, obj.StatusCode);
@@ -334,12 +336,14 @@ public class OrderControllerTest
     [Fact]
     public async Task AddMaterial_Returns400_WhenOrderApproved()
     {
+        _orderRepo.Setup(x => x.GetOrderDetail(1))
+            .ReturnsAsync(BuildFakeOrder(1, userId: 1));
         _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
             .ThrowsAsync(new InvalidOperationException("Cannot add material to an approved order."));
 
         var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
 
-        var result = await BuildController().AddMaterial(1, input);
+        var result = await BuildController().AddMaterial(1, input, null);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(400, obj.StatusCode);
@@ -348,12 +352,14 @@ public class OrderControllerTest
     [Fact]
     public async Task AddMaterial_Returns500_OnException()
     {
+        _orderRepo.Setup(x => x.GetOrderDetail(1))
+            .ReturnsAsync(BuildFakeOrder(1, userId: 1));
         _orderRepo.Setup(x => x.AddMaterial(1, It.IsAny<OMaterial>()))
             .ThrowsAsync(new Exception("db error"));
 
         var input = new CreateMaterialDTO { MaterialName = "Cotton", Value = 5, Uom = "m" };
 
-        var result = await BuildController().AddMaterial(1, input);
+        var result = await BuildController().AddMaterial(1, input, null);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);
