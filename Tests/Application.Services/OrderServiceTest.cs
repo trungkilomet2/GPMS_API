@@ -438,4 +438,102 @@ public class OrderServiceTest
 
         Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);
     }
+
+    // ─── ApproveOrder ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ApproveOrder_Success()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        var approved = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _orderStatusRepo.Setup(x => x.ApproveOrder(
+            It.IsAny<int>(),
+            It.IsAny<Order>(),
+            It.IsAny<List<OHistoryUpdate>>()
+        )).ReturnsAsync(approved);
+
+        var service = BuildService();
+        var result = await service.ApproveOrder(1, BuildFakeOrder(), new());
+
+        Assert.NotNull(result);
+        Assert.Equal(OrderStatus_Constants.Approved, result.StatusName);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Throws_WhenOrderNotFound()
+    {
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync((Order)null);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.ApproveOrder(1, BuildFakeOrder(), new()));
+
+        Assert.Equal("Order with id '1' not exist in system.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Throws_WhenOrderAlreadyApproved()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApproveOrder(1, BuildFakeOrder(), new()));
+
+        Assert.Equal("This order request has already been processed.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Throws_WhenOrderAlreadyRejected()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Rejected);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApproveOrder(1, BuildFakeOrder(), new()));
+
+        Assert.Equal("This order request has already been processed.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_Throws_WhenStatusNotPending()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApproveOrder(1, BuildFakeOrder(), new()));
+
+        Assert.Equal("Only approve order with status Chờ Xét Duyệt.", ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveOrder_CallsStatusRepo_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _orderStatusRepo.Setup(x => x.ApproveOrder(
+            It.IsAny<int>(),
+            It.IsAny<Order>(),
+            It.IsAny<List<OHistoryUpdate>>()
+        )).ReturnsAsync(existing);
+
+        var service = BuildService();
+        await service.ApproveOrder(1, BuildFakeOrder(), new());
+
+        _orderStatusRepo.Verify(x => x.ApproveOrder(
+            It.IsAny<int>(),
+            It.IsAny<Order>(),
+            It.IsAny<List<OHistoryUpdate>>()
+        ), Times.Once);
+    }
 }

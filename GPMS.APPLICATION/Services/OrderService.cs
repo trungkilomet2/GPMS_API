@@ -109,5 +109,19 @@ namespace GPMS.APPLICATION.Services
 
             return await _orderStatusRepo.DenyOrder(orderId, updatedOrder, histories);
         }
+
+        public async Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
+            if (existing.StatusName == OrderStatus_Constants.Approved ||
+                existing.StatusName == OrderStatus_Constants.Rejected)
+                throw new InvalidOperationException("This order request has already been processed.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new InvalidOperationException("Only approve order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.ApproveOrder(orderId, updatedOrder, histories);
+        }
     }
 }

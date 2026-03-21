@@ -77,6 +77,9 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.USER != null ? src.USER.FULLNAME : null))
+                .ForMember(dest => dest.UserPhone, opt => opt.MapFrom(src => src.USER != null ? src.USER.PHONE_NUMBER : null))
+                .ForMember(dest => dest.UserLocation, opt => opt.MapFrom(src => src.USER != null ? src.USER.LOCATION : null))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
@@ -157,7 +160,23 @@ namespace GPMS.INFRASTRUCTURE.Mappers
 
 
 
-
+            // PART WORK LOG
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.PART_WORK_LOG, GPMS.DOMAIN.Entities.ProductionPartWorkLog>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WL_ID))
+                .ForMember(dest => dest.PartId, opt => opt.MapFrom(src => src.PP_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.WORK_DATE))
+                .ForMember(dest => dest.IsReadOnly, opt => opt.MapFrom(src => src.IS_READ_ONLY ?? false))
+                .ForMember(dest => dest.IsPayment, opt => opt.MapFrom(src => src.IS_PAYMENT ?? false))
+                .ReverseMap()
+                .ForMember(dest => dest.WL_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PP_ID, opt => opt.MapFrom(src => src.PartId))
+                .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.WORK_DATE, opt => opt.MapFrom(src => src.WorkDate))
+                .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
+                .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
 
 

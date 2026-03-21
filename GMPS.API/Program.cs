@@ -111,6 +111,8 @@ builder.Services.AddScoped<ILeaveRequestRepositories, LeaveRequestService>();
 builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+//onworking
+builder.Services.AddScoped<IPermissionRepositories, PermissionService>();
 
 builder.Services.AddScoped<IBaseRepositories<Production>, SqlServerProductionRepository>();
 
@@ -120,8 +122,9 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 
 
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
-
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
+
+builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
