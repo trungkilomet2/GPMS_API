@@ -12,14 +12,14 @@ namespace GPMS.TEST.Application.Services
 {
     public class WorkerRoleServiceTest
     {
-        private readonly Mock<IBaseRepositories<WorkerRole>> _mockWorkerRoleRepo;
+        private readonly Mock<IBaseRepositories<WorkerSkill>> _mockWorkerRoleRepo;
         private readonly Mock<IBaseWorkerRoleRepositories> _mockBaseWorkerRepo;
 
         private readonly WorkerRoleService _service;
 
         public WorkerRoleServiceTest()
         {
-            _mockWorkerRoleRepo = new Mock<IBaseRepositories<WorkerRole>>();
+            _mockWorkerRoleRepo = new Mock<IBaseRepositories<WorkerSkill>>();
             _mockBaseWorkerRepo = new Mock<IBaseWorkerRoleRepositories>();
 
             _service = new WorkerRoleService(
@@ -31,10 +31,10 @@ namespace GPMS.TEST.Application.Services
         [Fact]
         public async Task GetAllWorkerRoles_ReturnsList()
         {
-            var roles = new List<WorkerRole>
+            var roles = new List<WorkerSkill>
             {
-                new WorkerRole { Id = 1, Name = "Ironing" },
-                new WorkerRole { Id = 2, Name = "Tailor" }
+                new WorkerSkill { Id = 1, Name = "Ironing" },
+                new WorkerSkill { Id = 2, Name = "Tailor" }
             };
 
             _mockWorkerRoleRepo
@@ -43,13 +43,13 @@ namespace GPMS.TEST.Application.Services
 
             var result = await _service.GetAllWorkerRoles();
 
-            Assert.Equal(2, ((List<WorkerRole>)result).Count);
+            Assert.Equal(2, ((List<WorkerSkill>)result).Count);
         }
 
         [Fact]
         public async Task CreateWorkerRole_ReturnsRole_WhenSuccess()
         {
-            var role = new WorkerRole
+            var role = new WorkerSkill
             {
                 Id = 1,
                 Name = "Sewer"
@@ -57,10 +57,10 @@ namespace GPMS.TEST.Application.Services
 
             _mockBaseWorkerRepo
                 .Setup(x => x.FindRoleByName(role.Name))
-                .ReturnsAsync((WorkerRole)null);
+                .ReturnsAsync((WorkerSkill)null);
 
             _mockWorkerRoleRepo
-                .Setup(x => x.Create(It.IsAny<WorkerRole>()))
+                .Setup(x => x.Create(It.IsAny<WorkerSkill>()))
                 .ReturnsAsync(role);
 
             var result = await _service.CreateWorkerRole(role);
@@ -71,14 +71,14 @@ namespace GPMS.TEST.Application.Services
         [Fact]
         public async Task CreateWorkerRole_ThrowsException_WhenRoleAlreadyExists()
         {
-            var role = new WorkerRole
+            var role = new WorkerSkill
             {
                 Name = "Sewer"
             };
 
             _mockBaseWorkerRepo
                 .Setup(x => x.FindRoleByName(role.Name))
-                .ReturnsAsync(new WorkerRole { Name = "Sewer" });
+                .ReturnsAsync(new WorkerSkill { Name = "Sewer" });
 
             await Assert.ThrowsAsync<Exception>(() =>
                 _service.CreateWorkerRole(role));

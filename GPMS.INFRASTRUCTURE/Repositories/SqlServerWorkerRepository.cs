@@ -62,7 +62,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var users = await _context.USER
                               .Include(u => u.ROLE)
-                              .Include(u => u.WR)
+                              .Include(u => u.WS)
                               .Include(u => u.US)
                               .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
                               r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
@@ -73,7 +73,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var users = await _context.USER
                               .Include(u => u.ROLE)
-                              .Include(u => u.WR)
+                              .Include(u => u.WS)
                               .Include(u => u.US)
                               .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
                               r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();

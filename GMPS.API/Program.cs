@@ -89,7 +89,7 @@ builder.Services.AddScoped<ICustomerRepositories, CustomerService>();
 builder.Services.AddScoped<IBaseRepositories<UserStatus>, SqlServerUserStatusRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
-builder.Services.AddScoped<IBaseRepositories<WorkerRole>, SqlServerWorkerRoleRepository>();
+builder.Services.AddScoped<IBaseRepositories<WorkerSkill>, SqlServerWorkerRoleRepository>();
 builder.Services.AddScoped<IBaseWorkerRoleRepositories, SqlServerWorkerRoleRepository>();
 builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 

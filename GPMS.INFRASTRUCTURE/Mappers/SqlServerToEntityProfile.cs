@@ -23,7 +23,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.US_ID))
                 .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.ROLE))
-                .ForMember(dest => dest.WorkerRoles, opt => opt.MapFrom(src => src.WR))
+                .ForMember(dest => dest.WorkerSkills, opt => opt.MapFrom(src => src.WS))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.US))
                 .ReverseMap();
 
@@ -32,7 +32,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
                 .ReverseMap();
 
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.WORKER_ROLE, GPMS.DOMAIN.Entities.WorkerRole>()
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.WORKER_ROLE, GPMS.DOMAIN.Entities.WorkerSkill>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WR_ID))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
                 .ReverseMap();

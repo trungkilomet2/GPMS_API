@@ -25,7 +25,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-worker-roles")]
         [Authorize(Roles = "Admin,Owner,PM")]
-        public async Task<IActionResult> GetAllWorkerRoles([FromQuery] RequestDTO<WorkerRole> input)
+        public async Task<IActionResult> GetAllWorkerRoles([FromQuery] RequestDTO<WorkerSkill> input)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
                     "Returned {Count} worker roles", data.Count);
 
-                return Ok(new RestDTO<IEnumerable<WorkerRole>>
+                return Ok(new RestDTO<IEnumerable<WorkerSkill>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,
@@ -113,7 +113,7 @@ namespace GMPS.API.Controllers
 
                 if (ModelState.IsValid)
                 {
-                    var newRole = new WorkerRole
+                    var newRole = new WorkerSkill
                     {
                         Name = input.Name
                     };
