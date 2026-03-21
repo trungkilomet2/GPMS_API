@@ -20,7 +20,7 @@ namespace GPMS.DOMAIN.Entities
 
         public List<Role> Roles { get; set; } = new();
 
-        public List<WorkerSkill> WorkerRoles { get; set; } = new();
+        public List<WorkerSkill> WorkerSkills { get; set; } = new();
 
         public UserStatus? Status { get; set; }
 
