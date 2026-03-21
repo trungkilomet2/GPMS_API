@@ -627,7 +627,7 @@ namespace GMPS.API.Controllers
                                            <p>Ghi chú: {result.Note}</p>
                                            <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
 
-                            await _emailRepo.SendEmailAsync(anowner.Email, subject, body);
+                            await _emailRepo.SendEmailAsync(anowner.Email, subject, body, EmailType.OrderNotification);
                         }
                     }                   
 
@@ -1047,7 +1047,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     await _emailRepo.SendEmailAsync(user.Email, "Thông báo yêu cầu chỉnh sửa đơn hàng",
-                            $"Đơn hàng với Id: '{existingOrder.Id}' đã bị yêu cầu chỉnh sửa.");
+                            $"Đơn hàng với Id: '{existingOrder.Id}' đã bị yêu cầu chỉnh sửa.",EmailType.OrderNotification);
                     _logger.LogInformation(CustomLogEvents.OrderController_Put,
                         "Modification request for OrderId {OrderId} submitted successfully", orderId);
                 }

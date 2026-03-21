@@ -251,7 +251,7 @@ public class OrderControllerTest
         _emailRepo.Setup(x => x.SendEmailAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),
-            It.IsAny<string>()
+            It.IsAny<string>(), EmailType.OrderNotification
         )).Returns(Task.CompletedTask);
 
         var input = new CreateOrderDTO
@@ -273,7 +273,7 @@ public class OrderControllerTest
         _emailRepo.Verify(x => x.SendEmailAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),
-            It.IsAny<string>()
+            It.IsAny<string>(), EmailType.OrderNotification
         ), Times.AtLeastOnce);
     }
 

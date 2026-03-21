@@ -509,12 +509,6 @@ namespace GMPS.API.Controllers
             }
         }
 
-        private string GenerateOtp()
-        {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
-        }
-
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
@@ -529,18 +523,18 @@ namespace GMPS.API.Controllers
 
                     if (!string.IsNullOrEmpty(user.Email))
                     {
-                        var otp = GenerateOtp();
-                        _memoryCache.Set(userId + "_email_otp", otp, TimeSpan.FromMinutes(5));
-                        await _emailRepo.SendEmailAsync(
-                            user.Email,
-                            "Xác nhận email",
-                            $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực trong 5 phút."
-                        );
+                        var isVerified = _memoryCache.Get<bool?>($"{user.Email}_verified");
 
-                        return Ok(new
+                        if(isVerified != true)
                         {
-                            message = "OTP đã được gửi về email, vui lòng kiểm tra"
-                        });
+                            _logger.LogWarning(CustomLogEvents.UserController_Put, "Email not verified for UserId {UserId}", userId);
+                            var errorDetails = new ValidationProblemDetails(ModelState);
+                            errorDetails.Status = StatusCodes.Status400BadRequest;
+                            errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                            errorDetails.Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.";
+                            return StatusCode(StatusCodes.Status400BadRequest,errorDetails.Detail);
+                        }
+                        _memoryCache.Remove($"{user.Email}_verified");
                     }
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
@@ -558,7 +552,7 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
-
+                    _memoryCache.Remove($"{user.Email}_email_otp");
                     _logger.LogInformation(CustomLogEvents.UserController_Put, "Profile updated successfully for UserId {UserId}", userId);
 
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>

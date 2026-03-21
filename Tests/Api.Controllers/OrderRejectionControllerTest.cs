@@ -85,13 +85,20 @@ namespace GPMS.TEST.Api.Controllers
             _mockEmailRepo.Setup(x => x.SendEmailAsync(
                 user.Email,
                 It.IsAny<string>(),
-                It.IsAny<string>()
+                It.IsAny<string>(),
+                EmailType.OrderNotification
             )).Returns(Task.CompletedTask);
 
             var result = await _controller.CreateOrderReject(dto);
 
             var objectResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
+            _mockEmailRepo.Verify(x => x.SendEmailAsync(
+                user.Email,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                EmailType.OrderNotification
+            ), Times.Once);
         }
 
         [Fact]
@@ -102,7 +109,7 @@ namespace GPMS.TEST.Api.Controllers
             var result = await _controller.CreateOrderReject(new CreateOrderRejectDTO());
 
             var objectResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);           
         }
 
         [Fact]
@@ -121,6 +128,27 @@ namespace GPMS.TEST.Api.Controllers
 
             var objectResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
-        }        
+        }
+
+        [Fact]
+        public async Task CreateOrderReject_Returns500_WhenOrderNotFound()
+        {
+            var dto = new CreateOrderRejectDTO
+            {
+                OrderId = 5,
+                Reason = "Invalid"
+            };
+
+            _mockRejectRepo.Setup(x => x.CreateReason(It.IsAny<OrderRejectReason>()))
+                           .ReturnsAsync(new OrderRejectReason());
+
+            _mockOrderRepo.Setup(x => x.GetOrderDetail(dto.OrderId))
+                          .ReturnsAsync((Order)null);
+
+            var result = await _controller.CreateOrderReject(dto);
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, obj.StatusCode);
+        }
     }
 }
