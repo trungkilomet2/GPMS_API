@@ -509,45 +509,6 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("sent-otp-email")]
-        public async Task<IActionResult> SendOTPEmail([FromBody] VerifyEmailDTO email)
-        {
-            if (string.IsNullOrEmpty(email?.Email))
-                return BadRequest("Email không hợp lệ");
-
-            await _emailRepo.SendEmailAsync(email.Email,null,null,EmailType.Verification);
-            _logger.LogInformation(CustomLogEvents.UserController_Post, "OTP email sent to {Email}", email.Email);
-            return StatusCode(StatusCodes.Status200OK,"OTP đã được gửi");
-        }
-
-        [HttpPost("verify-email")]
-        public IActionResult VerifyEmail([FromBody] VerifyOtpDTO model)
-        {
-            var cachedOtp = _memoryCache.Get<string>($"{model.Email}_otp");
-
-            if (cachedOtp == null)
-            {
-                _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
-                var errorDetails = new ValidationProblemDetails(ModelState);
-                errorDetails.Status = StatusCodes.Status400BadRequest;
-                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                return BadRequest(errorDetails.Errors);
-            }
-
-            if (model.Otp != cachedOtp)
-            {
-                _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP");
-                var errorDetails = new ValidationProblemDetails(ModelState);
-                errorDetails.Status = StatusCodes.Status400BadRequest;
-                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                return BadRequest(errorDetails.Errors);
-            }
-            _memoryCache.Set($"{model.Email}_verified", true, TimeSpan.FromMinutes(10));
-            _memoryCache.Remove($"{model.Email}_otp");
-
-            return StatusCode(StatusCodes.Status200OK,"Xác thực email thành công");
-        }
-
         [HttpPut("update-profile")]
         [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]

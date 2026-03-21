@@ -26,6 +26,5 @@ namespace GMPS.API.DTOs
         [StringLength(255,
             ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; }
-        public string? Otp { get; set; }
     }
 }
