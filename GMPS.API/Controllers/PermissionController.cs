@@ -31,6 +31,7 @@ namespace GMPS.API.Controllers
                 var result = permissions.Select(p => new
                 {
                     controller = p.Controller,
+                    method = p.Method,
                     action = p.Action,
                     roleIds = p.RoleIds,
                     roles = string.IsNullOrEmpty(p.RoleIds)

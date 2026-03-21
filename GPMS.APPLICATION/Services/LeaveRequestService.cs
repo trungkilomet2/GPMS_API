@@ -23,13 +23,15 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<LeaveRequest>> GetLeaveRequestsByUserId(int userId)
             => await _leaveRequestBaseRepo.GetAll(userId);
 
+        private static readonly TimeZoneInfo _vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
         public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content)
         {
             var leaveRequest = new LeaveRequest
             {
                 UserId = userId,
                 Content = content,
-                DateCreate = DateTime.UtcNow
+                DateCreate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone),
             };
 
             return await _leaveRequestBaseRepo.Create(leaveRequest);
@@ -50,7 +52,7 @@ namespace GPMS.APPLICATION.Services
 
             leaveRequest.DenyContent = denyContent;
             leaveRequest.StatusId = 3;
-            leaveRequest.DateReply = DateTime.UtcNow;
+            leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
         }
@@ -66,7 +68,7 @@ namespace GPMS.APPLICATION.Services
                 throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be approved.");
 
             leaveRequest.StatusId = 2; 
-            leaveRequest.DateReply = DateTime.UtcNow;
+            leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
         }
