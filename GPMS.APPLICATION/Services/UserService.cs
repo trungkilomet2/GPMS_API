@@ -143,5 +143,11 @@ namespace GPMS.APPLICATION.Services
             }
             return data;
         }
+
+        public async Task<bool> IsEmailExists(string email)
+        {
+            var data = await _accRepo.GetUserByMail(email.ToLower());
+            return data != null;
+        }
     }
 }

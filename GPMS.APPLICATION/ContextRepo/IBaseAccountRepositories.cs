@@ -13,6 +13,7 @@ namespace GPMS.APPLICATION.ContextRepo
         Task<User> Register(User user);
         Task<User> FindUserByUserName(string username);
         Task<IEnumerable<User>> GetOwner();
+        Task<User> GetUserByMail(string mail);
 
     }
 }

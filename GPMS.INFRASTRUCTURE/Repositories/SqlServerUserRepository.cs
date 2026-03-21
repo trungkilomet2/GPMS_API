@@ -80,6 +80,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<IEnumerable<User>>(data);
         }
 
+        public async Task<User> GetUserByMail(string mail)
+        {
+            var data = await _context.USER.Where(u => u.EMAIL.Equals(mail.ToLower())).FirstOrDefaultAsync();
+            return _mapper.Map<User>(data);
+        }
+
         public async Task<User> Login(string UserName, string password)
         {
             var data = await _context.USER.Where(u => u.USERNAME.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
