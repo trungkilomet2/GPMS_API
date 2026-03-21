@@ -45,7 +45,6 @@ namespace GMPS.API.Controllers
                         (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
-                var recordCount = data.Count();
                 var customer = data.Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize).Select(c => new CustomerDTO
                 {
@@ -85,13 +84,23 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-order-by-customer/{CustomerId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetOrderByCustomer(int CustomerId)
+        public async Task<IActionResult> GetOrderByCustomer(int CustomerId, [FromQuery] RequestDTO<OrderListDTO>? input)
         {            
 
             try
             {
                 _logger.LogInformation("Getting orders for customer {UserId}", CustomerId);
-
+                if(CustomerId <= 0)
+                    {
+                    _logger.LogInformation("Invalid CustomerId {UserId}", CustomerId);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Errors = { { "CustomerId", new[] { "CustomerId must be a positive integer." } } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Errors);
+                }
                 var orders = await _customerService.GetOrdersByCustomerId(CustomerId);
 
                 if (orders == null || !orders.Any())
@@ -106,7 +115,14 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound,errorDetails.Errors);
                 }
 
-                var data = orders.Select(o => new OrderListDTO
+                if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
+                {
+                    orders = orders.Where(u =>
+                        (u.OrderName != null && u.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)));
+                }
+
+                var data = orders.Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize).Select(o => new OrderListDTO
                 {
                     Id = o.Id,
                     OrderName = o.OrderName,
@@ -124,6 +140,9 @@ namespace GMPS.API.Controllers
                 var response = new RestDTO<IEnumerable<OrderListDTO>>
                 {
                     Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = data.Count(),
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(
