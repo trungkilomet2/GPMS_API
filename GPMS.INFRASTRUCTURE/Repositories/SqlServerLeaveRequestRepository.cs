@@ -1,5 +1,6 @@
 using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
@@ -30,6 +31,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             if (obj is int userId)
                 query = query.Where(lr => lr.USER_ID == userId);
+
+            // Insert By TrungNt | 2026-03-22 | Filter by date range (from date to end date)
+            if (obj is FromDateToEndDate from_to_end)
+            {
+                query = query.Where(lr => lr.USER_ID == from_to_end.UserId && lr.DATE_CREATE >= from_to_end.FromDate && lr.DATE_CREATE <= from_to_end.EndDate);
+
+            }
 
             var data = await query.ToListAsync();
             return _mapper.Map<IEnumerable<LeaveRequest>>(data);

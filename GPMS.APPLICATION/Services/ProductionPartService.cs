@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -274,18 +275,23 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
+        public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id,DateTime fromDate, DateTime toDate)
         {
-
             var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
-
+            List<AssignWorkerViewDTO> listAssignWorker = new List<AssignWorkerViewDTO>();
             foreach (var user in listUser)
             {
-                var dataB = await _workerSkill.GetWorkerSkillByUserId(user.Id);
-
+                FromDateToEndDate from_to_end = new FromDateToEndDate { UserId = user.Id, FromDate = fromDate, EndDate = toDate };
+                var list_skill = await _workerSkill.GetWorkerSkillByUserId(user.Id);
+                var list_leave_request_by_user = await _leaveRequestRepo.GetAll(from_to_end);
+                listAssignWorker.Add(new AssignWorkerViewDTO
+                {
+                    Workers = user,
+                    Skill_Of_Worker = list_skill,
+                    LeaveRequest = list_leave_request_by_user
+                });
             }
-
-
+            return listAssignWorker;
         }
     }
 }
