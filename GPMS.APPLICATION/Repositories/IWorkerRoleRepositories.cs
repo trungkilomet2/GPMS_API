@@ -9,7 +9,7 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface IWorkerRoleRepositories
     {
-        Task<IEnumerable<WorkerRole>> GetAllWorkerRoles();
-        Task<WorkerRole> CreateWorkerRole(WorkerRole workerRole);
+        Task<IEnumerable<WorkerSkill>> GetAllWorkerRoles();
+        Task<WorkerSkill> CreateWorkerRole(WorkerSkill workerRole);
     }
 }

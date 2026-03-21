@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.DOMAIN.Entities
 {
-    public class WorkerRole
+    public class WorkerSkill
     {
         public int Id { get; set; }
 

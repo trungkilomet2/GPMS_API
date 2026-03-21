@@ -82,7 +82,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                         NAME = t.TemplateName,
                         TYPE = t.Type,
                         FILE = t.File,
-                        QUANTITY = t.Quantity,
                         NOTE = t.Note
                     });
                 }
@@ -131,7 +130,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                         NAME = t.TemplateName,
                         TYPE = t.Type,
                         FILE = t.File,
-                        QUANTITY = t.Quantity,
                         NOTE = t.Note
                     });
                 }

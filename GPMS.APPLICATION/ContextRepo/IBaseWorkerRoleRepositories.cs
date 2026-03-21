@@ -9,6 +9,6 @@ namespace GPMS.APPLICATION.ContextRepo
 {
     public interface IBaseWorkerRoleRepositories
     {
-        Task<WorkerRole> FindRoleByName(string roleName);
+        Task<WorkerSkill> FindRoleByName(string roleName);
     }
 }

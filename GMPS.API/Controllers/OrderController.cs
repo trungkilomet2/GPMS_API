@@ -572,7 +572,7 @@ namespace GMPS.API.Controllers
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
                     "Creating new order for UserId {UserId}", input?.UserId);
-
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
                     var newOrder = new Order
@@ -589,6 +589,7 @@ namespace GMPS.API.Controllers
                         Cpu = input.Cpu,
                         Note = input.Note,
                         Status = 1,
+                        CreateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone),
                         Material = input.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
