@@ -604,7 +604,6 @@ namespace GMPS.API.Controllers
                             TemplateName = t.TemplateName,
                             Type = t.Type,
                             File = t.File,
-                            Quantity = t.Quantity,
                             Note = t.Note
                         }).ToList(),
                     };

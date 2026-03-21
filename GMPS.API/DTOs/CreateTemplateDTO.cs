@@ -15,9 +15,6 @@ namespace GMPS.API.DTOs
         [StringLength(255, ErrorMessage = "File path cannot exceed 255 characters")]
         public string? File { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
-        public int? Quantity { get; set; }
-
         [MaxLength(500, ErrorMessage = "Note cannot exceed 500 characters")]
         public string? Note { get; set; }
     }

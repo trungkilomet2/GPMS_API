@@ -11,7 +11,6 @@ namespace GPMS.DOMAIN.Entities
         public string TemplateName { get; set; }
         public string? Type { get; set; }
         public string? File { get; set; }
-        public int? Quantity { get; set; }
         public string? Note { get; set; }
     }
 }
