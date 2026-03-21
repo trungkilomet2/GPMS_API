@@ -16,12 +16,13 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-
+using Serilog;
+using Serilog.Sinks.MSSqlServer;
 Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.ClearProviders().AddSimpleConsole().AddDebug();
+builder.Logging.ClearProviders();
 //--------------------------- Controller Config ---------------------------
 builder.Services.AddControllers(
     options =>
@@ -65,6 +66,31 @@ builder.Services.AddSwaggerGen(
               }
          });
    });
+
+var columnOptions = new ColumnOptions();
+columnOptions.Id.ColumnName = "ID";
+columnOptions.Message.ColumnName = "MESSAGE";
+columnOptions.MessageTemplate.ColumnName = "MESSAGE_TEMPLATE";
+columnOptions.Level.ColumnName = "LEVEL";
+columnOptions.Exception.ColumnName = "EXCEPTION";
+columnOptions.Properties.ColumnName = "PROPERTIES";
+columnOptions.TimeStamp.ColumnName = "TIMPESTAMP";
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.MSSqlServer(
+        connectionString: builder.Configuration.GetConnectionString("GPMSDB"),
+        sinkOptions: new MSSqlServerSinkOptions
+        {
+            TableName = "LOG_EVENTS"
+        },
+        columnOptions: columnOptions
+    )
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
 // add cache
 builder.Services.AddMemoryCache();
 
