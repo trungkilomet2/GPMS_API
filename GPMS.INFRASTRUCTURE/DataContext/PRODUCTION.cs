@@ -33,6 +33,9 @@ public partial class PRODUCTION
     public virtual USER PM { get; set; } = null!;
 
     [InverseProperty("PRODUCTION")]
+    public virtual ICollection<PRODUCTION_ISSUE_LOG> PRODUCTION_ISSUE_LOG { get; set; } = new List<PRODUCTION_ISSUE_LOG>();
+
+    [InverseProperty("PRODUCTION")]
     public virtual PRODUCTION_REJECT_REASON? PRODUCTION_REJECT_REASON { get; set; }
 
     [ForeignKey("PS_ID")]

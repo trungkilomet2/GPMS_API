@@ -19,7 +19,7 @@ public partial class UO_COMMENT
     public string? CONTENT { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime? SEND_DATETIME { get; set; }
+    public DateTime SEND_DATETIME { get; set; }
 
     [ForeignKey("FROM_USER")]
     [InverseProperty("UO_COMMENT")]
