@@ -13,5 +13,9 @@ namespace GPMS.APPLICATION.ContextRepo
         public Task<User> GetWorkerById(int id);
         public  Task<User> Create(User entity);
         public Task<User> Update(User entity);
+        
+        // Insert By TrungNT
+        public Task<IEnumerable<WorkerSkill>> GetWorkerSkillByUserId(int userId);    
+
     }
 }

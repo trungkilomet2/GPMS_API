@@ -12,7 +12,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseProductionPartAssignRepositories _partAssignRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
-        private readonly IBaseRepositories<WorkerSkill>  _workerSkill;
+        private readonly IBaseWorkerRepository _workerSkill;
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
 
         private readonly IUnitOfWork _unitOfWork;
@@ -23,7 +23,7 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<User> userRepo,
             IUnitOfWork unitOfWork,
             IBaseProductionPartAssignRepositories partAssignRepo,
-            IBaseRepositories<WorkerSkill> workerSkill,
+            IBaseWorkerRepository workerSkill,
             IBaseRepositories<LeaveRequest> leaveRequestRepo
             )
         {
@@ -274,12 +274,18 @@ namespace GPMS.APPLICATION.Services
             throw new NotImplementedException();
         }
 
-        //public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
-        //{
+        public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
+        {
 
-        //   var dataA = await _partAssignRepo.ListWorkerWithPM(pm_id);
-        //    var dataB = await _workerSkill.GetAll();
+            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
 
-        //}
+            foreach (var user in listUser)
+            {
+                var dataB = await _workerSkill.GetWorkerSkillByUserId(user.Id);
+
+            }
+
+
+        }
     }
 }
