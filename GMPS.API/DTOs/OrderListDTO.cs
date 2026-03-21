@@ -3,6 +3,7 @@ namespace GMPS.API.DTOs
     public class OrderListDTO
     {
         public int Id { get; set; }
+        public int UserId { get; set; }
         public string OrderName { get; set; }
         public string Type { get; set; }
         public string? Size { get; set; }

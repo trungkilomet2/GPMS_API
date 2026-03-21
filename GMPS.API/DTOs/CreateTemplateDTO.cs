@@ -5,7 +5,7 @@ namespace GMPS.API.DTOs
 {
     public class CreateTemplateDTO
     {
-        //[Required(ErrorMessage = "TemplateName is required")]
+        [Required(ErrorMessage = "TemplateName is required")]
         [StringLength(100, ErrorMessage = "TemplateName cannot exceed 100 characters")]
         public string TemplateName { get; set; }
 

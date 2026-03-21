@@ -13,15 +13,18 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseOrderRepositories _orderBaseRepo;
         private readonly IBaseRepositories<OMaterial> _materialBaseRepo;
         private readonly IBaseRepositories<User> _userBaseRepo;
+        private readonly IBaseOrderStatusRepositories _orderStatusRepo;
 
         public OrderService(
             IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
-            IBaseRepositories<User> userBaseRepo)
+            IBaseRepositories<User> userBaseRepo,
+            IBaseOrderStatusRepositories orderStatusRepo)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
             _materialBaseRepo = materialBaseRepo ?? throw new ArgumentNullException(nameof(materialBaseRepo));
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
+            _orderStatusRepo = orderStatusRepo ?? throw new ArgumentNullException(nameof(orderStatusRepo));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
@@ -58,7 +61,7 @@ namespace GPMS.APPLICATION.Services
             if (existing is null)
                 throw new Exception($"Order with id '{orderId}' not exist in system.");
             if (existing.StatusName != OrderStatus_Constants.Modification)
-                throw new Exception("Only modify order with status 'Modification'.");
+                throw new Exception($"Only modify order with status '{OrderStatus_Constants.Modification}'.");
 
             return await _orderBaseRepo.UpdateOrder(orderId, updatedOrder, histories);
         }
@@ -69,11 +72,56 @@ namespace GPMS.APPLICATION.Services
             if (order is null)
                 throw new Exception($"Order with id '{orderId}' not found.");
 
+            if (order.StatusName == OrderStatus_Constants.Approved)
+                throw new InvalidOperationException("Cannot add material to an approved order.");
+
             if (material.Value <= 0)
                 throw new Exception("Quantity must be greater than zero.");
 
             material.OrderId = orderId;
             return await _materialBaseRepo.Create(material);
+        }
+
+        public async Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            if (updatedOrder == null)
+                throw new Exception("Failed to update order.");
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new Exception($"Order with id '{orderId}' not exist in system.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.RequestOrderModification(orderId, updatedOrder, histories);
+        }
+
+        public async Task<Order> DenyOrder(int userId,int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            if (updatedOrder == null)
+                throw new Exception("Failed to update order.");
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
+            if(existing.UserId != userId)
+                throw new Exception("You don't have permission to deny this order.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.DenyOrder(orderId, updatedOrder, histories);
+        }
+
+        public async Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        {
+            var existing = await _orderBaseRepo.GetById(orderId);
+            if (existing is null)
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
+            if (existing.StatusName == OrderStatus_Constants.Approved ||
+                existing.StatusName == OrderStatus_Constants.Rejected)
+                throw new InvalidOperationException("This order request has already been processed.");
+            if (existing.StatusName != OrderStatus_Constants.Pending)
+                throw new InvalidOperationException("Only approve order with status Chờ Xét Duyệt.");
+
+            return await _orderStatusRepo.ApproveOrder(orderId, updatedOrder, histories);
         }
     }
 }

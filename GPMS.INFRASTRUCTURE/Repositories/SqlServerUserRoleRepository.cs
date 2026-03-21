@@ -44,5 +44,28 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             throw new NotImplementedException();
         }
+
+        public async Task ReplaceUserRoles(User user, List<string> roleNames)
+        {
+            var sqlUser = await _context.USER
+                .Include(u => u.ROLE)
+                .Where(u => u.USER_ID == user.Id)
+                .FirstOrDefaultAsync();
+
+            if (sqlUser == null)
+                throw new KeyNotFoundException($"User with ID {user.Id} not found.");
+
+            sqlUser.ROLE.Clear();
+
+            foreach (var roleName in roleNames)
+            {
+                var role = await _context.ROLE.Where(r => r.NAME == roleName).FirstOrDefaultAsync();
+                if (role == null)
+                    throw new KeyNotFoundException($"Role '{roleName}' not found.");
+                sqlUser.ROLE.Add(role);
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

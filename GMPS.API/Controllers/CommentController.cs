@@ -41,7 +41,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
                     "Getting comments for OrderId {OrderId}", orderId);
 
-                var result = await _commentRepo.GetCommentById(orderId);
+                var result = await _commentRepo.GetCommentByOrderId(orderId);
                 if (!result.Any())
                     {
                     _logger.LogInformation(CustomLogEvents.CommentController_Get,
@@ -69,7 +69,6 @@ namespace GMPS.API.Controllers
                         new LinkDTO(Url.Action(null, "Comment", null, Request.Scheme)!, "self", "GET")
                     }
                 };
-
                 return Ok(response);
             }
             catch (Exception ex)
@@ -89,6 +88,7 @@ namespace GMPS.API.Controllers
         [HttpPost("create-comment")]
         public async Task<ActionResult> CreateComment([FromBody] CreatedCommentDTO? comment)
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 if (ModelState.IsValid)
@@ -96,16 +96,16 @@ namespace GMPS.API.Controllers
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Creating comment for OrderId {OrderId} by UserId {UserId}",
                         comment.ToOrderId, comment.FromUserId);
-
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
                     {
                         fromUserId = comment.FromUserId,
                         toOrderId = comment.ToOrderId,
                         Content = comment.Content,
-                        SendDateTime = DateTime.UtcNow
+                        SendDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
 
-                    var result = await _commentRepo.CreateComment(newComment);
+                    var result = await _commentRepo.CreateComment(userId,newComment);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Comment {CommentId} created successfully for OrderId {OrderId}",
@@ -136,7 +136,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
@@ -152,7 +153,7 @@ namespace GMPS.API.Controllers
                 if (ModelState.IsValid)
                 {
                     var commentExists = await _commentRepo.GetCommentById(CommentId);
-                    if(!commentExists.Any())
+                    if(commentExists == null)
                     {
                         _logger.LogWarning(CustomLogEvents.CommentController_Put,
                             "Comment {CommentId} not found for update", CommentId);
@@ -160,12 +161,12 @@ namespace GMPS.API.Controllers
                     }
                     _logger.LogInformation(CustomLogEvents.CommentController_Put,
                         "Updating comment {CommentId}", CommentId);
-
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
                     {
                         Id = CommentId,
                         Content = comment.Content,
-                        SendDateTime = DateTime.UtcNow
+                        SendDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone)
                     };
 
                     var updated = await _commentRepo.UpdateComment(newComment, userId);
@@ -212,7 +213,7 @@ namespace GMPS.API.Controllers
             try
             {
                 var commentExists = await _commentRepo.GetCommentById(CommentId);
-                if (!commentExists.Any())
+                if (commentExists == null)
                 {
                     _logger.LogWarning(CustomLogEvents.CommentController_Put,
                         "Comment {CommentId} not found for update", CommentId);
@@ -236,7 +237,8 @@ namespace GMPS.API.Controllers
                 var exceptionDetails = new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
                 };
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);

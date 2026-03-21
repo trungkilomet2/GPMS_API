@@ -39,7 +39,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             USER userSQL = _mapper.Map<USER>(entity);
             await _context.AddAsync(userSQL);
-            await _context.SaveChangesAsync();
             return _mapper.Map<User>(userSQL);
 
         }
@@ -52,7 +51,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> FindUserByUserName(string username)
         {
-            var data = await _context.USER.Where(u => u.UserName.Equals(username)).FirstOrDefaultAsync();
+            var data = await _context.USER.Where(u => u.USERNAME.Equals(username)).FirstOrDefaultAsync();
 
             if (data is null) return null;
 
@@ -69,13 +68,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<User> GetById(object id)
         {
-            var data = await _context.USER.Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
+            var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
+                              .Include(u => u.WR).Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
             return _mapper.Map<User>(data);
+        }
+
+        public async Task<IEnumerable<User>> GetOwner()
+        {
+            var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
+                              .Include(u => u.WR).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).ToListAsync();
+            return _mapper.Map<IEnumerable<User>>(data);
         }
 
         public async Task<User> Login(string UserName, string password)
         {
-            var data = await _context.USER.Where(u => u.UserName.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
+            var data = await _context.USER.Where(u => u.USERNAME.Equals(UserName) && u.PASSWORDHASH.Equals(password)).FirstOrDefaultAsync();
 
             return _mapper.Map<User>(data);
         }
@@ -93,7 +100,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 USER userSQL = _mapper.Map<USER>(user);
                 userSQL.US_ID = 1; // 1 equal Active status in User
                 await _context.AddAsync(userSQL);
-                await _context.SaveChangesAsync();
                 return _mapper.Map<User>(userSQL);
             }
             catch (Exception ex)
@@ -114,9 +120,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.LOCATION = entity.Location;
                 existingUser.AVATAR = entity.AvartarUrl;
                 existingUser.EMAIL = entity.Email;
+                existingUser.US_ID = entity.StatusId;
             
                 _context.USER.Update(existingUser);
-                await _context.SaveChangesAsync();
                 return _mapper.Map<User>(existingUser);       
         }
     }

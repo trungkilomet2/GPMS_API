@@ -66,7 +66,7 @@ namespace GPMS.TEST.Api.Controllers
                 SendDateTime = DateTime.UtcNow
             };
 
-            _mockRepo.Setup(x => x.CreateComment(It.IsAny<Comment>()))
+            _mockRepo.Setup(x => x.CreateComment(1,It.IsAny<Comment>()))
                      .ReturnsAsync(createdComment);
 
             var result = await _controller.CreateComment(dto);
@@ -100,7 +100,7 @@ namespace GPMS.TEST.Api.Controllers
                 Content = "Test comment"
             };
 
-            _mockRepo.Setup(x => x.CreateComment(It.IsAny<Comment>()))
+            _mockRepo.Setup(x => x.CreateComment(1,It.IsAny<Comment>()))
                      .ThrowsAsync(new Exception("Database error"));
 
             var result = await _controller.CreateComment(dto);
@@ -111,4 +111,3 @@ namespace GPMS.TEST.Api.Controllers
         }
     }
 }
-    

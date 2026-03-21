@@ -10,10 +10,13 @@ namespace GPMS.APPLICATION.Repositories
     public interface IUserRepositories
     {   
        Task<IEnumerable<User>> GetAllUser();
+        Task<IEnumerable<User>> GetOwner();
         Task<User> GetUserById(int id);
-        Task<User> CreateNewUser(User user);
-       Task DisableAnUser(User user);
+        Task<User> CreateNewUser(User user, List<int> roleIds);
+       Task DisableAnUser(int userId);
+       Task AssignRoles(int userId, List<int> roleIds);
        Task<User> ViewProfile(int id);
        Task<User> UpdateProfile(int userId, User user);
+        Task<User> UpdateUserForAdmin(int userId,User user);
     }
 }

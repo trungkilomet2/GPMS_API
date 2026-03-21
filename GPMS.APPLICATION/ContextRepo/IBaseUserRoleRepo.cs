@@ -9,7 +9,8 @@ namespace GPMS.APPLICATION.ContextRepo
 {
     public interface IBaseUserRoleRepo
     {
-        Task AddUserRole(User user,string roleName);
-        Task RemoveUserRole(User user,string roleName);
+        Task AddUserRole(User user, string roleName);
+        Task RemoveUserRole(User user, string roleName);
+        Task ReplaceUserRoles(User user, List<string> roleNames);
     }
 }

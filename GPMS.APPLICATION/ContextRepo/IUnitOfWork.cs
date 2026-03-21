@@ -9,7 +9,6 @@ namespace GPMS.APPLICATION.ContextRepo
     public interface IUnitOfWork
     {
         Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Return number state entities has been change in database after save changes. 
         /// </summary>

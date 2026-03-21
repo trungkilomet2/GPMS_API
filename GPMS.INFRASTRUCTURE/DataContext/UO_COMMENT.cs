@@ -11,9 +11,9 @@ public partial class UO_COMMENT
     [Key]
     public int OC_ID { get; set; }
 
-    public int? FROM_USER { get; set; }
+    public int FROM_USER { get; set; }
 
-    public int? TO_ORDER { get; set; }
+    public int TO_ORDER { get; set; }
 
     [StringLength(500)]
     public string? CONTENT { get; set; }
@@ -23,9 +23,9 @@ public partial class UO_COMMENT
 
     [ForeignKey("FROM_USER")]
     [InverseProperty("UO_COMMENT")]
-    public virtual USER? FROM_USERNavigation { get; set; }
+    public virtual USER FROM_USERNavigation { get; set; } = null!;
 
     [ForeignKey("TO_ORDER")]
     [InverseProperty("UO_COMMENT")]
-    public virtual ORDER? TO_ORDERNavigation { get; set; }
+    public virtual ORDER TO_ORDERNavigation { get; set; } = null!;
 }
