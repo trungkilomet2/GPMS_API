@@ -3,8 +3,10 @@ using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,10 +19,12 @@ public class UserControllerTest
     private readonly Mock<IConfiguration> _config = new();
     private readonly Mock<ILogger<UserController>> _logger = new();
     private readonly Mock<ICloudinaryService> _cloudinary = new();
+    private readonly Mock<IMemoryCache> _cache = new();
+    private readonly Mock<IEmailRepositories> _email = new();
 
     private UserController BuildController(int userId = 1)
     {
-        var controller = new UserController(_userRepo.Object, _config.Object, _logger.Object, _cloudinary.Object);
+        var controller = new UserController(_userRepo.Object, _config.Object, _logger.Object, _cloudinary.Object, _cache.Object, _email.Object);
         ControllerTestHelper.AttachHttpContext(controller, ControllerTestHelper.BuildUserWithId(userId));
         return controller;
     }

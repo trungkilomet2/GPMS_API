@@ -17,196 +17,214 @@ namespace GPMS.TEST.Api.Controllers
 {
     public class WorkerControllerTest
     {
-            private readonly Mock<IWorkerRepositories> _mockRepo;
-            private readonly Mock<ILogger<AccountController>> _mockLogger;
-            private readonly WorkerController _controller;
+        private readonly Mock<IWorkerRepositories> _mockRepo;
+        private readonly Mock<ILogger<AccountController>> _mockLogger;
+        private readonly WorkerController _controller;
 
-            public WorkerControllerTest()
+        public WorkerControllerTest()
+        {
+            _mockRepo = new Mock<IWorkerRepositories>();
+            _mockLogger = new Mock<ILogger<AccountController>>();
+
+            _controller = new WorkerController(
+                _mockRepo.Object,
+                _mockLogger.Object
+            );
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Scheme = "http";
+
+            _controller.ControllerContext = new ControllerContext()
             {
-                _mockRepo = new Mock<IWorkerRepositories>();
-                _mockLogger = new Mock<ILogger<AccountController>>();
-
-                _controller = new WorkerController(
-                    _mockRepo.Object,
-                    _mockLogger.Object
-                );
-
-                var httpContext = new DefaultHttpContext();
-                httpContext.Request.Scheme = "http";
-
-                _controller.ControllerContext = new ControllerContext()
-                {
-                    HttpContext = httpContext
-                };
-
-                var mockUrl = new Mock<IUrlHelper>();
-                mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
-                       .Returns("http://localhost/api/worker");
-
-                _controller.Url = mockUrl.Object;
-            }
-
-            [Fact]
-            public async Task GetEmployees_ReturnsOk_WhenEmployeesExist()
-            {
-                var users = new List<User>
-            {
-                new User
-                {
-                    Id = 1,
-                    UserName = "worker1",
-                    FullName = "Worker One",
-                    Email = "worker@test.com",
-                    PhoneNumber = "123",
-                    Roles = new List<Role>{ new Role{ Name = "Worker"} },
-                    WorkerRoles = new List<WorkerRole>{ new WorkerRole{ Name = "Sewer"} },
-                    Status = new UserStatus{ Name = "Active"}
-                }
+                HttpContext = httpContext
             };
 
-                _mockRepo.Setup(x => x.GetAllEmployees())
-                         .ReturnsAsync(users);
+            var mockUrl = new Mock<IUrlHelper>();
+            mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
+                   .Returns("http://localhost/api/worker");
 
-                var result = await _controller.GetEmployees();
+            _controller.Url = mockUrl.Object;
+        }
 
-                var okResult = Assert.IsType<OkObjectResult>(result);
+        [Fact]
+        public async Task GetEmployees_ReturnsOk_WhenEmployeesExist()
+        {
+            var users = new List<User>
+                 {
+        new User
+        {
+            Id = 1,
+            UserName = "worker1",
+            FullName = "Worker One",
+            Email = "worker@test.com",
+            PhoneNumber = "123",
+            Roles = new List<Role>{ new Role{ Name = "Worker"} },
+            WorkerRoles = new List<WorkerRole>{ new WorkerRole{ Name = "Sewer"} },
+            Status = new UserStatus{ Name = "Active"}
+        }
+                 };
 
-                Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-            }
+            _mockRepo.Setup(x => x.GetAllEmployees())
+                     .ReturnsAsync(users);
 
-            [Fact]
-            public async Task GetEmployees_Returns404_WhenNoEmployees()
+            var input = new RequestDTO<EmployeeDTO>
             {
-                _mockRepo.Setup(x => x.GetAllEmployees())
-                         .ReturnsAsync(new List<User>());
+                PageIndex = 0,
+                PageSize = 10
+            };
 
-                var result = await _controller.GetEmployees();
+            var result = await _controller.GetEmployees(input);
 
-                var objectResult = Assert.IsType<ObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
 
-                Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
-            }
+            var data = Assert.IsType<RestDTO<IEnumerable<EmployeeDTO>>>(okResult.Value);
+            Assert.Single(data.Data);
+        }
 
-            [Fact]
-            public async Task GetEmployeeById_ReturnsBadRequest_WhenIdInvalid()
+        [Fact]
+        public async Task GetEmployees_Returns404_WhenPageOutOfRange()
+        {
+            var users = new List<User>
+    {
+        new User { Id = 1, UserName = "worker1" }
+    };
+
+            _mockRepo.Setup(x => x.GetAllEmployees())
+                     .ReturnsAsync(users);
+
+            var input = new RequestDTO<EmployeeDTO>
             {
-                var result = await _controller.GetEmployeeById(0);
+                PageIndex = 10,
+                PageSize = 1
+            };
 
-                var objectResult = Assert.IsType<ObjectResult>(result);
+            var result = await _controller.GetEmployees(input);
 
-                Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
-            }
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+        }
 
-            [Fact]
-            public async Task GetEmployeeById_ReturnsNotFound_WhenEmployeeNotFound()
+        [Fact]
+        public async Task GetEmployeeById_ReturnsBadRequest_WhenIdInvalid()
+        {
+            var result = await _controller.GetEmployeeById(0);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEmployeeById_ReturnsNotFound_WhenEmployeeNotFound()
+        {
+            _mockRepo.Setup(x => x.GetEmployeeById(1))
+                     .ReturnsAsync((User)null);
+
+            var result = await _controller.GetEmployeeById(1);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEmployeeById_ReturnsOk_WhenEmployeeExists()
+        {
+            var user = new User
             {
-                _mockRepo.Setup(x => x.GetEmployeeById(1))
-                         .ReturnsAsync((User)null);
+                Id = 1,
+                UserName = "worker1",
+                FullName = "Worker One",
+                Email = "worker@test.com",
+                PhoneNumber = "123",
+                Roles = new List<Role> { new Role { Name = "Worker" } },
+                WorkerRoles = new List<WorkerRole> { new WorkerRole { Name = "Cutting" } }
+            };
 
-                var result = await _controller.GetEmployeeById(1);
+            _mockRepo.Setup(x => x.GetEmployeeById(1))
+                     .ReturnsAsync(user);
 
-                var objectResult = Assert.IsType<ObjectResult>(result);
+            var result = await _controller.GetEmployeeById(1);
 
-                Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
-            }
+            var okResult = Assert.IsType<OkObjectResult>(result);
 
-            [Fact]
-            public async Task GetEmployeeById_ReturnsOk_WhenEmployeeExists()
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateWorker_ReturnsCreated_WhenSuccessful()
+        {
+            var dto = new CreateEmployeeDTO
             {
-                var user = new User
-                {
-                    Id = 1,
-                    UserName = "worker1",
-                    FullName = "Worker One",
-                    Email = "worker@test.com",
-                    PhoneNumber = "123",
-                    Roles = new List<Role> { new Role { Name = "Worker" } },
-                    WorkerRoles = new List<WorkerRole> { new WorkerRole { Name = "Cutting" } }
-                };
+                UserName = "worker1",
+                Password = "123456",
+                FullName = "Worker One",
+                RoleIds = new List<int> { 2 }
+            };
 
-                _mockRepo.Setup(x => x.GetEmployeeById(1))
-                         .ReturnsAsync(user);
-
-                var result = await _controller.GetEmployeeById(1);
-
-                var okResult = Assert.IsType<OkObjectResult>(result);
-
-                Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-            }
-
-            [Fact]
-            public async Task CreateWorker_ReturnsCreated_WhenSuccessful()
+            var createdUser = new User
             {
-                var dto = new CreateEmployeeDTO
-                {
-                    UserName = "worker1",
-                    Password = "123456",
-                    FullName = "Worker One",
-                    RoleIds = new List<int> { 2 }
-                };
+                Id = 5,
+                UserName = dto.UserName
+            };
 
-                var createdUser = new User
-                {
-                    Id = 5,
-                    UserName = dto.UserName
-                };
+            _mockRepo.Setup(x => x.CreateEmployee(It.IsAny<User>()))
+                     .ReturnsAsync(createdUser);
 
-                _mockRepo.Setup(x => x.CreateEmployee(It.IsAny<User>()))
-                         .ReturnsAsync(createdUser);
+            var result = await _controller.CreateWorker(dto);
 
-                var result = await _controller.CreateWorker(dto);
+            var objectResult = Assert.IsType<ObjectResult>(result);
 
-                var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
+        }
 
-                Assert.Equal(StatusCodes.Status201Created, objectResult.StatusCode);
-            }
+        [Fact]
+        public async Task CreateWorker_ReturnsBadRequest_WhenModelStateInvalid()
+        {
+            _controller.ModelState.AddModelError("UserName", "Required");
 
-            [Fact]
-            public async Task CreateWorker_ReturnsBadRequest_WhenModelStateInvalid()
+            var dto = new CreateEmployeeDTO();
+
+            var result = await _controller.CreateWorker(dto);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateWorker_ReturnsBadRequest_WhenInvalidId()
+        {
+            var dto = new UpdateEmployeeDTO();
+
+            var result = await _controller.UpdateWorker(0, dto);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateWorker_ReturnsOk_WhenSuccessful()
+        {
+            var dto = new UpdateEmployeeDTO
             {
-                _controller.ModelState.AddModelError("UserName", "Required");
+                FullName = "Updated Worker",
+                StatusId = 1,
+                RoleIds = new List<int> { 2 }
+            };
 
-                var dto = new CreateEmployeeDTO();
+            var updatedUser = new User { Id = 1 };
 
-                var result = await _controller.CreateWorker(dto);
+            _mockRepo.Setup(x => x.UpdateEmployee(1, It.IsAny<User>()))
+                     .ReturnsAsync(updatedUser);
 
-                var objectResult = Assert.IsType<ObjectResult>(result);
+            var result = await _controller.UpdateWorker(1, dto);
 
-                Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
-            }
+            var okResult = Assert.IsType<OkObjectResult>(result);
 
-            [Fact]
-            public async Task UpdateWorker_ReturnsBadRequest_WhenInvalidId()
-            {
-                var dto = new UpdateEmployeeDTO();
-
-                var result = await _controller.UpdateWorker(0, dto);
-
-                var objectResult = Assert.IsType<ObjectResult>(result);
-
-                Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
-            }
-
-            [Fact]
-            public async Task UpdateWorker_ReturnsOk_WhenSuccessful()
-            {
-                var dto = new UpdateEmployeeDTO
-                {
-                    FullName = "Updated Worker",
-                    StatusId = 1,
-                    RoleIds = new List<int> { 2 }
-                };
-
-                var updatedUser = new User { Id = 1 };
-
-                _mockRepo.Setup(x => x.UpdateEmployee(1, It.IsAny<User>()))
-                         .ReturnsAsync(updatedUser);
-
-                var result = await _controller.UpdateWorker(1, dto);
-
-                var okResult = Assert.IsType<OkObjectResult>(result);
-
-                Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-            }
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
         }
     }
+}
