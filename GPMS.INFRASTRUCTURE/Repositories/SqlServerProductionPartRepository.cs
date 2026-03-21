@@ -79,12 +79,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds)
         {
             var dbEntity = await _context.P_PART
-                .Include(x => x.USER)
-                .FirstOrDefaultAsync(x => x.PP_ID == partId);
+                           .Include(x => x.USER)
+                           .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
-            
             if (dbEntity is null)
             {
+                throw new ValidationException("Không tồn tại Production Part trong hệ thống");
                 return null;
             }
 
@@ -101,6 +101,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             await _context.SaveChangesAsync();
             return await GetById(partId);
+        
         }
 
         public async Task Delete(object id)
