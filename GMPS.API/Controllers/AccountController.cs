@@ -124,12 +124,7 @@ namespace GMPS.API.Controllers
                     newUser.FullName = input.FullName;
                     newUser.PasswordHash = input.Password;
                     newUser.Email = input.Email;
-
-                   await _emailRepo.SendEmailAsync(input.Email, null, null, EmailType.Verification);
-
-
-
-
+                
                     var result = await _accountRepo.Register(newUser);
 
                     if (result.Status == GPMS.APPLICATION.Enum.RegisterStatus.Success)
