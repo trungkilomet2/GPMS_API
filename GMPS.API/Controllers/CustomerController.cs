@@ -24,7 +24,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-customer")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult> GetAllCustomer([FromBody] RequestDTO<CustomerDTO>? input)
+        public async Task<ActionResult> GetAllCustomer([FromQuery] RequestDTO<CustomerDTO>? input)
         {
             try
             {
@@ -64,6 +64,8 @@ namespace GMPS.API.Controllers
                 var response = new RestDTO<IEnumerable<CustomerDTO>>
                 {
                     Data = customer,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
                     RecordCount = data.Count(),
                     Links = new List<LinkDTO>
                     {
