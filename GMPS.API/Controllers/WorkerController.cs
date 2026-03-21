@@ -64,7 +64,7 @@ namespace GMPS.API.Controllers
                         PhoneNumber = u.PhoneNumber,
                         Email = u.Email,
                         Role = string.Join(", ", u.Roles.Select(r => r.Name)),
-                        WorkerRole = string.Join(", ", u.WorkerRoles.Select(w => w.Name)),
+                        WorkerRole = string.Join(", ", u.WorkerSkills.Select(w => w.Name)),
                         Status = u.Status?.Name ?? "Unknown"
                     })
                     .ToList();
@@ -138,7 +138,7 @@ namespace GMPS.API.Controllers
                     PhoneNumber = result.PhoneNumber,
                     Email = result.Email,
                     Role = string.Join(", ", result.Roles.Select(r => r.Name)),
-                    WorkerRole = string.Join(", ", result.WorkerRoles.Select(w => w.Name)),
+                    WorkerRole = string.Join(", ", result.WorkerSkills.Select(w => w.Name)),
                     Status = result.Status?.Name ?? "Unknown"
                 };
 

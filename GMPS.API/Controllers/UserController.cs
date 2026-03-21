@@ -101,7 +101,7 @@ namespace GMPS.API.Controllers
                         Location = user.Location,
                         Status = user.Status?.Name ?? "Unknown",
                         Role = string.Join(", ", user.Roles.Select(r => r.Name)),
-                        WorkerRole = string.Join(", ", user.WorkerRoles.Select(w => w.Name))
+                        WorkerRole = string.Join(", ", user.WorkerSkills.Select(w => w.Name))
                     };
 
                     _logger.LogInformation(CustomLogEvents.UserController_Get,
