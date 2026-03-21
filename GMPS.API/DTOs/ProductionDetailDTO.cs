@@ -11,11 +11,11 @@ namespace GMPS.API.DTOs
         public DateOnly? EndDate { get; set; }
         public int StatusId { get; set; }
     }
-
+    
     public class ProductionDetailPMDTO
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
         public string PhoneNumber { get; set; }
         public string AvartarUrl { get; set; }
         public string Email { get; set; }
