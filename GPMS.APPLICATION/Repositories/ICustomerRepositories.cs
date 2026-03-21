@@ -10,5 +10,6 @@ namespace GPMS.APPLICATION.Repositories
     public interface ICustomerRepositories
     {
         Task<IEnumerable<User>> GetAllCustomer();
+        Task<IEnumerable<Order>> GetOrdersByCustomerId(int customerId);
     }
 }

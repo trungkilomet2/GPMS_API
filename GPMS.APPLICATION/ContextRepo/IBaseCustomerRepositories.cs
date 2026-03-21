@@ -10,5 +10,6 @@ namespace GPMS.APPLICATION.ContextRepo
     public interface IBaseCustomerRepositories
     {
         Task<IEnumerable<User>> GetAllCustomer();
+        Task<IEnumerable<Order>> GetOrdersByCustomerId(int customerId);
     }
 }
