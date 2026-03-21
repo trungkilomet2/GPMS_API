@@ -27,6 +27,7 @@ namespace GMPS.API.Controllers
             var result = await _cloudinaryService.UploadImageAsync(image.File,CloudinaryConstrants.Cloudinary_Order_Image_Folder);
             return Ok(result);
         }
+
         [HttpGet("url-images")]
         public async Task<IActionResult> GetUrlImage(string publicId)
         {

@@ -426,6 +426,9 @@ namespace GMPS.API.Controllers
                 {
                     Id = order.Id,
                     UserId = order.UserId,
+                    UserFullName = order.UserFullName,
+                    UserPhone = order.UserPhone,
+                    UserLocation = order.UserLocation,
                     OrderName = order.OrderName,
                     Type = order.Type,
                     Size = order.Size,
@@ -511,6 +514,23 @@ namespace GMPS.API.Controllers
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
                         { "id", new[] { $"Order with id '{id}' not found" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                if (!order.Histories.Any())
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                        "No history records found for OrderId {OrderId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"No history found for order '{id}'" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -652,8 +672,9 @@ namespace GMPS.API.Controllers
 
         // api/order/{orderId}/materials
         [HttpPost("{orderId}/materials", Name = "Add material to order")]
+        [Consumes("multipart/form-data")]
         [Authorize(Roles = "Customer")]
-        public async Task<ActionResult> AddMaterial(int orderId, [FromBody] CreateMaterialDTO? input)
+        public async Task<ActionResult> AddMaterial(int orderId, [FromForm] CreateMaterialDTO? input, IFormFile? imageFile)
         {
             try
             {
@@ -662,10 +683,55 @@ namespace GMPS.API.Controllers
 
                 if (ModelState.IsValid)
                 {
+                    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    var existingOrder = await _orderRepo.GetOrderDetail(orderId);
+
+                    if (existingOrder is null)
+                    {
+                        _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                            "Order {OrderId} not found when adding material", orderId);
+                        var notFoundDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status404NotFound,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                        };
+                        notFoundDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "id", new[] { $"Order with id '{orderId}' not found" } }
+                        };
+                        return StatusCode(StatusCodes.Status404NotFound, notFoundDetails);
+                    }
+
+                    if (existingOrder.UserId != userId)
+                    {
+                        _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                            "User {UserId} attempted to add material to order {OrderId} owned by {OwnerId}",
+                            userId, orderId, existingOrder.UserId);
+                        var forbidDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status403Forbidden,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                        };
+                        forbidDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "authorization", new[] { "You do not have permission to add material to this order" } }
+                        };
+                        return StatusCode(StatusCodes.Status403Forbidden, forbidDetails);
+                    }
+
+                    string? imageUrl = null;
+                    if (imageFile != null && imageFile.Length > 0)
+                    {
+                        var uploadResult = await _cloudinaryService.UploadImageAsync(
+                            imageFile,
+                            CloudinaryConstrants.Cloudinary_Supplied_Image_Folder);
+                        imageUrl = uploadResult.Url;
+                    }
+
                     var material = new OMaterial
                     {
                         Name = input.MaterialName,
-                        Image = input.Image,
+                        Image = imageUrl ?? input.Image,
                         Value = input.Value,
                         Uom = input.Uom,
                         Note = input.Note
@@ -1104,6 +1170,117 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpPut("{orderId}/approve")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> ApproveOrder(int orderId)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Requesting approve for OrderId {OrderId}", orderId);
+                if (orderId <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Order Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+                var existingOrder = await _orderRepo.GetOrderDetail(orderId);
+                if (existingOrder is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { $"Order with id '{orderId}' not found" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+                if (existingOrder.StatusName == OrderStatus_Constants.Approved ||
+                    existingOrder.StatusName == OrderStatus_Constants.Rejected)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} has already been processed with status '{Status}'", orderId, existingOrder.StatusName);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status409Conflict,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "This order request has already been processed." } }
+                    };
+                    return StatusCode(StatusCodes.Status409Conflict, errorDetails);
+                }
+                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} cannot be approved - current status is '{Status}'", orderId, existingOrder.StatusName);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status403Forbidden,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { "Only Chờ Xét Duyệt order can be approved" } }
+                    };
+                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+                }
+                var histories = new List<OHistoryUpdate>
+                {
+                    new OHistoryUpdate
+                    {
+                        OrderId = orderId,
+                        FieldName = "Status",
+                        OldValue = existingOrder.StatusName,
+                        NewValue = OrderStatus_Constants.Approved
+                    }
+                };
+                var updatedOrder = new Order
+                {
+                    Id = orderId,
+                    Status = OrderStatus_Constants.Approved_ID
+                };
+                await _orderRepo.ApproveOrder(orderId, updatedOrder, histories);
+
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Order {OrderId} approved successfully", orderId);
+
+                return Ok($"Order '{orderId}' has been approved successfully");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Post, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,
+                    "Error occurred while approving OrderId {OrderId}", orderId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                });
             }
         }
     }
