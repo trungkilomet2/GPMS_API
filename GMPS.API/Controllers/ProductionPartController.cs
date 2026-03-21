@@ -136,7 +136,6 @@ namespace GMPS.API.Controllers
                 {
                     ProductionId = productionId,
                     PartName = x.PartName,
-                    TeamLeaderId = x.TeamLeaderId,
                     StartDate = x.StartDate,
                     EndDate = x.EndDate,
                     Cpu = x.Cpu,
@@ -185,7 +184,6 @@ namespace GMPS.API.Controllers
                 var part = new ProductionPart
                 {
                     PartName = dto.PartName,
-                    TeamLeaderId = dto.TeamLeaderId,
                     StartDate = dto.StartDate,
                     EndDate = dto.EndDate,
                     Cpu = dto.Cpu,

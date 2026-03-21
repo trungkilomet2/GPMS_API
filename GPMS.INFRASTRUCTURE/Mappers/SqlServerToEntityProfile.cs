@@ -110,7 +110,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
                 .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
-                .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.TEAM_LEADER_ID))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
@@ -122,7 +121,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
                 .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
-                .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.TEAM_LEADER_ID))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
@@ -166,7 +164,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.PartId, opt => opt.MapFrom(src => src.PP_ID))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
-                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.WORK_DATE))
+                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.CREATE_DATE))
                 .ForMember(dest => dest.IsReadOnly, opt => opt.MapFrom(src => src.IS_READ_ONLY ?? false))
                 .ForMember(dest => dest.IsPayment, opt => opt.MapFrom(src => src.IS_PAYMENT ?? false))
                 .ReverseMap()
@@ -174,7 +172,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.PP_ID, opt => opt.MapFrom(src => src.PartId))
                 .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
-                .ForMember(dest => dest.WORK_DATE, opt => opt.MapFrom(src => src.WorkDate))
+                .ForMember(dest => dest.CREATE_DATE, opt => opt.MapFrom(src => src.WorkDate))
                 .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
                 .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 

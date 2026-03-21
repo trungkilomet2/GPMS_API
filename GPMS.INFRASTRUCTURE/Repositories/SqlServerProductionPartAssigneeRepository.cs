@@ -65,10 +65,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return data is null ? null : _mapper.Map<ProductionPartWorkLog>(data);
         }
 
-        public async Task<int> MarkWorkLogsReadOnlyAfterDate(DateOnly date)
+        public async Task<int> MarkWorkLogsReadOnlyAfterDate(DateTime date)
         {
             var logs = await _context.PART_WORK_LOG
-                .Where(x => x.WORK_DATE < date && x.IS_READ_ONLY != true)
+                .Where(x => x.CREATE_DATE < date && x.IS_READ_ONLY != true)
                 .ToListAsync();
 
             foreach (var log in logs)
