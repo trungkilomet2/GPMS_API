@@ -371,7 +371,7 @@ public class UserControllerTest
             FullName = "Updated User",
             PhoneNumber = "088888888",
             Location = "HN",
-            Email = "updated@mail.com"
+            Email = null
         };
 
         var result = await BuildController(userId: 1).UpdateUser(input);
@@ -388,7 +388,8 @@ public class UserControllerTest
 
         var input = new UpdatedUserDTO
         {
-            FullName = "Updated User"
+            FullName = "Updated User",
+            Email = null
         };
 
         var result = await BuildController(userId: 1).UpdateUser(input);
@@ -405,13 +406,38 @@ public class UserControllerTest
 
         var input = new UpdatedUserDTO
         {
-            FullName = "Updated User"
+            FullName = "Updated User",
+            Email = null
         };
 
         var result = await BuildController(userId: 1).UpdateUser(input);
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_Returns200_AndSendOtp_WhenEmailProvided()
+    {
+        var controller = BuildController(userId: 1);
+
+        var input = new UpdatedUserDTO
+        {
+            Email = "test@gmail.com"
+        };
+
+        var result = await controller.UpdateUser(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(200, obj.StatusCode);
+
+        _email.Verify(x => x.SendEmailAsync(
+            input.Email,
+            It.IsAny<string>(),
+            It.IsAny<string>()
+        ), Times.Once);
+
+        _userRepo.Verify(x => x.UpdateProfile(It.IsAny<int>(), It.IsAny<User>()), Times.Never);
     }
 
 }
