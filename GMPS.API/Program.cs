@@ -83,6 +83,9 @@ builder.Services.AddScoped<IEmailRepositories, EmailService>();
 builder.Services.AddScoped<IWorkerRepositories, WorkerService>();
 builder.Services.AddScoped<IBaseWorkerRepository, SqlServerWorkerRepository>();
 
+builder.Services.AddScoped<IBaseCustomerRepositories, SqlServerCustomerRepository>();
+builder.Services.AddScoped<ICustomerRepositories, CustomerService>();
+
 builder.Services.AddScoped<IBaseRepositories<UserStatus>, SqlServerUserStatusRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();

@@ -53,17 +53,6 @@ namespace GMPS.API.Controllers
                 }
 
                 var recordCount = result.Count();
-                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
-
-                if (recordCount > 0 && input.PageIndex >= totalPages)
-                {
-                    return NotFound(new
-                    {
-                        message = $"Page {input.PageIndex} not exist",
-                        totalPages
-                    });
-                }
-
                 var data = result
                     .Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize)

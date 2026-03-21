@@ -231,7 +231,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            var result = await service.GetCommentById(1);
+            var result = await service.GetCommentByOrderId(1);
 
             Assert.Equal(2, result.Count());
         }
