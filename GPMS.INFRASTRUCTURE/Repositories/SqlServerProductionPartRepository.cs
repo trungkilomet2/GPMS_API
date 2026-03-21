@@ -74,9 +74,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new ValidationException("Không tồn tại Production Part trong hệ thống");
             }
             dbEntity.PART_NAME = entity.PartName;
-            dbEntity.TEAM_LEADER_ID = entity.TeamLeaderId;
-            dbEntity.START_DATE = entity.StartDate;
-            dbEntity.END_DATE = entity.EndDate;
+            dbEntity.START_DATE = entity.StartDate ?? DateTime.Now; // FIX Tạm
+            dbEntity.END_DATE = entity.EndDate ?? DateTime.Now; // FIX Tạm
             dbEntity.CPU = entity.Cpu;
             dbEntity.PPS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
