@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -151,6 +152,27 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new ValidationException("Không tồn tại User trong Production Part");
             }
             return await GetById(partId);
+        }
+
+        public async Task<IEnumerable<User>> ListWorkerWithPM(int pm_id)
+        {
+            USER check_id = await _context.USER.Include(u => u.ROLE).Where(x => x.USER_ID == pm_id).FirstOrDefaultAsync(); 
+
+            if(check_id is null)
+            {
+                throw new ValidationException("Không tồn tại PM trong hệ thống");
+            }
+            if(check_id.ROLE.Where(r=>r.NAME.Equals(Roles_Constants.PM)).FirstOrDefault() is null)
+            {
+                throw new ValidationException("User đang không phải là PM trong hệ thống");
+            }
+            
+            List<USER> workers = await _context.USER
+                .Include(u => u.ROLE)
+                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
+                .ToListAsync();
+
+            return _mapper.Map<IEnumerable<User>>(workers);
         }
     }
 }

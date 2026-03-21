@@ -12,6 +12,9 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseProductionPartAssignRepositories _partAssignRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
+        private readonly IBaseRepositories<WorkerSkill>  _workerSkill;
+        private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
+
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
@@ -19,13 +22,19 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<Production> productionRepo,
             IBaseRepositories<User> userRepo,
             IUnitOfWork unitOfWork,
-            IBaseProductionPartAssignRepositories partAssignRepo)
+            IBaseProductionPartAssignRepositories partAssignRepo,
+            IBaseRepositories<WorkerSkill> workerSkill,
+            IBaseRepositories<LeaveRequest> leaveRequestRepo
+            )
         {
             _partRepo = partRepo;
             _productionRepo = productionRepo;
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
             _partAssignRepo = partAssignRepo;
+            _workerSkill = workerSkill;
+            _leaveRequestRepo = leaveRequestRepo;
+
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -260,6 +269,17 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { updated })).First();
         }
 
-       
+        public Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
+        {
+            throw new NotImplementedException();
+        }
+
+        //public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
+        //{
+
+        //   var dataA = await _partAssignRepo.ListWorkerWithPM(pm_id);
+        //    var dataB = await _workerSkill.GetAll();
+
+        //}
     }
 }
