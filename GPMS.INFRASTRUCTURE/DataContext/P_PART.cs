@@ -16,11 +16,11 @@ public partial class P_PART
     [StringLength(150)]
     public string PART_NAME { get; set; } = null!;
 
-    public int TEAM_LEADER_ID { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime START_DATE { get; set; }
 
-    public DateOnly? START_DATE { get; set; }
-
-    public DateOnly? END_DATE { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime END_DATE { get; set; }
 
     [Column(TypeName = "decimal(18, 2)")]
     public decimal CPU { get; set; }
@@ -37,10 +37,6 @@ public partial class P_PART
     [ForeignKey("PRODUCTION_ID")]
     [InverseProperty("P_PART")]
     public virtual PRODUCTION PRODUCTION { get; set; } = null!;
-
-    [ForeignKey("TEAM_LEADER_ID")]
-    [InverseProperty("P_PART")]
-    public virtual USER TEAM_LEADER { get; set; } = null!;
 
     [ForeignKey("PP_ID")]
     [InverseProperty("PP")]
