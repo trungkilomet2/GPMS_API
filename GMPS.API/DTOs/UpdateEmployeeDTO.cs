@@ -11,7 +11,7 @@ namespace GMPS.API.DTOs
 
         [Required(ErrorMessage = "StatusId is required")]
         [Range(1, int.MaxValue, ErrorMessage = "StatusId must be greater than 0")]
-        public int StatusId { get; set; }
+        public int ManagerId { get; set; }
 
         [Required(ErrorMessage = "At least one role must be assigned")]
         [MinLength(1, ErrorMessage = "At least one role must be provided")]

@@ -66,6 +66,7 @@ namespace GMPS.API.Controllers
                         FullName = u.FullName,
                         PhoneNumber = u.PhoneNumber,
                         Email = u.Email,
+                        ManagerId = u.ManagerId,
                         Role = string.Join(", ", u.Roles.Select(r => r.Name)),
                         WorkerRole = string.Join(", ", u.WorkerSkills.Select(w => w.Name)),
                         Status = u.Status?.Name ?? "Unknown"
@@ -74,7 +75,6 @@ namespace GMPS.API.Controllers
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Returned {Count} employees", data.Count);
-
                 return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
@@ -140,6 +140,7 @@ namespace GMPS.API.Controllers
                     AvatarUrl = result.AvartarUrl,
                     PhoneNumber = result.PhoneNumber,
                     Email = result.Email,
+                    ManagerId = result.ManagerId,
                     Role = string.Join(", ", result.Roles.Select(r => r.Name)),
                     WorkerRole = string.Join(", ", result.WorkerSkills.Select(w => w.Name)),
                     Status = result.Status?.Name ?? "Unknown"
@@ -198,6 +199,7 @@ namespace GMPS.API.Controllers
                         UserName = input.UserName,
                         PasswordHash = passwordHasher.HashPassword(null, input.Password),
                         FullName = input.FullName,
+                        ManagerId = input.ManagerId,
                         StatusId = 1,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
@@ -276,7 +278,7 @@ namespace GMPS.API.Controllers
                     {
                         Id = userId,
                         FullName = input.FullName,
-                        StatusId = input.StatusId,
+                        ManagerId = input.ManagerId,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r

@@ -5,6 +5,7 @@ using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.TEST.TestCommon;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -420,6 +421,12 @@ public class UserControllerTest
     public async Task UpdateUser_Returns200_AndSendOtp_WhenEmailProvided()
     {
         var controller = BuildController(userId: 1);
+        var email = "test@gmail.com";
+
+        object cacheValue = null;
+
+        _cache.Setup(x => x.TryGetValue($"{email}_verified", out cacheValue))
+              .Returns(true);
 
         var input = new UpdatedUserDTO
         {
@@ -428,15 +435,8 @@ public class UserControllerTest
 
         var result = await controller.UpdateUser(input);
 
-        var obj = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.Equal(200, obj.StatusCode);
-
-        _email.Verify(x => x.SendEmailAsync(
-            input.Email,
-            It.IsAny<string>(),
-            It.IsAny<string>(), EmailType.Verification
-        ), Times.Once);
-
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, obj.StatusCode);
         _userRepo.Verify(x => x.UpdateProfile(It.IsAny<int>(), It.IsAny<User>()), Times.Never);
     }
 

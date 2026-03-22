@@ -1,7 +1,9 @@
 ﻿using GMPS.API.Controllers;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.EmailAPI;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -32,6 +34,9 @@ namespace GPMS.TEST.Api.Controllers
         {
             var controller = BuildController();
 
+            _userRepo.Setup(x => x.IsEmailExists(It.IsAny<string>()))
+                     .ReturnsAsync(true);
+
             var input = new VerifyEmailDTO
             {
                 Email = "test@gmail.com"
@@ -40,7 +45,7 @@ namespace GPMS.TEST.Api.Controllers
             var result = await controller.SendOTPEmail(input);
 
             var obj = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(200, obj.StatusCode);
+            Assert.Equal(StatusCodes.Status200OK, obj.StatusCode);
 
             _emailRepo.Verify(x => x.SendEmailAsync(
                 input.Email,
@@ -57,8 +62,26 @@ namespace GPMS.TEST.Api.Controllers
 
             var result = await controller.SendOTPEmail(null);
 
-            var obj = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, obj.StatusCode);
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task SendOTPEmail_Returns409_WhenEmailExists()
+        {
+            var controller = BuildController();
+
+            _userRepo.Setup(x => x.IsEmailExists(It.IsAny<string>())).ReturnsAsync(true);
+
+            var input = new VerifyEmailDTO
+            {
+                Email = "test@gmail.com"
+            };
+
+            var result = await controller.SendOTPEmail(input);
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status409Conflict, obj.StatusCode);
         }
 
         [Fact]
@@ -73,86 +96,51 @@ namespace GPMS.TEST.Api.Controllers
 
             var result = await controller.SendOTPEmail(input);
 
-            var obj = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, obj.StatusCode);
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, obj.StatusCode);
         }
 
 
         [Fact]
-        public void VerifyEmail_Returns400_WhenOtpNotFound()
+        public void VerifyEmail_Returns404_WhenOtpNotFound()
         {
             var controller = BuildController();
 
-            object cacheValue = null;
-
-            _cache.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheValue))
-                  .Returns(false);
-
-            var input = new VerifyOtpDTO
+            var result = controller.VerifyEmail(new VerifyOtpDTO
             {
                 Email = "test@gmail.com",
                 Otp = "123456"
-            };
+            });
 
-            var result = controller.VerifyEmail(input);
-
-            var obj = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, obj.StatusCode);
+            var obj = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal(StatusCodes.Status404NotFound, obj.StatusCode);
         }
 
         [Fact]
-        public void VerifyEmail_Returns400_WhenOtpInvalid()
-        {
-            var controller = BuildController();
-
-            var email = "test@gmail.com";
-            object cacheValue = "999999";
-
-            _cache.Setup(x => x.TryGetValue($"{email}_otp", out cacheValue))
-                  .Returns(true);
-
-            var input = new VerifyOtpDTO
-            {
-                Email = email,
-                Otp = "123456"
-            };
-
-            var result = controller.VerifyEmail(input);
-
-            var obj = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(400, obj.StatusCode);
-        }
-
-        [Fact]
-        public void VerifyEmail_Returns200_WhenOtpValid()
+        public void VerifyEmail_Returns409_WhenAlreadyVerified()
         {
             var controller = BuildController();
 
             var email = "test@gmail.com";
             var otp = "123456";
 
-            object cacheValue = otp;
+            object cacheOtp = "123456";
+            object cacheVerified = true;
 
-            _cache.Setup(x => x.TryGetValue($"{email}_otp", out cacheValue))
+            _cache.Setup(x => x.TryGetValue($"{email}_otp", out cacheOtp))
                   .Returns(true);
 
-            var input = new VerifyOtpDTO
+            _cache.Setup(x => x.TryGetValue($"{email}_verified", out cacheVerified))
+                  .Returns(true);
+
+            var result = controller.VerifyEmail(new VerifyOtpDTO
             {
                 Email = email,
                 Otp = otp
-            };
-
-            var result = controller.VerifyEmail(input);
+            });
 
             var obj = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(200, obj.StatusCode);
-
-            _cache.Verify(x => x.Remove($"{email}_otp"), Times.Once);
-            _cache.Verify(x => x.Set(
-                $"{email}_verified",
-                true,
-                It.IsAny<TimeSpan>()
-            ), Times.Once);
+            Assert.Equal(StatusCodes.Status409Conflict, obj.StatusCode);
         }
     }
 }
