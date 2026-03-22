@@ -43,7 +43,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new Exception("Người dùng không tồn tại role nào");
             }
-            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner)).Count() == 0)
+            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner) || r.Name.Equals( Roles_Constants.PM)).Count() == 0)
             {
                 throw new ValidationException("Chỉ Owner và PM mới được quản lý Production");
             }
