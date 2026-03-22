@@ -28,10 +28,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     await action();
                     await transaction.CommitAsync(cts);
                 }
-                catch
+                catch(Exception ex)
                 {
                     await transaction.RollbackAsync(cts);
-                    throw new Exception("Đã có lỗi xảy ra  - RollBack Data Thành Công");
+                    throw new Exception(ex.Message);
                 }
             }
         }

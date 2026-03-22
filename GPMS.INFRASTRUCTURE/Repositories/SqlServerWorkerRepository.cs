@@ -80,6 +80,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<User>(users);
         }
 
+        #region Insert by TrungNT | 22-03-2026
+        // Insert by TrungNT
+        public async Task<IEnumerable<WorkerSkill>> GetWorkerSkillByUserId(int userId)
+        {   
+            var workerSkill = await _context.USER
+                .Include(ws => ws.WS).Where(u => u.USER_ID == userId).SelectMany(u => u.WS).ToListAsync();
+
+            return _mapper.Map<IEnumerable<WorkerSkill>>(workerSkill);
+        }
+
+        #endregion
+
         public async Task<User> Update(User entity)
         {
             var existing = await _context.USER

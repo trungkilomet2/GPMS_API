@@ -328,6 +328,50 @@ namespace GMPS.API.Controllers
 
 
 
+        [HttpGet("parts/list-assign-workers")]
+        public async Task<ActionResult<RestDTO<IEnumerable<DataAssignWorkerViewDTO>>>> ListAssignWorker(
+            [FromQuery] ListAssignForPM dto
+            )
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ValidationProblemDetails(ModelState));
+            }
+            try
+            {
+                var data = await _productionPartService.ListAssignWorker(dto.PMId, dto.fromDate,dto.toDate);
+                if(data.Count() == 0)
+                {
+                    throw new ValidationException("PM đang không quản lý Worker nào cả");
+                }
+                return Ok(new RestDTO<IEnumerable<DataAssignWorkerViewDTO>>
+                {
+                   Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+               // _logger.LogError(ex, "Failed to remove worker {WorkerId} from part {PartId}", workerId, partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        }
+
+
+
+
+
 
     }
 }

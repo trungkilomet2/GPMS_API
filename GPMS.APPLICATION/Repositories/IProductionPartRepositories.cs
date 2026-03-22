@@ -14,6 +14,8 @@ namespace GPMS.APPLICATION.Repositories
         // P_Part =============> Assignment    
         Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds);
         Task<ProductionPartDetailViewDTO> RemoveWorker(int partId, int workerId);
+        // Lấy danh sách của worker có thể assign vào part đó gồm tên user + kĩ năng + lịch nghỉ phép
+        Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id, DateTime fromDate, DateTime toDate);
 
     }
 }

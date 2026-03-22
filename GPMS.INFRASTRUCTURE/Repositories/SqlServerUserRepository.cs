@@ -99,7 +99,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             User existUser = await FindUserByUserName(user.UserName);
             if (existUser is not null)
             {
-                throw new DbUpdateException("Tên tài khoản đã tồn tại");
+                throw new DbUpdateException("Tên tài khoản đã tồn tại.");
+            }
+            var existEmail = await GetUserByMail(user.Email);
+            if(existEmail is not null)
+            {
+                throw new DbUpdateException("Tên email đã tồn tại trong hệ thống.");
             }
             try
             {   

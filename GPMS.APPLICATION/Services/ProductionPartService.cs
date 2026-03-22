@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -12,6 +13,9 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseProductionPartAssignRepositories _partAssignRepo;
         private readonly IBaseRepositories<Production> _productionRepo;
         private readonly IBaseRepositories<User> _userRepo;
+        private readonly IBaseWorkerRepository _workerSkill;
+        private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
+
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
@@ -19,13 +23,19 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<Production> productionRepo,
             IBaseRepositories<User> userRepo,
             IUnitOfWork unitOfWork,
-            IBaseProductionPartAssignRepositories partAssignRepo)
+            IBaseProductionPartAssignRepositories partAssignRepo,
+            IBaseWorkerRepository workerSkill,
+            IBaseRepositories<LeaveRequest> leaveRequestRepo
+            )
         {
             _partRepo = partRepo;
             _productionRepo = productionRepo;
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
             _partAssignRepo = partAssignRepo;
+            _workerSkill = workerSkill;
+            _leaveRequestRepo = leaveRequestRepo;
+
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -245,6 +255,32 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { updated })).First();
         }
 
-       
+        public Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id,DateTime fromDate, DateTime toDate)
+        {   
+            if(fromDate > toDate)
+            {
+                throw new ValidationException("From date phải nhỏ hơn To date");
+            }
+            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
+            List<AssignWorkerViewDTO> listAssignWorker = new List<AssignWorkerViewDTO>();
+            foreach (var user in listUser)
+            {
+                FromDateToEndDate from_to_end = new FromDateToEndDate { UserId = user.Id, FromDate = fromDate, EndDate = toDate };
+                var list_skill = await _workerSkill.GetWorkerSkillByUserId(user.Id);
+                var list_leave_request_by_user = await _leaveRequestRepo.GetAll(from_to_end);
+                listAssignWorker.Add(new AssignWorkerViewDTO
+                {
+                    Workers = user,
+                    Skill_Of_Worker = list_skill,
+                    LeaveRequest = list_leave_request_by_user
+                });
+            }
+            return listAssignWorker;
+        }
     }
 }
