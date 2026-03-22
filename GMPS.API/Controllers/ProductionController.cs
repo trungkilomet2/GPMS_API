@@ -17,7 +17,7 @@ using System.Net;
 using System.Net.WebSockets;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace GMPS.API.Controllers
+namespace GMPS.API.Controllers 
 {
     [ApiController]
     [Route("api/[controller]")]

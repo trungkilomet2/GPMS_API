@@ -6,6 +6,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
@@ -28,6 +29,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 var data = _context.PRODUCTION.Include(p => p.ORDER).Include(p=> p.PM);
                 return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
             }
+            if(obj is Order order)
+            {
+                var data =  _context.PRODUCTION.Where(p => p.ORDER_ID == order.Id && p.PS_ID != ProductionStatus_Constants.Reject_ID).ToList(); 
+                return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
+            }
+
             throw new Exception("Đã có lỗi xảy ra trong hệ thống");
         }
 

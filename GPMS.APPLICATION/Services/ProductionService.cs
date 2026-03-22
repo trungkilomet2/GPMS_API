@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
@@ -56,6 +57,10 @@ namespace GPMS.APPLICATION.Services
             if (check_order_system.Status != OrderStatus_Constants.Approved_ID)
             {
                 throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất - Không ở trạng thái Chấp Nhận");
+            }
+            if(_prdRepo.GetAll(check_order_system).Result.Count() > 0)
+            {
+                throw new ValidationException("Đơn hàng đang trong kế hoạch sản xuất hoặc đã hoàn thành rồi");
             }
             var new_production = await _prdRepo.Create(production);
             return new_production is null ? throw new Exception("Tạo đơn hàng không thành công") : new_production;
@@ -156,10 +161,44 @@ namespace GPMS.APPLICATION.Services
                 {
                     Production = production,
                     ProjectManager = pm,
-                    Order = order
+                    Order = order,
+                    ProductionStatusName = GetStatusProductName(production.StatusId)
                 });
             }
             return result;
+        }
+
+        public string GetStatusProductName(int statusId)
+        {
+            switch (statusId)
+            {
+                case ProductionStatus_Constants.Pending_ID:
+                    return ProductionStatus_Constants.Pending;
+
+                case ProductionStatus_Constants.Reject_ID:
+                    return ProductionStatus_Constants.Reject;
+
+                case ProductionStatus_Constants.NeedUpdate_ID:
+                    return ProductionStatus_Constants.NeedUpdate;
+
+                case ProductionStatus_Constants.Approval_ID:
+                    return ProductionStatus_Constants.Approval;
+
+                case ProductionStatus_Constants.PendingPlan_ID:
+                    return ProductionStatus_Constants.PendingPlan;
+
+                case ProductionStatus_Constants.NeedUpdatePlan_ID:
+                    return ProductionStatus_Constants.NeedUpdatePlan;
+
+                case ProductionStatus_Constants.Producting_ID:
+                    return ProductionStatus_Constants.Producting;
+
+                case ProductionStatus_Constants.Done_ID:
+                    return ProductionStatus_Constants.Done;
+
+                default:
+                    return "Unknown Status";
+            }
         }
     }
 }
