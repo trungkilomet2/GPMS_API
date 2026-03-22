@@ -42,8 +42,6 @@ namespace GMPS.API.Mapper
 
 
 
-
-
             //------------------------ Production Part ----------------------------------------------------------//
 
             CreateMap<GPMS.APPLICATION.DTOs.ProductionPartDetailViewDTO, ProductionPartDetailDTO>()

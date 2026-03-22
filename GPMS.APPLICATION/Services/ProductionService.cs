@@ -3,6 +3,7 @@ using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
@@ -56,6 +57,10 @@ namespace GPMS.APPLICATION.Services
             if (check_order_system.Status != OrderStatus_Constants.Approved_ID)
             {
                 throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất - Không ở trạng thái Chấp Nhận");
+            }
+            if(_prdRepo.GetAll(check_order_system).Result.Count() > 0)
+            {
+                throw new ValidationException("Đơn hàng đang trong kế hoạch sản xuất hoặc đã hoàn thành rồi");
             }
             var new_production = await _prdRepo.Create(production);
             return new_production is null ? throw new Exception("Tạo đơn hàng không thành công") : new_production;
