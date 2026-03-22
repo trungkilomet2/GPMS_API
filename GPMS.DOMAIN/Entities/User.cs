@@ -17,6 +17,7 @@ namespace GPMS.DOMAIN.Entities
        public string Location { get; set; }
        public string Email { get; set; }
        public int StatusId { get; set; }
+       public int ManagerId { get; set; }
 
         public List<Role> Roles { get; set; } = new();
 

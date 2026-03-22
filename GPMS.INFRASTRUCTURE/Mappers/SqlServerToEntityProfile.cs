@@ -21,6 +21,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.AvartarUrl, opt => opt.MapFrom(src => src.AVATAR))
                 .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.LOCATION))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.EMAIL))
+                .ForMember(dest => dest.ManagerId, opt => opt.MapFrom(src => src.MANAGER_ID))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.US_ID))
                 .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.ROLE))
                 .ForMember(dest => dest.WorkerSkills, opt => opt.MapFrom(src => src.WS))

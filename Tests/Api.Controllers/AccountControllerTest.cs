@@ -2,6 +2,7 @@
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +14,7 @@ namespace GPMS.TEST.Api.Controllers;
 public class AccountControllerTest
 {
     private readonly Mock<IAccountRepositories> _accountRepo = new();
+    private readonly Mock<IEmailRepositories> _emailRepo = new();
     private readonly Mock<ILogger<AccountController>> _logger = new();
     private readonly IConfiguration _configuration;
     private readonly AccountController _controller;
@@ -26,7 +28,7 @@ public class AccountControllerTest
             ["JWT:Audience"] = "test-audience"
         }).Build();
 
-        _controller = new AccountController(_accountRepo.Object, _configuration, _logger.Object)
+        _controller = new AccountController(_accountRepo.Object, _configuration, _logger.Object,_emailRepo.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

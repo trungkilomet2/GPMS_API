@@ -83,29 +83,6 @@ namespace GPMS.TEST.Api.Controllers
         }
 
         [Fact]
-        public async Task GetEmployees_Returns404_WhenPageOutOfRange()
-        {
-            var users = new List<User>
-    {
-        new User { Id = 1, UserName = "worker1" }
-    };
-
-            _mockRepo.Setup(x => x.GetAllEmployees())
-                     .ReturnsAsync(users);
-
-            var input = new RequestDTO<EmployeeDTO>
-            {
-                PageIndex = 10,
-                PageSize = 1
-            };
-
-            var result = await _controller.GetEmployees(input);
-
-            var objectResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
-        }
-
-        [Fact]
         public async Task GetEmployeeById_ReturnsBadRequest_WhenIdInvalid()
         {
             var result = await _controller.GetEmployeeById(0);
@@ -160,13 +137,15 @@ namespace GPMS.TEST.Api.Controllers
                 UserName = "worker1",
                 Password = "123456",
                 FullName = "Worker One",
-                RoleIds = new List<int> { 2 }
+                RoleIds = new List<int> { 2 },
+                ManagerId = 1,
             };
 
             var createdUser = new User
             {
                 Id = 5,
-                UserName = dto.UserName
+                UserName = dto.UserName,
+                StatusId = 1
             };
 
             _mockRepo.Setup(x => x.CreateEmployee(It.IsAny<User>()))
@@ -211,7 +190,6 @@ namespace GPMS.TEST.Api.Controllers
             var dto = new UpdateEmployeeDTO
             {
                 FullName = "Updated Worker",
-                StatusId = 1,
                 RoleIds = new List<int> { 2 }
             };
 

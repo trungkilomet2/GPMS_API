@@ -22,25 +22,25 @@ namespace GMPS.API.Controllers
         private readonly IUserRepositories _userRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<CommentController> _logger;
+        private readonly IOrderRepositories _orderRepo;
 
-        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger, IUserRepositories userRepo)
+        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger, IUserRepositories userRepo, IOrderRepositories orderRepo)
         {
             _commentRepo = commentInterface ?? throw new ArgumentNullException(nameof(commentInterface));
             _configuration = configuration;
             _logger = logger;
             _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
+            _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
         public async Task<IActionResult> GetCommentByOrderId(int orderId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var user = await _userRepo.GetUserById(userId);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);           
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
                     "Getting comments for OrderId {OrderId}", orderId);
-
                 var result = await _commentRepo.GetCommentByOrderId(orderId);
                 if (!result.Any())
                     {
@@ -51,7 +51,6 @@ namespace GMPS.API.Controllers
                 var comment = result.Select(c => new CommentDTO
                 {
                     Id = c.Id,
-                    UserName = user.UserName,
                     ToOrderId = c.toOrderId,
                     Content = c.Content,
                     SendDateTime = c.SendDateTime
