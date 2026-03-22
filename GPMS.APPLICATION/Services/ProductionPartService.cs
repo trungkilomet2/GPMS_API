@@ -95,7 +95,6 @@ namespace GPMS.APPLICATION.Services
             await ValidatePartInput(productionId, part);
 
             existing.PartName = part.PartName;
-            existing.TeamLeaderId = part.TeamLeaderId;
             existing.Cpu = part.Cpu;
             existing.StatusId = part.StatusId;
             existing.StartDate = part.StartDate;
@@ -180,17 +179,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("PartName không được để trống");
             }
-
-            if (part.TeamLeaderId <= 0)
-            {
-                throw new ValidationException("TeamLeaderId phải > 0");
-            }
-
-            var teamLeader = await _userRepo.GetById(part.TeamLeaderId);
-            if (teamLeader is null)
-            {
-                throw new ValidationException("Team leader không tồn tại trong hệ thống");
-            }
+          
 
             if (part.Cpu <= 0)
             {
@@ -218,9 +207,6 @@ namespace GPMS.APPLICATION.Services
             {
                 // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
                 var detail = await _partRepo.GetById(part.Id);
-                int teamLeaderId = detail.TeamLeaderId;
-                // Lấy thông tin của Team Leader
-                var leader = await _userRepo.GetById(detail.TeamLeaderId);
                 // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
                 var assignees = detail.AssigneeIds.Distinct().ToList();
                 // Lấy danh sách người dùng được giao
@@ -238,7 +224,6 @@ namespace GPMS.APPLICATION.Services
                 result.Add(new ProductionPartDetailViewDTO
                 {
                     Part = detail,
-                    TeamLeader = leader,
                     Assignees = assigneeUsers
                 });
             }
