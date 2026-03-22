@@ -64,8 +64,8 @@ namespace GMPS.API.Controllers
         }
 
 
-        [HttpGet("get-user-detail-for-admin/{userId}")]
-        [Authorize(Roles = "Admin")]
+        [HttpGet("user-detail/{userId}")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<UserDetailDTO>>> GetUserDetail(int userId)
         {
             try

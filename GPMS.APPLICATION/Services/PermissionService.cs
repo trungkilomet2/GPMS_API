@@ -29,7 +29,7 @@ namespace GPMS.APPLICATION.Services
 
             // User
             new("User", "GET", "GetUser", "1,2"),
-            new("User", "GET", "GetUserDetail", "1"),
+            new("User", "GET", "GetUserDetail", "1,2"),
             new("User", "GET", "GetUserList", "1"),
             new("User", "POST", "CreateUser", "1"),
             new("User", "PUT", "DisableUser", "1"),
