@@ -434,7 +434,7 @@ public class UserControllerTest
         _email.Verify(x => x.SendEmailAsync(
             input.Email,
             It.IsAny<string>(),
-            It.IsAny<string>()
+            It.IsAny<string>(), EmailType.Verification
         ), Times.Once);
 
         _userRepo.Verify(x => x.UpdateProfile(It.IsAny<int>(), It.IsAny<User>()), Times.Never);

@@ -47,13 +47,11 @@ namespace GMPS.API.Mapper
              .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Part.Id))
              .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Part.ProductionId))
              .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.Part.PartName))
-             .ForMember(dest => dest.TeamLeaderId, opt => opt.MapFrom(src => src.Part.TeamLeaderId))
              .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Part.StartDate))
              .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Part.EndDate))
              .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.Part.Cpu))
              .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Part.StatusId))
              .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Part.StatusName))
-             .ForMember(dest => dest.TeamLeader, opt => opt.MapFrom(src => src.TeamLeader))
              .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.Assignees));
 
             CreateMap<User, ProductionPartUserDTO>()

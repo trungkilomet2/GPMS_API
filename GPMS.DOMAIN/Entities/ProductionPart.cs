@@ -5,7 +5,6 @@
         public int Id { get; set; }
         public int ProductionId { get; set; }
         public string PartName { get; set; } = string.Empty;
-        public int TeamLeaderId { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public decimal Cpu { get; set; }

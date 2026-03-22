@@ -59,7 +59,7 @@ namespace GPMS.TEST.Api.Controllers
             Email = "worker@test.com",
             PhoneNumber = "123",
             Roles = new List<Role>{ new Role{ Name = "Worker"} },
-            WorkerRoles = new List<WorkerSkill>{ new WorkerSkill{ Name = "Sewer"} },
+            WorkerSkills = new List<WorkerSkill>{ new WorkerSkill{ Name = "Sewer"} },
             Status = new UserStatus{ Name = "Active"}
         }
                  };
@@ -139,7 +139,7 @@ namespace GPMS.TEST.Api.Controllers
                 Email = "worker@test.com",
                 PhoneNumber = "123",
                 Roles = new List<Role> { new Role { Name = "Worker" } },
-                WorkerRoles = new List<WorkerSkill> { new WorkerSkill { Name = "Cutting" } }
+                WorkerSkills = new List<WorkerSkill> { new WorkerSkill { Name = "Cutting" } }
             };
 
             _mockRepo.Setup(x => x.GetEmployeeById(1))
