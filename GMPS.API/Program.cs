@@ -4,6 +4,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Entities.GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.EmailAPI;
@@ -15,9 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
+using System.Text;
 Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -152,6 +153,16 @@ builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductio
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
 builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
+
+builder.Services.AddScoped<IBaseRepositories<ProductionRejectReason>, SqlServerProductionRejectRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionIssueLog>, SqlServerProductionIssueRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionPartWorkLog>, SqlServerProductionPartWorkLogRepository>();
+builder.Services.AddScoped<IBaseRepositories<TemplateDefinition>, SqlServerTemplateRepository>();
+builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingNotebookRepository>();
+builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
+
+builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
+builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();

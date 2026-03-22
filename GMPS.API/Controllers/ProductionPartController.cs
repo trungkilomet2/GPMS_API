@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -24,15 +26,22 @@ namespace GMPS.API.Controllers
         private readonly IProductionPartRepositories _productionPartService;
         private readonly IMapper _mapper;
         private readonly ILogger<ProductionPartController> _logger;
+        private readonly IProductionRepositories _productionService;
+        private readonly ICloudinaryService _cloudinaryService;
 
         public ProductionPartController(
             IProductionPartRepositories productionPartService,
             IMapper mapper,
-            ILogger<ProductionPartController> logger)
+            ILogger<ProductionPartController> logger,
+            IProductionRepositories productionService,
+            ICloudinaryService cloudinaryService
+            )
         {
             _productionPartService = productionPartService;
             _mapper = mapper;
             _logger = logger;
+            _productionService = productionService;
+            _cloudinaryService = cloudinaryService;
         }
 
         // GET: Lấy tất cả Production Part của Production ID đấy
@@ -339,14 +348,14 @@ namespace GMPS.API.Controllers
             }
             try
             {
-                var data = await _productionPartService.ListAssignWorker(dto.PMId, dto.fromDate,dto.toDate);
-                if(data.Count() == 0)
+                var data = await _productionPartService.ListAssignWorker(dto.PMId, dto.fromDate, dto.toDate);
+                if (data.Count() == 0)
                 {
                     throw new ValidationException("PM đang không quản lý Worker nào cả");
                 }
                 return Ok(new RestDTO<IEnumerable<DataAssignWorkerViewDTO>>
                 {
-                   Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)
+                    Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)
                 });
             }
             catch (ValidationException ex)
@@ -359,12 +368,114 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-               // _logger.LogError(ex, "Failed to remove worker {WorkerId} from part {PartId}", workerId, partId);
+                // _logger.LogError(ex, "Failed to remove worker {WorkerId} from part {PartId}", workerId, partId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Detail = ex.Message,
                     Status = StatusCodes.Status500InternalServerError
                 });
+            }
+        }
+
+        //------------------------- LOG WORK API------------------------------- CHECK1
+
+        [HttpGet("parts/get-work-logs/{partId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartWorkLog>>>> GetWorkLogs([Range(1, int.MaxValue)] int partId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.GetWorkLogs(partId);
+                return Ok(new RestDTO<IEnumerable<ProductionPartWorkLog>> { Data = data });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+        }
+
+        [HttpPost("parts/create-work-logs/{partId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog([Range(1, int.MaxValue)] int partId, [FromBody] CreatePartWorkLogDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.CreateWorkLog(partId, dto.UserId, dto.Quantity);
+                return StatusCode(StatusCodes.Status201Created, new RestDTO<ProductionPartWorkLog> { Data = data });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+        }
+
+        [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog([Range(1, int.MaxValue)] int partId, [Range(1, int.MaxValue)] int workLogId, [FromBody] UpdatePartWorkLogDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.UpdateWorkLog(partId, workLogId, dto.Quantity);
+                return Ok(new RestDTO<ProductionPartWorkLog> { Data = data });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+        }
+
+        [HttpPost("parts/issues/{partId:int}")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
+            [Range(1, int.MaxValue)] int partId,
+            [FromForm] CreatePartIssueDTO dto
+            )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var part = await _productionPartService.GetPartAssignmentDetail(partId);
+                string? imageUrl = null;
+                if (dto.Image is not null && dto.Image.Length > 0)
+                {
+                    imageUrl = (await _cloudinaryService.UploadImageAsync(dto.Image, CloudinaryConstrants.Cloudinary_Order_Image_Folder)).Url;
+                }
+
+                var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
+                {
+                    ProductionId = part.Part.ProductionId,
+                    CreatedBy = dto.CreatedBy,
+                    TypeIssue = partId,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Priority = dto.Priority,
+                    StatusId = 1,
+                    ImageUrl = imageUrl
+                });
+
+                return StatusCode(StatusCodes.Status201Created, new RestDTO<ProductionIssueListItemDTO>
+                {
+                    Data = new ProductionIssueListItemDTO
+                    {
+                        IssueId = issue.Id,
+                        Title = issue.Title,
+                        Description = issue.Description,
+                        TypeIssue = issue.TypeIssue,
+                        Priority = issue.Priority,
+                        Quantity = 1,
+                        ImageUrl = issue.ImageUrl,
+                        CreatedAt = issue.CreatedAt
+                    }
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Create issue failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
 
