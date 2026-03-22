@@ -337,10 +337,13 @@ namespace GMPS.API.Controllers
             {
                 return BadRequest(new ValidationProblemDetails(ModelState));
             }
-
             try
             {
                 var data = await _productionPartService.ListAssignWorker(dto.PMId, dto.fromDate,dto.toDate);
+                if(data.Count() == 0)
+                {
+                    throw new ValidationException("PM đang không quản lý Worker nào cả");
+                }
                 return Ok(new RestDTO<IEnumerable<DataAssignWorkerViewDTO>>
                 {
                    Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)

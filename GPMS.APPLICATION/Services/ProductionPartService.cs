@@ -261,7 +261,11 @@ namespace GPMS.APPLICATION.Services
         }
 
         public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id,DateTime fromDate, DateTime toDate)
-        {
+        {   
+            if(fromDate > toDate)
+            {
+                throw new ValidationException("From date phải nhỏ hơn To date");
+            }
             var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
             List<AssignWorkerViewDTO> listAssignWorker = new List<AssignWorkerViewDTO>();
             foreach (var user in listUser)
