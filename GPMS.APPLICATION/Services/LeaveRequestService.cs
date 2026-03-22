@@ -25,13 +25,15 @@ namespace GPMS.APPLICATION.Services
 
         private static readonly TimeZoneInfo _vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
-        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content)
+        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate)
         {
             var leaveRequest = new LeaveRequest
             {
                 UserId = userId,
                 Content = content,
                 DateCreate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone),
+                FromDate = fromDate,
+                ToDate = toDate,
             };
 
             return await _leaveRequestBaseRepo.Create(leaveRequest);
@@ -40,7 +42,7 @@ namespace GPMS.APPLICATION.Services
         public async Task<LeaveRequest> GetLeaveRequestById(int id)
             => await _leaveRequestBaseRepo.GetById(id);
 
-        public async Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent)
+        public async Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent, int approverId)
         {
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
@@ -52,12 +54,13 @@ namespace GPMS.APPLICATION.Services
 
             leaveRequest.DenyContent = denyContent;
             leaveRequest.StatusId = 3;
+            leaveRequest.ApprovedBy = approverId;
             leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
         }
 
-        public async Task<LeaveRequest> ApproveLeaveRequest(int id)
+        public async Task<LeaveRequest> ApproveLeaveRequest(int id, int approverId)
         {
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
@@ -67,7 +70,8 @@ namespace GPMS.APPLICATION.Services
             if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
                 throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be approved.");
 
-            leaveRequest.StatusId = 2; 
+            leaveRequest.StatusId = 2;
+            leaveRequest.ApprovedBy = approverId;
             leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);

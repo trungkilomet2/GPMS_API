@@ -422,13 +422,15 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
+                var orderUser = await _userRepo.GetUserById(order.UserId);
+
                 var data = new OrderDetailDTO
                 {
                     Id = order.Id,
                     UserId = order.UserId,
-                    UserFullName = order.UserFullName,
-                    UserPhone = order.UserPhone,
-                    UserLocation = order.UserLocation,
+                    UserFullName = orderUser?.FullName,
+                    UserPhone = orderUser?.PhoneNumber,
+                    UserLocation = orderUser?.Location,
                     OrderName = order.OrderName,
                     Type = order.Type,
                     Size = order.Size,

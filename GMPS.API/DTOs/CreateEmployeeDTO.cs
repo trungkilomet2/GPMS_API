@@ -16,8 +16,7 @@ namespace GMPS.API.DTOs
         [Required(ErrorMessage = "FullName is required")]
         [StringLength(50, ErrorMessage = "FullName cannot exceed 50 characters")]
         public string FullName { get; set; } = null!;
-
-        public int StatusId { get; set; }
+        public int ManagerId { get; set; }
 
         [Required(ErrorMessage = "At least one role must be assigned")]
         [MinLength(1, ErrorMessage = "At least one role must be provided")]

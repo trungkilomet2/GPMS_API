@@ -44,7 +44,9 @@ namespace GPMS.APPLICATION.Services
             var status = await _userStatusRepo.GetById(user.StatusId);
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
-
+            var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
+            if (existManager == null)
+                throw new KeyNotFoundException($"Manager with Id '{user.ManagerId}' not found.");
             User createdUser = null;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -75,7 +77,9 @@ namespace GPMS.APPLICATION.Services
             var status = await _userStatusRepo.GetById(user.StatusId);
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
-
+            var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
+            if (existManager == null)
+                throw new KeyNotFoundException($"Manager with Id '{user.ManagerId}' not found.");
             var existing = await _workerRepo.GetWorkerById(userId);
             if (existing == null)
                 throw new KeyNotFoundException($"Employee with id '{userId}' not found.");

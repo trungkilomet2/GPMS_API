@@ -30,7 +30,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Getting all worker roles - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    "Getting all worker skills - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     input.PageIndex, input.PageSize);
 
                 if (!ModelState.IsValid)
@@ -43,7 +43,12 @@ namespace GMPS.API.Controllers
                 }
 
                 var result = await _workerroleRepo.GetAllWorkerRoles();
-
+                if(result == null || !result.Any())
+                {
+                    _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
+                        "No worker Skills found");
+                    return NotFound("Worker Skill not found");
+                }
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                 {
                     result = result.Where(x =>
@@ -69,7 +74,7 @@ namespace GMPS.API.Controllers
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Returned {Count} worker roles", data.Count);
+                    "Returned {Count} worker skills", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<WorkerSkill>>
                 {
@@ -92,7 +97,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting worker roles");
+                    "Error while getting worker skills");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {

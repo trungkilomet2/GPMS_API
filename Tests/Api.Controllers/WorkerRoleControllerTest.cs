@@ -51,8 +51,8 @@ namespace GPMS.TEST.Api.Controllers
         {
             var roles = new List<WorkerSkill>
             {
-                new WorkerSkill{ Id = 1, Name = "Tailor"},
-                new WorkerSkill{ Id = 2, Name = "Quality Control"}
+                new WorkerSkill { Id = 1, Name = "Tailor" },
+                new WorkerSkill { Id = 2, Name = "QC" }
             };
 
             _mockRepo.Setup(x => x.GetAllWorkerRoles())
@@ -60,7 +60,7 @@ namespace GPMS.TEST.Api.Controllers
 
             var request = new RequestDTO<WorkerSkill>
             {
-                PageIndex = 1,
+                PageIndex = 0,
                 PageSize = 10
             };
 
@@ -70,20 +70,23 @@ namespace GPMS.TEST.Api.Controllers
 
             Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
         }
-
         [Fact]
         public async Task GetAllWorkerRoles_ReturnsNotFound_WhenNoRoles()
         {
             _mockRepo.Setup(x => x.GetAllWorkerRoles())
                      .ReturnsAsync(new List<WorkerSkill>());
 
-            var request = new RequestDTO<WorkerSkill>();
+            var request = new RequestDTO<WorkerSkill>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
 
             var result = await _controller.GetAllWorkerRoles(request);
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
 
-            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+            Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
         }
 
         [Fact]
@@ -138,7 +141,7 @@ namespace GPMS.TEST.Api.Controllers
 
             Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
         }
-        
+
 
         [Fact]
         public async Task CreateWorkerRole_ReturnsInternalServerError_WhenExceptionOccurs()

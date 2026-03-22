@@ -118,6 +118,7 @@ namespace GPMS.TEST.Application.Services
             {
                 Id = 1,
                 StatusId = 1,
+                ManagerId= 1,
                 Roles = new List<Role> { new Role { Id = 2 } }
             };
 
@@ -126,6 +127,9 @@ namespace GPMS.TEST.Application.Services
 
             _mockRoleRepo.Setup(x => x.GetById(2))
                          .ReturnsAsync(new Role { Id = 2 });
+
+            _mockWorkerRepo.Setup(x => x.GetWorkerById(1))
+                           .ReturnsAsync(new User { Id = 1 });
 
             _mockWorkerRepo.Setup(x => x.Create(It.IsAny<User>()))
                            .ReturnsAsync(user);
@@ -196,6 +200,7 @@ namespace GPMS.TEST.Application.Services
             {
                 Id = 1,
                 StatusId = 1,
+                ManagerId = 1,
                 Roles = new List<Role> { new Role { Id = 2 } }
             };
 

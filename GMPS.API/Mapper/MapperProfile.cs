@@ -17,13 +17,16 @@ namespace GMPS.API.Mapper
 
             CreateMap<ProductionDetailViewDTO, ListProductionDTO>()
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
-                .ForMember(dest => dest.PmId, opt => opt.MapFrom(src => src.Production.PmId))
+                .ForMember(dest => dest.PmInfo, opt => opt.MapFrom(src => src.ProjectManager))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Production.StartDate))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Production.EndDate))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
-                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
+                .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.ProductionStatusName));
             CreateMap<Order, ListOrderProductionDTO>();
-                
+            CreateMap<User, PMInfo>();
+
+
             // ProductionDetail
             CreateMap<ProductionDetailViewDTO, ProductionDetailDTO>()
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
@@ -34,8 +37,6 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<User, ProductionDetailPMDTO>();
             CreateMap<Order, ProductionDetailOrderDTO>();
-
-
 
 
 

@@ -297,7 +297,7 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() =>
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.UpdateUserForAdmin(99, new User { Id = 99 }));
         }
     }
