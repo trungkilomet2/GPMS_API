@@ -156,10 +156,44 @@ namespace GPMS.APPLICATION.Services
                 {
                     Production = production,
                     ProjectManager = pm,
-                    Order = order
+                    Order = order,
+                    ProductionStatusName = GetStatusProductName(production.StatusId)
                 });
             }
             return result;
+        }
+
+        public string GetStatusProductName(int statusId)
+        {
+            switch (statusId)
+            {
+                case ProductionStatus_Constants.Pending_ID:
+                    return ProductionStatus_Constants.Pending;
+
+                case ProductionStatus_Constants.Reject_ID:
+                    return ProductionStatus_Constants.Reject;
+
+                case ProductionStatus_Constants.NeedUpdate_ID:
+                    return ProductionStatus_Constants.NeedUpdate;
+
+                case ProductionStatus_Constants.Approval_ID:
+                    return ProductionStatus_Constants.Approval;
+
+                case ProductionStatus_Constants.PendingPlan_ID:
+                    return ProductionStatus_Constants.PendingPlan;
+
+                case ProductionStatus_Constants.NeedUpdatePlan_ID:
+                    return ProductionStatus_Constants.NeedUpdatePlan;
+
+                case ProductionStatus_Constants.Producting_ID:
+                    return ProductionStatus_Constants.Producting;
+
+                case ProductionStatus_Constants.Done_ID:
+                    return ProductionStatus_Constants.Done;
+
+                default:
+                    return "Unknown Status";
+            }
         }
     }
 }
