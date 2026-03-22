@@ -438,7 +438,7 @@ namespace GMPS.API.Controllers
                 string? imageUrl = null;
                 if (dto.Image is not null && dto.Image.Length > 0)
                 {
-                    imageUrl = (await _cloudinaryService.UploadImageAsync(dto.Image, CloudinaryConstrants.Cloudinary_Order_Image_Folder)).Url;
+                    imageUrl = (await _cloudinaryService.UploadImageAsync(dto.Image, CloudinaryConstrants.Cloudinary_Order_Issue_Folder)).Url;
                 }
 
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
