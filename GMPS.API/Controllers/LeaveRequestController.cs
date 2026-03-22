@@ -142,6 +142,8 @@ namespace GMPS.API.Controllers
                         UserFullName = lr.UserFullName,
                         Content = lr.Content,
                         DateCreate = lr.DateCreate,
+                        FromDate = lr.FromDate,
+                        ToDate = lr.ToDate,
                         DateReply = lr.DateReply,
                         Status = lr.StatusName
                     });
@@ -293,6 +295,8 @@ namespace GMPS.API.Controllers
                         UserFullName = lr.UserFullName,
                         Content = lr.Content,
                         DateCreate = lr.DateCreate,
+                        FromDate = lr.FromDate,
+                        ToDate = lr.ToDate,
                         DateReply = lr.DateReply,
                         Status = lr.StatusName
                     });
@@ -405,8 +409,11 @@ namespace GMPS.API.Controllers
                     UserFullName = leaveRequest.UserFullName,
                     Content = leaveRequest.Content,
                     DateCreate = leaveRequest.DateCreate,
+                    FromDate = leaveRequest.FromDate,
+                    ToDate = leaveRequest.ToDate,
                     DateReply = leaveRequest.DateReply,
                     DenyContent = leaveRequest.DenyContent,
+                    ApprovedByName = leaveRequest.ApprovedByName,
                     Status = leaveRequest.StatusName
                 };
 
@@ -441,7 +448,7 @@ namespace GMPS.API.Controllers
 
         // GET api/leaverequest/leave-request-detail/{id}
         [HttpGet("leave-request-detail/{id}", Name = "Get leave request detail by id")]
-        [Authorize(Roles = "Owner,PM,Team_Leader,Worker")]
+        [Authorize(Roles = "Owner,PM")]
         public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> GetLeaveRequestDetail(int id)
         {
             try
@@ -485,36 +492,6 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
-
-                if (userIdClaim is null || roleClaim is null)
-                    return Unauthorized();
-
-                if (!int.TryParse(userIdClaim, out var requesterId))
-                    return Unauthorized();
-
-                var isTeamLeader = roleClaim == nameof(RoleName.Team_Leader);
-                var isWorker = roleClaim == nameof(RoleName.Worker);
-
-                if ((isWorker || isTeamLeader) && leaveRequest.UserId != requesterId)
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "UserId {RequesterId} with role '{Role}' attempted to access LeaveRequestId {LeaveRequestId} belonging to UserId {OwnerId}",
-                        requesterId, roleClaim, id, leaveRequest.UserId);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status403Forbidden,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "authorization", new[] { "You do not have permission to view this leave request." } }
-                    };
-                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
-                }
-
                 var data = new LeaveRequestDetailDTO
                 {
                     Id = leaveRequest.Id,
@@ -522,14 +499,16 @@ namespace GMPS.API.Controllers
                     UserFullName = leaveRequest.UserFullName,
                     Content = leaveRequest.Content,
                     DateCreate = leaveRequest.DateCreate,
+                    FromDate = leaveRequest.FromDate,
+                    ToDate = leaveRequest.ToDate,
                     DateReply = leaveRequest.DateReply,
                     DenyContent = leaveRequest.DenyContent,
+                    ApprovedByName = leaveRequest.ApprovedByName,
                     Status = leaveRequest.StatusName
                 };
 
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Get,
-                    "Returned detail for LeaveRequestId {LeaveRequestId} to UserId {RequesterId} successfully",
-                    id, requesterId);
+                    "Returned detail for LeaveRequestId {LeaveRequestId} successfully", id);
 
                 return Ok(new RestDTO<LeaveRequestDetailDTO>
                 {
@@ -590,7 +569,7 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
 
-                var created = await _leaveRequestRepo.CreateLeaveRequest(requesterId, input!.Content);
+                var created = await _leaveRequestRepo.CreateLeaveRequest(requesterId, input!.Content, input.FromDate, input.ToDate);
 
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Post,
                     "UserId {UserId} created LeaveRequestId {LeaveRequestId} successfully", requesterId, created.Id);
@@ -602,8 +581,11 @@ namespace GMPS.API.Controllers
                     UserFullName = created.UserFullName,
                     Content = created.Content,
                     DateCreate = created.DateCreate,
+                    FromDate = created.FromDate,
+                    ToDate = created.ToDate,
                     DateReply = created.DateReply,
                     DenyContent = created.DenyContent,
+                    ApprovedByName = created.ApprovedByName,
                     Status = created.StatusName
                 };
 
@@ -655,6 +637,10 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var approverId))
+                    return Unauthorized();
+
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "Denying LeaveRequestId {LeaveRequestId}", id);
 
@@ -711,7 +697,7 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
 
-                await _leaveRequestRepo.DenyLeaveRequest(id, input!.DenyContent);
+                await _leaveRequestRepo.DenyLeaveRequest(id, input!.DenyContent, approverId);
 
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "LeaveRequestId {LeaveRequestId} denied successfully", id);
@@ -772,6 +758,10 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var approverId))
+                    return Unauthorized();
+
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "Approving LeaveRequestId {LeaveRequestId}", id);
 
@@ -792,7 +782,7 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
 
-                await _leaveRequestRepo.ApproveLeaveRequest(id);
+                await _leaveRequestRepo.ApproveLeaveRequest(id, approverId);
 
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "LeaveRequestId {LeaveRequestId} approved successfully", id);
