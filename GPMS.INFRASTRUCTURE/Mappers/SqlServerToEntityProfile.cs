@@ -142,10 +142,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.OrderId))
                 .ForMember(dest => dest.P_START_DATE, opt => opt.MapFrom(src => src.StartDate))
                 .ForMember(dest => dest.P_END_DATE, opt => opt.MapFrom(src => src.EndDate))
-                .ForMember(dest => dest.PS_ID, opt => opt.MapFrom(src => src.StatusId))
-                ;
-
-
+                .ForMember(dest => dest.PS_ID, opt => opt.MapFrom(src => src.StatusId));
 
             //ORDER REJECT REASON
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER_REJECT_REASON, GPMS.DOMAIN.Entities.OrderRejectReason>()
