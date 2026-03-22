@@ -29,8 +29,8 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Getting all employees - PageIndex: {PageIndex}, PageSize: {PageSize}",
-                    input.PageIndex, input.PageSize);
+                    "Getting all employees - PageIndex: {PageIndex}, PageSize: {PageSize}, SortColumn: {SortColumn}, SortOrder: {SortOrder}, FilterQuery: {FilterQuery} ",
+                    input.PageIndex, input.PageSize, input.SortColumn,input.SortOrder, input.FilterQuery);
 
                 if (!ModelState.IsValid)
                 {
@@ -48,7 +48,10 @@ namespace GMPS.API.Controllers
                     result = result.Where(u =>
                         (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
                         (u.UserName != null && u.UserName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
-                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
+                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.Roles != null &&u.Roles.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.WorkerSkills != null &&u.WorkerSkills.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Status != null && u.Status.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
 
