@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("USERNAME", Name = "UQ__USER__B15BE12E96462767", IsUnique = true)]
+[Index("USERNAME", Name = "UQ__USER__B15BE12E42F4D952", IsUnique = true)]
 public partial class USER
 {
     [Key]
@@ -43,8 +43,11 @@ public partial class USER
     [InverseProperty("MANAGER")]
     public virtual ICollection<USER> InverseMANAGER { get; set; } = new List<USER>();
 
+    [InverseProperty("APPROVED_BYNavigation")]
+    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUESTAPPROVED_BYNavigation { get; set; } = new List<LEAVE_REQUEST>();
+
     [InverseProperty("USER")]
-    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUEST { get; set; } = new List<LEAVE_REQUEST>();
+    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUESTUSER { get; set; } = new List<LEAVE_REQUEST>();
 
     [ForeignKey("MANAGER_ID")]
     [InverseProperty("InverseMANAGER")]
