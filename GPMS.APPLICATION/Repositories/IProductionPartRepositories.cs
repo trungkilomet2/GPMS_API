@@ -17,5 +17,11 @@ namespace GPMS.APPLICATION.Repositories
         // Lấy danh sách của worker có thể assign vào part đó gồm tên user + kĩ năng + lịch nghỉ phép
         Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id, DateTime fromDate, DateTime toDate);
 
+        // Worker Log Work ========> Worker Log Work
+        Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId);
+        Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity);
+        Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity);
+
+
     }
 }

@@ -295,7 +295,7 @@ namespace GMPS.API.Controllers
         #region Filter Production Plan Đang Ở Trạng Thái Sản Xuất - Chưa Sử Dung API
         // HTTP GET: Xem danh sách Production Plan đang chờ được xem xét
         // Actor : Chủ Xưởng - Admin : Xem danh sách các Production Plan đang ở trạng thái chờ xét duyệt
-        
+
         //[HttpGet("production-plans/pending")]
         //public async Task<ActionResult<IEnumerable<Production>>> GetPendingPlans(RequestDTO<Production> input)
         //{
@@ -323,6 +323,100 @@ namespace GMPS.API.Controllers
         //}
 
         #endregion
+
+        //------------------------- PRODUCTION STATUS API------------------------------- CHECK2
+
+        [HttpPatch("production/approve/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> ApproveProduction(
+          [Range(1, int.MaxValue)] int production_id,
+          [FromBody] ApproveProductionDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.ApproveProduction(production_id, dto.UserId);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        [HttpPatch("production/reject/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> RejectProduction(
+            [Range(1, int.MaxValue)] int production_id,
+            [FromBody] RejectProductionRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.RejectProduction(production_id, dto.UserId, dto.Reason);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        [HttpGet("production/{production_id:int}/issues")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueListItemDTO>>>> GetIssues([Range(1, int.MaxValue)] int production_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var issues = await _productionService.GetProductionIssues(production_id);
+                var data = issues.Select(x => new ProductionIssueListItemDTO
+                {
+                    IssueId = x.Id,
+                    TypeIssue = x.TypeIssue,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Priority = x.Priority,
+                    Quantity = 1,
+                    ImageUrl = x.ImageUrl,
+                    CreatedAt = x.CreatedAt
+                });
+                return Ok(new RestDTO<IEnumerable<ProductionIssueListItemDTO>> { Data = data });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+        }
+
+        [HttpGet("production/issues/summary-by-type/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueSummaryDTO>>>> GetIssueSummaryByType([Range(1, int.MaxValue)] int production_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var summary = await _productionService.GetProductionIssueSummaryByType(production_id);
+                var data = summary.Select(x => new ProductionIssueSummaryDTO
+                {
+                    TypeIssue = x.TypeIssue,
+                    TotalIssues = x.Id,
+                    TotalQuantity = x.Id,
+                    LastIssueAt = x.CreatedAt
+                });
+                return Ok(new RestDTO<IEnumerable<ProductionIssueSummaryDTO>> { Data = data });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+        }
 
 
     }

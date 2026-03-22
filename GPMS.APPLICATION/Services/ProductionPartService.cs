@@ -1,6 +1,7 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<User> _userRepo;
         private readonly IBaseWorkerRepository _workerSkill;
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
+        private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
 
         private readonly IUnitOfWork _unitOfWork;
 
@@ -25,7 +27,8 @@ namespace GPMS.APPLICATION.Services
             IUnitOfWork unitOfWork,
             IBaseProductionPartAssignRepositories partAssignRepo,
             IBaseWorkerRepository workerSkill,
-            IBaseRepositories<LeaveRequest> leaveRequestRepo
+            IBaseRepositories<LeaveRequest> leaveRequestRepo,
+            IBaseRepositories<ProductionPartWorkLog> workLogRepo
             )
         {
             _partRepo = partRepo;
@@ -35,7 +38,7 @@ namespace GPMS.APPLICATION.Services
             _partAssignRepo = partAssignRepo;
             _workerSkill = workerSkill;
             _leaveRequestRepo = leaveRequestRepo;
-
+            _workLogRepo = workLogRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -84,6 +87,12 @@ namespace GPMS.APPLICATION.Services
                 {
                     check_parts.Add(await _partRepo.Create(part));
                 }
+                //var production = await _productionRepo.GetById(productionId);
+                //if (production is not null)
+                //{
+                //    production.StatusId = ProductionStatus_Constants.Pending_ID;
+                //    await _productionRepo.Update(production);
+                //}
             });
             return await BuildViews(check_parts);
         }
@@ -282,5 +291,55 @@ namespace GPMS.APPLICATION.Services
             }
             return listAssignWorker;
         }
+
+
+
+        public async Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId)
+        {
+            _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
+            var logs = await _workLogRepo.GetAll(partId);
+            var now = DateTime.UtcNow;
+            var normalized = new List<ProductionPartWorkLog>();
+            foreach (var log in logs)
+            {
+                log.IsReadOnly = log.IsReadOnly || now - log.WorkDate.ToDateTime(TimeOnly.MinValue) > TimeSpan.FromHours(24);
+                normalized.Add(log);
+            }
+            return normalized;
+        }
+
+        public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity)
+        {
+            _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
+            _ = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
+            if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
+            return await _workLogRepo.Create(new ProductionPartWorkLog
+            {
+                PartId = partId,
+                UserId = userId,
+                Quantity = quantity,
+                WorkDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                IsReadOnly = false,
+                IsPayment = false
+            });
+        }
+
+        public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity)
+        {
+            if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
+            var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
+            if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
+            var elapsed = DateTime.UtcNow - log.WorkDate.ToDateTime(TimeOnly.MinValue);
+            if (log.IsReadOnly || elapsed > TimeSpan.FromHours(24))
+            {
+                throw new ValidationException("Work log đã quá 24h, chỉ được xem");
+            }
+            log.Quantity = quantity;
+            return await _workLogRepo.Update(log);
+        }
+
+
+
+
     }
 }

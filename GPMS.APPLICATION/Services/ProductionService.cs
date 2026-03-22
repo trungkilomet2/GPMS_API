@@ -15,16 +15,26 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<User> _userRepositories;
         private readonly IBaseRepositories<Production> _prdRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
+        private readonly IBaseRepositories<ProductionRejectReason> _productionRejectRepo;
+        private readonly IBaseRepositories<ProductionIssueLog> _productionIssueRepo;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ProductionService(IBaseRepositories<Production> productionRepo, IUnitOfWork unitOfWork, 
-            IBaseRepositories<Role> roleRepositories, IBaseRepositories<User> userRepositories, IBaseRepositories<Order> orderRepo)
-        {
+        public ProductionService(
+            IBaseRepositories<Production> productionRepo, 
+            IUnitOfWork unitOfWork, 
+            IBaseRepositories<Role> roleRepositories, 
+            IBaseRepositories<User> userRepositories, 
+            IBaseRepositories<Order> orderRepo,
+            IBaseRepositories<ProductionRejectReason> productionRejectRepo,
+            IBaseRepositories<ProductionIssueLog> productionIssueRepo
+            ) {
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
             _roleRepositories = roleRepositories;
             _userRepositories = userRepositories;
             _orderRepo = orderRepo;
+            _productionRejectRepo = productionRejectRepo;
+            _productionIssueRepo = productionIssueRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
@@ -166,6 +176,68 @@ namespace GPMS.APPLICATION.Services
                 });
             }
             return result;
+        }
+
+
+
+        public async Task<Production> ApproveProduction(int productionId, int actionByUserId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
+            production.StatusId = ProductionStatus_Constants.Approval_ID;
+            return await _prdRepo.Update(production);
+        }
+
+        public async Task<Production> RejectProduction(int productionId, int actionByUserId, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                throw new ValidationException("Lý do từ chối là bắt buộc");
+            }
+
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                production.StatusId = ProductionStatus_Constants.Reject_ID;
+                await _prdRepo.Update(production);
+                await _productionRejectRepo.Create(new ProductionRejectReason
+                {
+                    ProductionId = productionId,
+                    UserId = actionByUserId,
+                    Reason = reason.Trim(),
+                    CreatedAt = DateTime.UtcNow
+                });
+            });
+
+            return await _prdRepo.GetById(productionId);
+        }
+
+        public async Task<IEnumerable<ProductionIssueLog>> GetProductionIssues(int productionId)
+        {
+            _ = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            return await _productionIssueRepo.GetAll(productionId);
+        }
+
+        public async Task<IEnumerable<ProductionIssueLog>> GetProductionIssueSummaryByType(int productionId)
+        {
+            var issues = (await GetProductionIssues(productionId)).ToList();
+            return issues.GroupBy(x => x.TypeIssue)
+                .Select(g => new ProductionIssueLog
+                {
+                    TypeIssue = g.Key,
+                    CreatedAt = g.Max(x => x.CreatedAt),
+                    Id = g.Count()
+                }).ToList();
+        }
+
+        public async Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue)
+        {
+            _ = await _prdRepo.GetById(issue.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+            _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
+            issue.CreatedAt = DateTime.UtcNow;
+            return await _productionIssueRepo.Create(issue);
         }
 
         public string GetStatusProductName(int statusId)
