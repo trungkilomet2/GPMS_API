@@ -176,6 +176,88 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
                 .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
+        // TrungNT Added - 22-03-26
+
+            // PRODUCTION REJECT REASON
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.PRODUCTION_REJECT_REASON, GPMS.DOMAIN.Entities.ProductionRejectReason>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORR_ID))
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.REASON))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
+                .ReverseMap()
+                .ForMember(dest => dest.ORR_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.ProductionId))
+                .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.REASON, opt => opt.MapFrom(src => src.Reason))
+                .ForMember(dest => dest.CREATED_AT, opt => opt.MapFrom(src => src.CreatedAt));
+
+            // PRODUCTION ISSUE LOG
+        
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.PRODUCTION_ISSUE_LOG, GPMS.DOMAIN.Entities.ProductionIssueLog>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ISSUE_ID))
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CREATED_BY))
+                .ForMember(dest => dest.AssignedTo, opt => opt.MapFrom(src => src.ASSIGNED_TO))
+                .ForMember(dest => dest.TypeIssue, opt => opt.MapFrom(src => src.TYPE_ISSUE))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.TITLE))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.DESCRIPTION))
+                .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.PRIORITY ?? 2))
+                .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.IS_ID))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.IMAGE))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
+                .ReverseMap()
+                .ForMember(dest => dest.ISSUE_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.ProductionId))
+                .ForMember(dest => dest.CREATED_BY, opt => opt.MapFrom(src => src.CreatedBy))
+                .ForMember(dest => dest.ASSIGNED_TO, opt => opt.MapFrom(src => src.AssignedTo))
+                .ForMember(dest => dest.TYPE_ISSUE, opt => opt.MapFrom(src => src.TypeIssue))
+                .ForMember(dest => dest.TITLE, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.DESCRIPTION, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.PRIORITY, opt => opt.MapFrom(src => src.Priority))
+                .ForMember(dest => dest.IS_ID, opt => opt.MapFrom(src => src.StatusId))
+                .ForMember(dest => dest.IMAGE, opt => opt.MapFrom(src => src.ImageUrl))
+                .ForMember(dest => dest.CREATED_AT, opt => opt.MapFrom(src => src.CreatedAt));
+          
+            // CUTTING NOTE BOOK
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.CUTTING_NOTEBOOK, GPMS.DOMAIN.Entities.CuttingNotebook>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CP_ID))
+                .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
+                .ForMember(dest => dest.MarkerLength, opt => opt.MapFrom(src => src.MARKER_LENGTH))
+                .ForMember(dest => dest.FabricWidth, opt => opt.MapFrom(src => src.FABRIC_WIDTH))
+                .ReverseMap()
+                .ForMember(dest => dest.CP_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PRODUCTION_ID, opt => opt.MapFrom(src => src.ProductionId))
+                .ForMember(dest => dest.MARKER_LENGTH, opt => opt.MapFrom(src => src.MarkerLength))
+                .ForMember(dest => dest.FABRIC_WIDTH, opt => opt.MapFrom(src => src.FabricWidth));
+            
+            // CUTING NOTE BOOK LOG
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.CUTTING_NOTEBOOK_LOG, GPMS.DOMAIN.Entities.CuttingNotebookLog>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CND_ID))
+                .ForMember(dest => dest.NotebookId, opt => opt.MapFrom(src => src.CP_ID))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
+                .ForMember(dest => dest.MeterPerKg, opt => opt.MapFrom(src => src.METER_PER_KG))
+                .ForMember(dest => dest.Layer, opt => opt.MapFrom(src => src.LAYER))
+                .ForMember(dest => dest.ProductQty, opt => opt.MapFrom(src => src.PRODUCT_QTY))
+                .ForMember(dest => dest.AvgConsumption, opt => opt.MapFrom(src => src.AVG_CONSUMPTION))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
+                .ForMember(dest => dest.DateCreate, opt => opt.MapFrom(src => src.DATE_CREATE))
+                .ForMember(dest => dest.IsReadOnly, opt => opt.MapFrom(src => src.IS_READ_ONLY ?? false))
+                .ForMember(dest => dest.IsPayment, opt => opt.MapFrom(src => src.IS_PAYMENT ?? false))
+                .ReverseMap()
+                .ForMember(dest => dest.CND_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.CP_ID, opt => opt.MapFrom(src => src.NotebookId))
+                .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.COLOR, opt => opt.MapFrom(src => src.Color))
+                .ForMember(dest => dest.METER_PER_KG, opt => opt.MapFrom(src => src.MeterPerKg))
+                .ForMember(dest => dest.LAYER, opt => opt.MapFrom(src => src.Layer))
+                .ForMember(dest => dest.PRODUCT_QTY, opt => opt.MapFrom(src => src.ProductQty))
+                .ForMember(dest => dest.AVG_CONSUMPTION, opt => opt.MapFrom(src => src.AvgConsumption))
+                .ForMember(dest => dest.NOTE, opt => opt.MapFrom(src => src.Note))
+                .ForMember(dest => dest.DATE_CREATE, opt => opt.MapFrom(src => src.DateCreate))
+                .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
+                .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
 
 
