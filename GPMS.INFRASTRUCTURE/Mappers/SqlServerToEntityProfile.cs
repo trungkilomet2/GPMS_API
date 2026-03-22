@@ -77,9 +77,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
-                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.USER != null ? src.USER.FULLNAME : null))
-                .ForMember(dest => dest.UserPhone, opt => opt.MapFrom(src => src.USER != null ? src.USER.PHONE_NUMBER : null))
-                .ForMember(dest => dest.UserLocation, opt => opt.MapFrom(src => src.USER != null ? src.USER.LOCATION : null))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
@@ -101,7 +98,11 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.CONTENT))
                 .ForMember(dest => dest.DateCreate, opt => opt.MapFrom(src => src.DATE_CREATE))
                 .ForMember(dest => dest.DateReply, opt => opt.MapFrom(src => src.DATE_REPLY))
+                .ForMember(dest => dest.FromDate, opt => opt.MapFrom(src => src.FROM_DATE))
+                .ForMember(dest => dest.ToDate, opt => opt.MapFrom(src => src.TO_DATE))
                 .ForMember(dest => dest.DenyContent, opt => opt.MapFrom(src => src.DENY_CONTENT))
+                .ForMember(dest => dest.ApprovedBy, opt => opt.MapFrom(src => src.APPROVED_BY))
+                .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.APPROVED_BYNavigation != null ? src.APPROVED_BYNavigation.FULLNAME : null))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.LRS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.LRS != null ? src.LRS.NAME : null));
 
