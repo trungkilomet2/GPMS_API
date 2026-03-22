@@ -65,6 +65,13 @@ namespace GMPS.API.Mapper
 
             //----------------------------------------------------------------------------------------------------//
 
+            CreateMap<AssignWorkerViewDTO, DataAssignWorkerViewDTO>();
+            CreateMap<User, WorkerInfor>()
+                .ForMember(dest => dest.WorkerId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.WorkerName, opt => opt.MapFrom(src => src.FullName));
+            CreateMap<WorkerSkill, WorkerSkillInfo>();
+            CreateMap<LeaveRequest, WorerLRInfo>()
+                .ForMember(dest => dest.DateLR, opt => opt.MapFrom(src => src.DateReply));
 
 
         }
