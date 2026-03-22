@@ -7,5 +7,8 @@ namespace GMPS.API.DTOs
         [Required(ErrorMessage = "Content is required.")]
         [StringLength(155, ErrorMessage = "Content must not exceed 155 characters.")]
         public string Content { get; set; } = null!;
+
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
     }
 }
