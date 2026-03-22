@@ -426,9 +426,6 @@ namespace GMPS.API.Controllers
                 {
                     Id = order.Id,
                     UserId = order.UserId,
-                    UserFullName = order.UserFullName,
-                    UserPhone = order.UserPhone,
-                    UserLocation = order.UserLocation,
                     OrderName = order.OrderName,
                     Type = order.Type,
                     Size = order.Size,

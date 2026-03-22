@@ -93,6 +93,10 @@ namespace GPMS.APPLICATION.Services
         public async Task<User> ViewProfile(int id)
         {
             var data = await _userBaseRepo.GetById(id);
+            if(data == null)
+            {
+                throw new KeyNotFoundException("User not found");
+            }
             return data;
         }
 

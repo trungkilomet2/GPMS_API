@@ -68,6 +68,8 @@ namespace GPMS.APPLICATION.Services
                 throw new ArgumentException("Invalid order id");
 
             var data = await _commentRepo.GetById(CommentId);
+            if(data == null)
+                throw new Exception($"Comment does not exist");
             return data;
         }
 
