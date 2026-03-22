@@ -9,7 +9,7 @@ namespace GPMS.APPLICATION.DTOs
 {
     public class AssignWorkerViewDTO
     {
-        public User Workers;
+        public User Workers { get; set; }
         public IEnumerable<WorkerSkill> Skill_Of_Worker { get; set; }
         public IEnumerable<LeaveRequest?> LeaveRequest { get; set; }
 

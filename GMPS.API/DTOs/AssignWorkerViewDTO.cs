@@ -8,8 +8,6 @@
         public IEnumerable<WorerLRInfo> WorkerLrInfo { get; set; }
 
 
-
-
     }
 
     public class WorkerInfor

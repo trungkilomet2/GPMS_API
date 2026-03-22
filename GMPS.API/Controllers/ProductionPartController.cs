@@ -341,9 +341,9 @@ namespace GMPS.API.Controllers
             try
             {
                 var data = await _productionPartService.ListAssignWorker(dto.PMId, dto.fromDate,dto.toDate);
-                return Ok(new RestDTO<DataAssignWorkerViewDTO>
+                return Ok(new RestDTO<IEnumerable<DataAssignWorkerViewDTO>>
                 {
-                //    Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)
+                   Data = _mapper.Map<IEnumerable<DataAssignWorkerViewDTO>>(data)
                 });
             }
             catch (ValidationException ex)
