@@ -370,7 +370,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpGet("production/{production_id:int}/issues")]
+        [HttpGet("production/issues/{production_id:int}")]
         public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueListItemDTO>>>> GetIssues([Range(1, int.MaxValue)] int production_id)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
