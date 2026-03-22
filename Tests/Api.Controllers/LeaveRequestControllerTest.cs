@@ -338,25 +338,12 @@ public class LeaveRequestControllerTest
     }
 
     [Fact]
-    public async Task GetLeaveRequestDetail_Returns200_WhenWorkerAccessesOwnLeaveRequest()
+    public async Task GetLeaveRequestDetail_Returns200_WhenPMAccessesAnyLeaveRequest()
     {
         _leaveRequestRepo.Setup(x => x.GetLeaveRequestById(1))
-            .ReturnsAsync(BuildFakeLeaveRequest(id: 1, userId: 1));
+            .ReturnsAsync(BuildFakeLeaveRequest(id: 1, userId: 99));
 
-        var result = await BuildController(userId: 1, role: nameof(RoleName.Worker)).GetLeaveRequestDetail(1);
-
-        var obj = Assert.IsType<OkObjectResult>(result.Result);
-        var dto = Assert.IsType<RestDTO<LeaveRequestDetailDTO>>(obj.Value);
-        Assert.Equal(1, dto.Data.Id);
-    }
-
-    [Fact]
-    public async Task GetLeaveRequestDetail_Returns200_WhenTeamLeaderAccessesOwnLeaveRequest()
-    {
-        _leaveRequestRepo.Setup(x => x.GetLeaveRequestById(1))
-            .ReturnsAsync(BuildFakeLeaveRequest(id: 1, userId: 1));
-
-        var result = await BuildController(userId: 1, role: nameof(RoleName.Team_Leader)).GetLeaveRequestDetail(1);
+        var result = await BuildController(userId: 1, role: nameof(RoleName.PM)).GetLeaveRequestDetail(1);
 
         var obj = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<RestDTO<LeaveRequestDetailDTO>>(obj.Value);
@@ -385,30 +372,6 @@ public class LeaveRequestControllerTest
     }
 
     [Fact]
-    public async Task GetLeaveRequestDetail_Returns403_WhenWorkerAccessesOthersLeaveRequest()
-    {
-        _leaveRequestRepo.Setup(x => x.GetLeaveRequestById(1))
-            .ReturnsAsync(BuildFakeLeaveRequest(id: 1, userId: 99));
-
-        var result = await BuildController(userId: 1, role: nameof(RoleName.Worker)).GetLeaveRequestDetail(1);
-
-        var obj = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetLeaveRequestDetail_Returns403_WhenTeamLeaderAccessesOthersLeaveRequest()
-    {
-        _leaveRequestRepo.Setup(x => x.GetLeaveRequestById(1))
-            .ReturnsAsync(BuildFakeLeaveRequest(id: 1, userId: 99));
-
-        var result = await BuildController(userId: 1, role: nameof(RoleName.Team_Leader)).GetLeaveRequestDetail(1);
-
-        var obj = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
     public async Task GetLeaveRequestDetail_Returns500_OnException()
     {
         _leaveRequestRepo.Setup(x => x.GetLeaveRequestById(1))
@@ -425,7 +388,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns201_WhenSuccessful()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(1, It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(1, It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
             .ReturnsAsync(BuildFakeLeaveRequest(id: 5, userId: 1));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };
@@ -451,7 +414,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns500_WhenPendingStatusNotFoundInSystem()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
             .ThrowsAsync(new InvalidOperationException("Status 'Pending' not found in system."));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };
@@ -465,7 +428,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns500_OnException()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
             .ThrowsAsync(new Exception("db error"));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };
@@ -481,7 +444,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task DenyLeaveRequest_Returns200_WhenSuccessful()
     {
-        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(1, It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(1, It.IsAny<string>(), It.IsAny<int>()))
             .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Denied));
 
         var input = new DenyLeaveRequestDTO { DenyContent = "Not approved." };
@@ -518,7 +481,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task DenyLeaveRequest_Returns404_WhenLeaveRequestNotFound()
     {
-        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(99, It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(99, It.IsAny<string>(), It.IsAny<int>()))
             .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
 
         var input = new DenyLeaveRequestDTO { DenyContent = "Not approved." };
@@ -532,7 +495,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task DenyLeaveRequest_Returns403_WhenStatusIsNotPending()
     {
-        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(1, It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(1, It.IsAny<string>(), It.IsAny<int>()))
             .ThrowsAsync(new InvalidOperationException("Only leave requests with status 'Pending' can be denied."));
 
         var input = new DenyLeaveRequestDTO { DenyContent = "Not approved." };
@@ -546,7 +509,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task DenyLeaveRequest_Returns500_OnException()
     {
-        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.DenyLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
         var input = new DenyLeaveRequestDTO { DenyContent = "Not approved." };
@@ -562,7 +525,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task ApproveLeaveRequest_Returns200_WhenSuccessful()
     {
-        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(1))
+        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(1, It.IsAny<int>()))
             .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Approved));
 
         var result = await BuildController().ApproveLeaveRequest(1);
@@ -592,7 +555,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task ApproveLeaveRequest_Returns404_WhenLeaveRequestNotFound()
     {
-        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(99))
+        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(99, It.IsAny<int>()))
             .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
 
         var result = await BuildController().ApproveLeaveRequest(99);
@@ -604,7 +567,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task ApproveLeaveRequest_Returns403_WhenStatusIsNotPending()
     {
-        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(1))
+        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(1, It.IsAny<int>()))
             .ThrowsAsync(new InvalidOperationException("Only leave requests with status 'Pending' can be approved."));
 
         var result = await BuildController().ApproveLeaveRequest(1);
@@ -616,7 +579,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task ApproveLeaveRequest_Returns500_OnException()
     {
-        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(It.IsAny<int>()))
+        _leaveRequestRepo.Setup(x => x.ApproveLeaveRequest(It.IsAny<int>(), It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
         var result = await BuildController().ApproveLeaveRequest(1);

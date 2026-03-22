@@ -27,6 +27,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var query = _context.LEAVE_REQUEST
                 .Include(lr => lr.USER)
                 .Include(lr => lr.LRS)
+                .Include(lr => lr.APPROVED_BYNavigation)
                 .AsQueryable();
 
             if (obj is int userId)
@@ -48,6 +49,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var data = await _context.LEAVE_REQUEST
                 .Include(lr => lr.USER)
                 .Include(lr => lr.LRS)
+                .Include(lr => lr.APPROVED_BYNavigation)
                 .FirstOrDefaultAsync(lr => lr.LR_ID == (int)id);
 
             return _mapper.Map<LeaveRequest>(data);
@@ -68,12 +70,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new InvalidOperationException($"Status with id '{entity.StatusId}' not found in system.");
 
             existing.LRS_ID = status.LRS_ID;
-            existing.DENY_CONTENT = entity.DenyContent;  
+            existing.DENY_CONTENT = entity.DenyContent;
             existing.DATE_REPLY = entity.DateReply;
+            existing.APPROVED_BY = entity.ApprovedBy;
 
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<LeaveRequest>(existing);
+            var updated = await _context.LEAVE_REQUEST
+                .Include(lr => lr.USER)
+                .Include(lr => lr.LRS)
+                .Include(lr => lr.APPROVED_BYNavigation)
+                .FirstOrDefaultAsync(lr => lr.LR_ID == existing.LR_ID);
+
+            return _mapper.Map<LeaveRequest>(updated);
         }
 
         public async Task<LeaveRequest> Create(LeaveRequest entity)
@@ -89,6 +98,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 USER_ID = entity.UserId,
                 CONTENT = entity.Content,
                 DATE_CREATE = entity.DateCreate,
+                FROM_DATE = entity.FromDate,
+                TO_DATE = entity.ToDate,
                 LRS_ID = pendingStatus.LRS_ID
             };
 
