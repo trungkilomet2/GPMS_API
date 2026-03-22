@@ -90,22 +90,6 @@ namespace GMPS.API.Controllers
                         });
                     }
 
-                    var requesterRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                    if (requesterRole == nameof(RoleName.Owner) &&
-                        user.Roles.Any(r => r.Name == nameof(RoleName.Admin)))
-                    {
-                        _logger.LogWarning(CustomLogEvents.UserController_Get,
-                            "Owner UserId {RequesterId} attempted to view Admin UserId {UserId}",
-                            User.FindFirst(ClaimTypes.NameIdentifier)?.Value, userId);
-
-                        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-                        {
-                            Detail = "You do not have permission to view this user.",
-                            Status = StatusCodes.Status403Forbidden,
-                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                        });
-                    }
-
                     var userDetail = new UserDetailDTO
                     {
                         Id = user.Id,
