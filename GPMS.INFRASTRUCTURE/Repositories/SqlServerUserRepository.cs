@@ -134,7 +134,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.US_ID = entity.StatusId;
             
                 _context.USER.Update(existingUser);
-                return _mapper.Map<User>(existingUser);       
+                _context.SaveChanges();
+            return _mapper.Map<User>(existingUser);       
         }
     }
 }

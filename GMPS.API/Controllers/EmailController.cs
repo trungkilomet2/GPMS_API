@@ -48,7 +48,7 @@ namespace GMPS.API.Controllers
                         return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Detail);
                     }
                     var existingUser = await _userRepo.IsEmailExists(email.Email.ToLower());
-                    if (!existingUser)
+                    if (existingUser)
                     {
                         _logger.LogWarning("Email already exists: {Email}", email.Email);
 
