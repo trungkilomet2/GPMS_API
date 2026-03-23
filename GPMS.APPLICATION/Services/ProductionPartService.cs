@@ -302,7 +302,7 @@ namespace GPMS.APPLICATION.Services
             var normalized = new List<ProductionPartWorkLog>();
             foreach (var log in logs)
             {
-                log.IsReadOnly = log.IsReadOnly || now - log.WorkDate.ToDateTime(TimeOnly.MinValue) > TimeSpan.FromHours(24);
+                log.IsReadOnly = log.IsReadOnly || now - log.WorkDate > TimeSpan.FromHours(24);
                 normalized.Add(log);
             }
             return normalized;
@@ -318,7 +318,7 @@ namespace GPMS.APPLICATION.Services
                 PartId = partId,
                 UserId = userId,
                 Quantity = quantity,
-                WorkDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                WorkDate = DateTime.UtcNow,
                 IsReadOnly = false,
                 IsPayment = false
             });
@@ -329,7 +329,7 @@ namespace GPMS.APPLICATION.Services
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
             var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
             if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
-            var elapsed = DateTime.UtcNow - log.WorkDate.ToDateTime(TimeOnly.MinValue);
+            var elapsed = DateTime.UtcNow - log.WorkDate;
             if (log.IsReadOnly || elapsed > TimeSpan.FromHours(24))
             {
                 throw new ValidationException("Work log đã quá 24h, chỉ được xem");

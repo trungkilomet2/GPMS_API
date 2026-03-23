@@ -151,8 +151,16 @@ namespace GMPS.API.Controllers
                     StatusId = ProductionPart_Constrants.ToDo_ID
                 });
 
+                foreach (var part in parts)
+                {
+                    if(part.StartDate > part.EndDate)
+                    {
+                        throw new ValidationException("Không được tồn tại ngày bắt đầu lớn hơn ngày kết thúc");
+                    }
+                }
+                
                 var data = await _productionPartService.CreateParts(productionId, parts);
-
+                
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<IEnumerable<ProductionPartDetailDTO>>
                 {
                     Data = _mapper.Map<IEnumerable<ProductionPartDetailDTO>>(data)
