@@ -8,7 +8,6 @@ namespace GMPS.API.DTOs
         [StringLength(150)]
         public string PartName { get; set; } = string.Empty;
 
-        [Range(1, int.MaxValue)]
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
 
