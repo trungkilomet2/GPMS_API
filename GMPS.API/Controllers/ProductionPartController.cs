@@ -443,12 +443,13 @@ namespace GMPS.API.Controllers
             try
             {
                 var part = await _productionPartService.GetPartAssignmentDetail(partId);
+
                 string? imageUrl = null;
                 if (dto.Image is not null && dto.Image.Length > 0)
                 {
                     imageUrl = (await _cloudinaryService.UploadImageAsync(dto.Image, CloudinaryConstrants.Cloudinary_Order_Issue_Folder)).Url;
                 }
-
+                
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
                 {
                     ProductionId = part.Part.ProductionId,
