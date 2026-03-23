@@ -279,6 +279,7 @@ namespace GMPS.API.Controllers
                         Id = userId,
                         FullName = input.FullName,
                         ManagerId = input.ManagerId,
+                        StatusId = input.StatusId,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r
