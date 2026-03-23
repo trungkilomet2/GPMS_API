@@ -151,8 +151,16 @@ namespace GMPS.API.Controllers
                     StatusId = ProductionPart_Constrants.ToDo_ID
                 });
 
+                foreach (var part in parts)
+                {
+                    if(part.StartDate > part.EndDate)
+                    {
+                        throw new ValidationException("Không được tồn tại ngày bắt đầu lớn hơn ngày kết thúc");
+                    }
+                }
+                
                 var data = await _productionPartService.CreateParts(productionId, parts);
-
+                
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<IEnumerable<ProductionPartDetailDTO>>
                 {
                     Data = _mapper.Map<IEnumerable<ProductionPartDetailDTO>>(data)
@@ -435,12 +443,13 @@ namespace GMPS.API.Controllers
             try
             {
                 var part = await _productionPartService.GetPartAssignmentDetail(partId);
+
                 string? imageUrl = null;
                 if (dto.Image is not null && dto.Image.Length > 0)
                 {
                     imageUrl = (await _cloudinaryService.UploadImageAsync(dto.Image, CloudinaryConstrants.Cloudinary_Order_Issue_Folder)).Url;
                 }
-
+                
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
                 {
                     ProductionId = part.Part.ProductionId,
