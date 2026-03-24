@@ -120,6 +120,51 @@ public class OrderControllerTest
         Assert.Equal(404, obj.StatusCode);
     }
 
+    [Fact]
+    public async Task GetOrders_Returns400_WhenStatusIsInvalid()
+    {
+        var input = new OrderRequestDTO { Status = "InvalidStatus" };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrders_Returns400_WhenDateRangeInvalid()
+    {
+        var input = new OrderRequestDTO
+        {
+            StartDateFrom = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            StartDateTo = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrders_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _orderRepo.Setup(x => x.GetAllOrders())
+            .ReturnsAsync(new List<Order>
+            {
+                BuildFakeOrder(1, statusName: OrderStatus_Constants.Pending),
+                BuildFakeOrder(2, statusName: OrderStatus_Constants.Approved)
+            });
+
+        var input = new OrderRequestDTO { Status = OrderStatus_Constants.Pending.ToLowerInvariant() };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
     // ─── GetMyOrders ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -145,6 +190,51 @@ public class OrderControllerTest
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns400_WhenStatusIsInvalid()
+    {
+        var input = new OrderRequestDTO { Status = "InvalidStatus" };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns400_WhenDateRangeInvalid()
+    {
+        var input = new OrderRequestDTO
+        {
+            StartDateFrom = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            StartDateTo = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _orderRepo.Setup(x => x.GetOrdersByUserId(1))
+            .ReturnsAsync(new List<Order>
+            {
+                BuildFakeOrder(1, userId: 1, statusName: OrderStatus_Constants.Pending),
+                BuildFakeOrder(2, userId: 1, statusName: OrderStatus_Constants.Approved)
+            });
+
+        var input = new OrderRequestDTO { Status = OrderStatus_Constants.Pending.ToLowerInvariant() };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
     }
 
     // ─── GetOrderDetail ───────────────────────────────────────────────────────
