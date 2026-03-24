@@ -1,3 +1,4 @@
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -30,13 +31,14 @@ namespace GMPS.API.Controllers
                 var permissions = await _permissionRepo.GetAll();
                 var result = permissions.Select(p => new
                 {
+                    id = p.Id,
                     controller = p.Controller,
                     method = p.Method,
                     action = p.Action,
                     roleIds = p.RoleIds,
                     roles = string.IsNullOrEmpty(p.RoleIds)
                         ? new List<string>()
-                        : p.RoleIds.Split(',').Select(id => roleMap.TryGetValue(id, out var name) ? name : id).ToList()
+                        : p.RoleIds.Split(',').Select(rid => roleMap.TryGetValue(rid, out var name) ? name : rid).ToList()
                 });
 
                 _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Returned {Count} permissions", result.Count());
@@ -46,6 +48,50 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.PermissionController_Get, ex, "Error occurred while getting permissions");
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePermission(int id, [FromBody] UpdatePermissionDTO input)
+        {
+            try
+            {
+                if (id <= 0)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new ValidationProblemDetails
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Errors = { { "id", new[] { "Id must be a positive integer." } } }
+                    });
+                }
+
+                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Updating permission {Id}", id);
+
+                var updated = await _permissionRepo.UpdateRoleAuthorize(id, input.RoleAuthorize);
+                if (!updated)
+                {
+                    return StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                    {
+                        Detail = $"Permission with id '{id}' not found.",
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    });
+                }
+
+                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Updated permission {Id}", id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.PermissionController_Put, ex, "Error occurred while updating permission {Id}", id);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
