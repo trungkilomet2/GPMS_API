@@ -69,5 +69,6 @@ namespace GPMS.DOMAIN.Constants
 
         // PERMISSION CONTROLLER
         public const int PermissionController_Get = 50910;
+        public const int PermissionController_Put = 50920;
     }
 }
