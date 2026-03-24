@@ -2,6 +2,7 @@
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,9 +36,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<LogEvent>> GetAll(object? obj)
+        public async Task<IEnumerable<LogEvent>> GetAll(object? obj)
         {
-            throw new NotImplementedException();
+            var data = await _context.LOG_EVENTS.ToListAsync();
+            return _mapper.Map<IEnumerable<LogEvent>>(data);
         }
 
         public Task<LogEvent> GetById(object id)
