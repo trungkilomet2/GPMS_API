@@ -422,6 +422,17 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
+                if (User.IsInRole("Customer"))
+                {
+                    var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    if (order.UserId != requesterId)
+                        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                        {
+                            Detail = "You are not allowed to view this order.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                }
+
                 var orderUser = await _userRepo.GetUserById(order.UserId);
 
                 var data = new OrderDetailDTO
@@ -518,6 +529,17 @@ namespace GMPS.API.Controllers
                         { "id", new[] { $"Order with id '{id}' not found" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                if (User.IsInRole("Customer"))
+                {
+                    var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    if (order.UserId != requesterId)
+                        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                        {
+                            Detail = "You are not allowed to view this order's history.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
                 }
 
                 if (!order.Histories.Any())
