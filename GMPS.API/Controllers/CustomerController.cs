@@ -45,6 +45,24 @@ namespace GMPS.API.Controllers
                         (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
+                var recordCount = data.Count();
+                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
+
+                if (recordCount > 0 && input.PageIndex >= totalPages)
+                {
+                    _logger.LogWarning("PageIndex {PageIndex} out of range. Total pages: {TotalPages}", input.PageIndex, totalPages);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                    };
+                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
                 var customer = data.Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize).Select(c => new CustomerDTO
                 {
@@ -60,7 +78,7 @@ namespace GMPS.API.Controllers
                     Data = customer,
                     PageIndex = input.PageIndex,
                     PageSize = input.PageSize,
-                    RecordCount = data.Count(),
+                    RecordCount = recordCount,
                     Links = new List<LinkDTO>
                     {
                         new LinkDTO(Url.Action(null, "Customer", null, Request.Scheme)!, "self", "GET")
@@ -142,7 +160,7 @@ namespace GMPS.API.Controllers
                     Data = data,
                     PageIndex = input.PageIndex,
                     PageSize = input.PageSize,
-                    RecordCount = data.Count(),
+                    RecordCount = orders.Count(),
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(

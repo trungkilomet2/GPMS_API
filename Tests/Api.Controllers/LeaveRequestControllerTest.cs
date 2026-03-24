@@ -143,6 +143,25 @@ public class LeaveRequestControllerTest
     }
 
     [Fact]
+    public async Task GetLeaveRequests_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _leaveRequestRepo.Setup(x => x.GetAllLeaveRequests())
+            .ReturnsAsync(new List<LeaveRequest>
+            {
+                BuildFakeLeaveRequest(1, statusName: LeaveRequestStatus_Constants.Pending),
+                BuildFakeLeaveRequest(2, statusName: LeaveRequestStatus_Constants.Approved)
+            });
+
+        var input = new LeaveRequestRequestDTO { Status = LeaveRequestStatus_Constants.Pending.ToLower() };
+
+        var result = await BuildController().GetLeaveRequests(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<LeaveRequestListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
+    [Fact]
     public async Task GetLeaveRequests_Returns500_OnException()
     {
         _leaveRequestRepo.Setup(x => x.GetAllLeaveRequests())
@@ -233,6 +252,25 @@ public class LeaveRequestControllerTest
             });
 
         var input = new LeaveRequestRequestDTO { Status = LeaveRequestStatus_Constants.Approved };
+
+        var result = await BuildController(userId: 1).GetMyLeaveRequestHistory(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<LeaveRequestListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetMyLeaveRequestHistory_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _leaveRequestRepo.Setup(x => x.GetLeaveRequestsByUserId(1))
+            .ReturnsAsync(new List<LeaveRequest>
+            {
+                BuildFakeLeaveRequest(1, statusName: LeaveRequestStatus_Constants.Approved),
+                BuildFakeLeaveRequest(2, statusName: LeaveRequestStatus_Constants.Denied)
+            });
+
+        var input = new LeaveRequestRequestDTO { Status = LeaveRequestStatus_Constants.Approved.ToLower() };
 
         var result = await BuildController(userId: 1).GetMyLeaveRequestHistory(input);
 

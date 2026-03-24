@@ -9,6 +9,7 @@ using GPMS.TEST.TestCommon;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 
 namespace GPMS.TEST.Api.Controllers;
 
@@ -35,6 +36,27 @@ public class OrderControllerTest
             ControllerTestHelper.BuildUserWithId(userId)
         );
 
+        return controller;
+    }
+
+    private OrderController BuildControllerWithRole(int userId, string role)
+    {
+        var controller = new OrderController(
+            _orderRepo.Object,
+            _logger.Object,
+            _cloudinary.Object,
+            _emailRepo.Object,
+            _userRepo.Object
+        );
+
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Name, "tester"),
+            new Claim(ClaimTypes.Role, role)
+        }, "TestAuth");
+
+        ControllerTestHelper.AttachHttpContext(controller, new ClaimsPrincipal(identity));
         return controller;
     }
 
@@ -98,6 +120,51 @@ public class OrderControllerTest
         Assert.Equal(404, obj.StatusCode);
     }
 
+    [Fact]
+    public async Task GetOrders_Returns400_WhenStatusIsInvalid()
+    {
+        var input = new OrderRequestDTO { Status = "InvalidStatus" };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrders_Returns400_WhenDateRangeInvalid()
+    {
+        var input = new OrderRequestDTO
+        {
+            StartDateFrom = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            StartDateTo = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrders_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _orderRepo.Setup(x => x.GetAllOrders())
+            .ReturnsAsync(new List<Order>
+            {
+                BuildFakeOrder(1, statusName: OrderStatus_Constants.Pending),
+                BuildFakeOrder(2, statusName: OrderStatus_Constants.Approved)
+            });
+
+        var input = new OrderRequestDTO { Status = OrderStatus_Constants.Pending.ToLowerInvariant() };
+
+        var result = await BuildController().GetOrders(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
     // ─── GetMyOrders ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -123,6 +190,51 @@ public class OrderControllerTest
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns400_WhenStatusIsInvalid()
+    {
+        var input = new OrderRequestDTO { Status = "InvalidStatus" };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns400_WhenDateRangeInvalid()
+    {
+        var input = new OrderRequestDTO
+        {
+            StartDateFrom = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            StartDateTo = DateOnly.FromDateTime(DateTime.Today)
+        };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_Returns200_WhenFilterByLowercaseStatus()
+    {
+        _orderRepo.Setup(x => x.GetOrdersByUserId(1))
+            .ReturnsAsync(new List<Order>
+            {
+                BuildFakeOrder(1, userId: 1, statusName: OrderStatus_Constants.Pending),
+                BuildFakeOrder(2, userId: 1, statusName: OrderStatus_Constants.Approved)
+            });
+
+        var input = new OrderRequestDTO { Status = OrderStatus_Constants.Pending.ToLowerInvariant() };
+
+        var result = await BuildController(userId: 1).GetMyOrders(input);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<OrderListDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
     }
 
     // ─── GetOrderDetail ───────────────────────────────────────────────────────
@@ -157,6 +269,17 @@ public class OrderControllerTest
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderDetail_Returns403_WhenCustomerViewsOtherUsersOrder()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(BuildFakeOrder(userId: 99));
+
+        var result = await BuildControllerWithRole(userId: 1, role: "Customer").GetOrderDetail(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, obj.StatusCode);
     }
 
     [Fact]
@@ -220,6 +343,22 @@ public class OrderControllerTest
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrderHistory_Returns403_WhenCustomerViewsOtherUsersOrderHistory()
+    {
+        var order = BuildFakeOrder(userId: 99);
+        order.Histories = new List<OHistoryUpdate>
+        {
+            new OHistoryUpdate { FieldName = "OrderName", OldValue = "A", NewValue = "B" }
+        };
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+
+        var result = await BuildControllerWithRole(userId: 1, role: "Customer").GetOrderHistory(1);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, obj.StatusCode);
     }
 
     [Fact]

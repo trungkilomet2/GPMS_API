@@ -18,6 +18,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var rows = await _context.USER_AUTHORIZE.AsNoTracking().ToListAsync();
             return rows.Select(r => new PermissionEntry(
+                r.ID,
                 r.CONTROLLER,
                 r.METHOD,
                 r.ACTION,
@@ -29,6 +30,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var roles = await _context.ROLE.AsNoTracking().ToListAsync();
             return roles.ToDictionary(r => r.ROLE_ID.ToString(), r => r.NAME);
+        }
+
+        public async Task<bool> UpdateRoleAuthorize(int id, string? roleAuthorize)
+        {
+            var affected = await _context.USER_AUTHORIZE
+                .Where(x => x.ID == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.ROLE_AUTHORIZE, roleAuthorize));
+            return affected > 0;
         }
     }
 }
