@@ -1,4 +1,5 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Constants;
@@ -36,6 +37,98 @@ namespace GMPS.API.Controllers
             _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
+        private ActionResult? ValidateOrderQuery(OrderRequestDTO input)
+        {
+            var validStatuses = new[]
+            {
+                OrderStatus_Constants.Pending, OrderStatus_Constants.Modification,
+                OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
+            };
+
+            if (!string.IsNullOrEmpty(input.Status))
+            {
+                var matched = validStatuses.FirstOrDefault(s =>
+                    s.Normalize(NormalizationForm.FormC).Equals(
+                        input.Status.Normalize(NormalizationForm.FormC), StringComparison.OrdinalIgnoreCase));
+
+                if (matched is null)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                input.Status = matched;
+            }
+
+            if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
+            {
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "startDateFrom", new[] { "StartDateFrom must be less than or equal to StartDateTo." } }
+                };
+                return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                };
+                errorDetails.Errors = ModelState
+                    .Where(kvp => kvp.Value!.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+                return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+            }
+
+            return null;
+        }
+
+        private IEnumerable<Order> ApplyOrderFilterSort(IEnumerable<Order> source, OrderRequestDTO input)
+        {
+            if (!string.IsNullOrEmpty(input.FilterQuery))
+                source = source.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(input.Status))
+                source = source.Where(o => o.StatusName == input.Status);
+
+            if (input.StartDateFrom.HasValue)
+                source = source.Where(o => o.StartDate >= input.StartDateFrom.Value);
+
+            if (input.StartDateTo.HasValue)
+                source = source.Where(o => o.StartDate <= input.StartDateTo.Value);
+
+            var isDesc = string.IsNullOrEmpty(input.SortColumn)
+                || string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
+
+            return input.SortColumn?.ToLower() switch
+            {
+                "startdate" => isDesc ? source.OrderByDescending(o => o.StartDate) : source.OrderBy(o => o.StartDate),
+                "enddate"   => isDesc ? source.OrderByDescending(o => o.EndDate)   : source.OrderBy(o => o.EndDate),
+                "status"    => isDesc ? source.OrderByDescending(o => o.StatusName) : source.OrderBy(o => o.StatusName),
+                "quantity"  => isDesc ? source.OrderByDescending(o => o.Quantity)  : source.OrderBy(o => o.Quantity),
+                "name"      => isDesc ? source.OrderByDescending(o => o.OrderName) : source.OrderBy(o => o.OrderName),
+                _           => isDesc ? source.OrderByDescending(o => o.Id)        : source.OrderBy(o => o.Id)
+            };
+        }
+
         // api/order/order-list
         [HttpGet("order-list", Name = "Get all order list")]
         [Authorize(Roles = "Owner")]
@@ -47,101 +140,11 @@ namespace GMPS.API.Controllers
                     "Getting all orders - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, StartDateFrom: {StartDateFrom}, StartDateTo: {StartDateTo}",
                     input.PageIndex, input.PageSize, input.Status, input.StartDateFrom, input.StartDateTo);
 
-                var validStatuses = new[]
-                {
-                    OrderStatus_Constants.Pending, OrderStatus_Constants.Modification,
-                    OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
-                };
-
-                if (!string.IsNullOrEmpty(input.Status))
-                {
-                    var matched = validStatuses.FirstOrDefault(s =>
-                        s.Normalize(NormalizationForm.FormC).Equals(
-                            input.Status.Normalize(NormalizationForm.FormC), StringComparison.OrdinalIgnoreCase));
-
-                    if (matched is null)
-                    {
-                        _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                            "Invalid Status value '{Status}' provided", input.Status);
-
-                        var errorDetails = new ValidationProblemDetails(ModelState)
-                        {
-                            Status = StatusCodes.Status400BadRequest,
-                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                        };
-                        errorDetails.Errors = new Dictionary<string, string[]>
-                        {
-                            { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
-                        };
-                        return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                    }
-
-                    input.Status = matched;
-                }
-
-                if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "StartDateFrom {StartDateFrom} is greater than StartDateTo {StartDateTo}",
-                        input.StartDateFrom, input.StartDateTo);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "startDateFrom", new[] { "StartDateFrom must be less than or equal to StartDateTo." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "Invalid model state while getting all orders");
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value!.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                var validationResult = ValidateOrderQuery(input);
+                if (validationResult is not null) return validationResult;
 
                 var result = await _orderRepo.GetAllOrders();
-
-                if (!string.IsNullOrEmpty(input.FilterQuery))
-                    result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(o => o.StatusName == input.Status);
-
-                if (input.StartDateFrom.HasValue)
-                    result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
-
-                if (input.StartDateTo.HasValue)
-                    result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
-
-                var isDesc = string.IsNullOrEmpty(input.SortColumn)
-                    || string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-
-                result = input.SortColumn?.ToLower() switch
-                {
-                    "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
-                    "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
-                    "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
-                    "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
-                    "name"      => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName),
-                    _           => isDesc ? result.OrderByDescending(o => o.Id)        : result.OrderBy(o => o.Id)
-                };
+                result = ApplyOrderFilterSort(result, input);
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -227,101 +230,11 @@ namespace GMPS.API.Controllers
                     "Getting orders for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, StartDateFrom: {StartDateFrom}, StartDateTo: {StartDateTo}",
                     userId, input.PageIndex, input.PageSize, input.Status, input.StartDateFrom, input.StartDateTo);
 
-                var validStatuses = new[]
-                {
-                    OrderStatus_Constants.Pending, OrderStatus_Constants.Modification,
-                    OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
-                };
-
-                if (!string.IsNullOrEmpty(input.Status))
-                {
-                    var matched = validStatuses.FirstOrDefault(s =>
-                        s.Normalize(NormalizationForm.FormC).Equals(
-                            input.Status.Normalize(NormalizationForm.FormC), StringComparison.OrdinalIgnoreCase));
-
-                    if (matched is null)
-                    {
-                        _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                            "UserId {UserId} provided invalid Status value '{Status}'", userId, input.Status);
-
-                        var errorDetails = new ValidationProblemDetails(ModelState)
-                        {
-                            Status = StatusCodes.Status400BadRequest,
-                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                        };
-                        errorDetails.Errors = new Dictionary<string, string[]>
-                        {
-                            { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
-                        };
-                        return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                    }
-
-                    input.Status = matched;
-                }
-
-                if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "UserId {UserId}: StartDateFrom {StartDateFrom} is greater than StartDateTo {StartDateTo}",
-                        userId, input.StartDateFrom, input.StartDateTo);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "startDateFrom", new[] { "StartDateFrom must be less than or equal to StartDateTo." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "Invalid model state while getting orders for UserId {UserId}", userId);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value!.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                var validationResult = ValidateOrderQuery(input);
+                if (validationResult is not null) return validationResult;
 
                 var result = await _orderRepo.GetOrdersByUserId(userId);
-
-                if (!string.IsNullOrEmpty(input.FilterQuery))
-                    result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(o => o.StatusName == input.Status);
-
-                if (input.StartDateFrom.HasValue)
-                    result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
-
-                if (input.StartDateTo.HasValue)
-                    result = result.Where(o => o.StartDate <= input.StartDateTo.Value);
-
-                var isDesc = string.IsNullOrEmpty(input.SortColumn)
-                    || string.Equals(input.SortOrder, "DESC", StringComparison.OrdinalIgnoreCase);
-
-                result = input.SortColumn?.ToLower() switch
-                {
-                    "startdate" => isDesc ? result.OrderByDescending(o => o.StartDate) : result.OrderBy(o => o.StartDate),
-                    "enddate"   => isDesc ? result.OrderByDescending(o => o.EndDate)   : result.OrderBy(o => o.EndDate),
-                    "status"    => isDesc ? result.OrderByDescending(o => o.StatusName) : result.OrderBy(o => o.StatusName),
-                    "quantity"  => isDesc ? result.OrderByDescending(o => o.Quantity)  : result.OrderBy(o => o.Quantity),
-                    "name"      => isDesc ? result.OrderByDescending(o => o.OrderName) : result.OrderBy(o => o.OrderName),
-                    _           => isDesc ? result.OrderByDescending(o => o.Id)        : result.OrderBy(o => o.Id)
-                };
+                result = ApplyOrderFilterSort(result, input);
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -876,102 +789,25 @@ namespace GMPS.API.Controllers
                 if (userIdClaim is null || !int.TryParse(userIdClaim, out var userId))
                     return Unauthorized();
 
-                var existingOrder = await _orderRepo.GetOrderDetail(id);
-                if (existingOrder is null)
+                var updateInput = new UpdateOrderInput
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
-                        "Order {OrderId} not found", id);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status404NotFound,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "id", new[] { $"Order with id ' {id} ' not found" } }
-                    };
-                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
-                }
-
-                if (existingOrder.StatusName != OrderStatus_Constants.Modification)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
-                        "Order {OrderId} cannot be updated - current status is '{Status}', required 'Modification'",
-                        id, existingOrder.StatusName);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status403Forbidden,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { $"Only modify order with status '{OrderStatus_Constants.Modification}'" } }
-                    };
-                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
-                }
-
-                if (existingOrder.UserId != userId)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
-                        "UserId {UserId} is not the owner of OrderId {OrderId}", userId, id);
-
-                    return Forbid();
-                }
-
-                // Giữ ảnh cũ nếu user không gửi ảnh mới
-                var resolvedImage = !string.IsNullOrEmpty(input!.Image)
-                    ? input.Image
-                    : existingOrder.Image;
-
-                var histories = new List<OHistoryUpdate>();
-                void TrackChange(string field, string? oldVal, string? newVal)
-                {
-                    if (oldVal != newVal)
-                        histories.Add(new OHistoryUpdate
-                        {
-                            OrderId = id,
-                            FieldName = field,
-                            OldValue = oldVal ?? string.Empty,
-                            NewValue = newVal ?? string.Empty
-                        });
-                }
-
-                TrackChange("OrderName", existingOrder.OrderName, input.OrderName);
-                TrackChange("Type", existingOrder.Type, input.Type);
-                TrackChange("Size", existingOrder.Size, input.Size);
-                TrackChange("Color", existingOrder.Color, input.Color);
-                TrackChange("StartDate", existingOrder.StartDate.ToString(), input.StartDate.ToString());
-                TrackChange("EndDate", existingOrder.EndDate.ToString(), input.EndDate.ToString());
-                TrackChange("Quantity", existingOrder.Quantity.ToString(), input.Quantity.ToString());
-                TrackChange("Image", existingOrder.Image, resolvedImage);
-                TrackChange("Note", existingOrder.Note, input.Note);
-
-                _logger.LogInformation(CustomLogEvents.OrderController_Put,
-                    "Tracked {Count} field change(s) for OrderId {OrderId}", histories.Count, id);
-
-                var updatedOrder = new Order
-                {
-                    Id = id,
-                    UserId = userId,
-                    OrderName = input.OrderName,
+                    OrderName = input!.OrderName,
                     Type = input.Type,
                     Size = input.Size,
                     Color = input.Color,
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
-                    Image = resolvedImage,
+                    Image = input.Image,
                     Note = input.Note,
-                    Template = input.Templates?.Select(t => new OrderTemplate
+                    Templates = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName,
                         Type = t.Type,
                         File = t.File,
                         Note = t.Note
                     }).ToList(),
-                    Material = input.Materials?.Select(m => new OrderMaterial
+                    Materials = input.Materials?.Select(m => new OrderMaterial
                     {
                         MaterialName = m.MaterialName,
                         Image = m.Image,
@@ -981,25 +817,51 @@ namespace GMPS.API.Controllers
                     }).ToList()
                 };
 
-                await _orderRepo.UpdateOrder(id, updatedOrder, histories);
+                await _orderRepo.UpdateOrder(id, userId, updateInput);
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
                     "Order {OrderId} updated successfully by UserId {UserId}", id, userId);
 
                 return Ok($"Order '{id}' updated successfully");
             }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Order {OrderId} not found", id);
+                return StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Order {OrderId} status error: {Message}", id, ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Unauthorized access to update Order {OrderId}", id);
+                return Forbid();
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Put, ex,
                     "Error occurred while updating OrderId {OrderId}", id);
-
-                var exceptionDetails = new ProblemDetails
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Detail = ex.Message,
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                });
             }
         }
 
@@ -1111,11 +973,11 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult> DenyOrder(int orderId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
                     "Requesting deny for OrderId {OrderId}", orderId);
+
                 if (orderId <= 0)
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Put,
@@ -1131,57 +993,10 @@ namespace GMPS.API.Controllers
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
-                var existingOrder = await _orderRepo.GetOrderDetail(orderId);
-                if (existingOrder is null)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
-                        "Order {OrderId} not found", orderId);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status404NotFound,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "id", new[] { $"Order with id ' {orderId} ' not found" } }
-                    };
-                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
-                }
-                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Put,
-                        "Order {OrderId} cannot request deny - current status is '{Status}', required Chờ Xét Duyệt",
-                        orderId, existingOrder.StatusName);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status500InternalServerError,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { "Only Chờ Xét Duyệt order can request deny" } }
-                    };
-                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
-                }
-                var histories = new List<OHistoryUpdate>();
-                void TrackChange(string field, string? oldVal, string? newVal)
-                {
-                    if (oldVal != newVal)
-                        histories.Add(new OHistoryUpdate
-                        {
-                            OrderId = orderId,
-                            FieldName = field,
-                            OldValue = oldVal ?? string.Empty,
-                            NewValue = newVal ?? string.Empty
-                        });
-                }
-                TrackChange("Status", existingOrder.StatusName, OrderStatus_Constants.Modification);
-                var updatedOrder = new Order
-                {
-                    Id = orderId,
-                    Status = 5
-                };
-                await _orderRepo.DenyOrder(userId, orderId, updatedOrder, histories);
+
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+                await _orderRepo.DenyOrder(userId, orderId);
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Put,
                     "Deny request for OrderId {OrderId} submitted successfully", orderId);
@@ -1190,26 +1005,42 @@ namespace GMPS.API.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(CustomLogEvents.OrderController_Put, ex.Message);
-
-                return NotFound(new ProblemDetails
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Order {OrderId} not found", orderId);
+                return StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
                 {
                     Detail = ex.Message,
                     Status = StatusCodes.Status404NotFound,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                 });
             }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Unauthorized deny attempt on OrderId {OrderId}", orderId);
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Order {OrderId} status error: {Message}", orderId, ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Put, ex,
                     "Error occurred while requesting deny for OrderId {OrderId}", orderId);
-                var exceptionDetails = new ProblemDetails
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Detail = ex.Message,
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                });
             }
         }
 
@@ -1221,8 +1052,11 @@ namespace GMPS.API.Controllers
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
                     "Requesting approve for OrderId {OrderId}", orderId);
+
                 if (orderId <= 0)
                 {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Invalid OrderId {OrderId} - must be greater than 0", orderId);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -1234,67 +1068,8 @@ namespace GMPS.API.Controllers
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
-                var existingOrder = await _orderRepo.GetOrderDetail(orderId);
-                if (existingOrder is null)
-                {
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status404NotFound,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "id", new[] { $"Order with id '{orderId}' not found" } }
-                    };
-                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
-                }
-                if (existingOrder.StatusName == OrderStatus_Constants.Approved ||
-                    existingOrder.StatusName == OrderStatus_Constants.Rejected)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
-                        "Order {OrderId} has already been processed with status '{Status}'", orderId, existingOrder.StatusName);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status409Conflict,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { "This order request has already been processed." } }
-                    };
-                    return StatusCode(StatusCodes.Status409Conflict, errorDetails);
-                }
-                if (existingOrder.StatusName != OrderStatus_Constants.Pending)
-                {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
-                        "Order {OrderId} cannot be approved - current status is '{Status}'", orderId, existingOrder.StatusName);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status403Forbidden,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { "Only Chờ Xét Duyệt order can be approved" } }
-                    };
-                    return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
-                }
-                var histories = new List<OHistoryUpdate>
-                {
-                    new OHistoryUpdate
-                    {
-                        OrderId = orderId,
-                        FieldName = "Status",
-                        OldValue = existingOrder.StatusName,
-                        NewValue = OrderStatus_Constants.Approved
-                    }
-                };
-                var updatedOrder = new Order
-                {
-                    Id = orderId,
-                    Status = OrderStatus_Constants.Approved_ID
-                };
-                await _orderRepo.ApproveOrder(orderId, updatedOrder, histories);
+
+                await _orderRepo.ApproveOrder(orderId);
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
                     "Order {OrderId} approved successfully", orderId);
@@ -1303,12 +1078,35 @@ namespace GMPS.API.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(CustomLogEvents.OrderController_Post, ex.Message);
-                return NotFound(new ProblemDetails
+                _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                    "Order {OrderId} not found", orderId);
+                return StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
                 {
                     Detail = ex.Message,
                     Status = StatusCodes.Status404NotFound,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "This order request has already been processed.")
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                    "Order {OrderId} has already been processed", orderId);
+                return StatusCode(StatusCodes.Status409Conflict, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status409Conflict,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                    "Order {OrderId} status error: {Message}", orderId, ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
                 });
             }
             catch (Exception ex)
