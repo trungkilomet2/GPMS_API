@@ -293,7 +293,6 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-
         public async Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId)
         {
             _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");

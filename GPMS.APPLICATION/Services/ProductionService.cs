@@ -17,16 +17,18 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<Order> _orderRepo;
         private readonly IBaseRepositories<ProductionRejectReason> _productionRejectRepo;
         private readonly IBaseRepositories<ProductionIssueLog> _productionIssueRepo;
+        private readonly IBaseOrderRepositories _orderStatusRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionService(
-            IBaseRepositories<Production> productionRepo, 
-            IUnitOfWork unitOfWork, 
-            IBaseRepositories<Role> roleRepositories, 
-            IBaseRepositories<User> userRepositories, 
+            IBaseRepositories<Production> productionRepo,
+            IUnitOfWork unitOfWork,
+            IBaseRepositories<Role> roleRepositories,
+            IBaseRepositories<User> userRepositories,
             IBaseRepositories<Order> orderRepo,
             IBaseRepositories<ProductionRejectReason> productionRejectRepo,
-            IBaseRepositories<ProductionIssueLog> productionIssueRepo
+            IBaseRepositories<ProductionIssueLog> productionIssueRepo,
+            IBaseOrderRepositories orderStatusRepo
             ) {
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
@@ -35,6 +37,7 @@ namespace GPMS.APPLICATION.Services
             _orderRepo = orderRepo;
             _productionRejectRepo = productionRejectRepo;
             _productionIssueRepo = productionIssueRepo;
+            _orderStatusRepo = orderStatusRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
@@ -178,13 +181,14 @@ namespace GPMS.APPLICATION.Services
             return result;
         }
 
-
-
+        // Chấp Nhận Yêu Cầu Sản Xuất Đến Từ Chủ Xưởng
         public async Task<Production> ApproveProduction(int productionId, int actionByUserId)
         {
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
             var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
             production.StatusId = ProductionStatus_Constants.Approval_ID;
+            await _orderStatusRepo.ChangeStatus(production.Id,OrderStatus_Constants.Producting_ID);
+
             return await _prdRepo.Update(production);
         }
 

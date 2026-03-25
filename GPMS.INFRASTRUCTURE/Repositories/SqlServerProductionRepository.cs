@@ -78,17 +78,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             bool haveManagerWorker = _context.USER.Any(u => u.MANAGER_ID == entity.PmId);
             if (!haveManagerWorker)
             {
-                throw new DBConcurrencyException($"PM '{entity.PmId}' đang không quản lý công nhân nào");
+                throw new DBConcurrencyException($"PM ID = '{entity.PmId}' đang không quản lý công nhân nào");
             }
-            PRODUCTION production_databse = _context.PRODUCTION.FirstOrDefault(p=> p.PRODUCTION_ID == entity.Id);
-            if(production_databse is null ) throw new DBConcurrencyException($"Production with id '{entity.Id}' not found.");
+            PRODUCTION production_databse = await _context.PRODUCTION.FirstOrDefaultAsync(p=> p.PRODUCTION_ID == entity.Id);
+            if(production_databse is null ) throw new DBConcurrencyException($"Không tìm thấy Production ID = '{entity.Id}'.");
             production_databse.PM_ID = entity.PmId;
             production_databse.ORDER_ID = entity.OrderId;
             production_databse.P_START_DATE = entity.StartDate;
             production_databse.P_END_DATE = entity.EndDate;
             production_databse.PS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
-            return await GetById(entity.Id) ?? throw new DBConcurrencyException("Failed to update production.");
+            return await GetById(entity.Id) ?? throw new DBConcurrencyException("Cập Nhật Production Thất Bại.");
         }
 
         public Task Delete(object id)

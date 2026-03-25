@@ -168,7 +168,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<Order>(existing);
         }
 
-        public Task<Order> Update(Order entity) => throw new NotImplementedException();
+        public Task<Order> Update(Order entity)
+        {
+            throw new NotImplementedException();
+        }
         public Task Delete(object id) => throw new NotImplementedException();
 
         public async Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
