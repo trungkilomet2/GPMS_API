@@ -29,7 +29,8 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<ProductionRejectReason> productionRejectRepo,
             IBaseRepositories<ProductionIssueLog> productionIssueRepo,
             IBaseOrderRepositories orderStatusRepo
-            ) {
+            )
+        {
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
             _roleRepositories = roleRepositories;
@@ -57,7 +58,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new Exception("Người dùng không tồn tại role nào");
             }
-            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner) || r.Name.Equals( Roles_Constants.PM)).Count() == 0)
+            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner) || r.Name.Equals(Roles_Constants.PM)).Count() == 0)
             {
                 throw new ValidationException("Chỉ Owner và PM mới được quản lý Production");
             }
@@ -71,7 +72,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất - Không ở trạng thái Chấp Nhận");
             }
-            if(_prdRepo.GetAll(check_order_system).Result.Count() > 0)
+            if (_prdRepo.GetAll(check_order_system).Result.Count() > 0)
             {
                 throw new ValidationException("Đơn hàng đang trong kế hoạch sản xuất hoặc đã hoàn thành rồi");
             }
@@ -104,7 +105,7 @@ namespace GPMS.APPLICATION.Services
             // Lấy toàn bộ thông tin của production đấy 
             var production = await _prdRepo.GetById(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
-    //        production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
+            //        production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
             return await _prdRepo.Update(production);
         }
 
@@ -153,7 +154,7 @@ namespace GPMS.APPLICATION.Services
         // New Coding for DTOs
         public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
         {
-            if(productionId <= 0)
+            if (productionId <= 0)
             {
                 throw new ValidationException("Production ID truyền vào phải là một số > 0");
             }
@@ -187,13 +188,13 @@ namespace GPMS.APPLICATION.Services
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
             if (production.StatusId == ProductionStatus_Constants.Reject_ID)
                 throw new ValidationException("Production này đã bị từ chối rồi");
-            
-            if(production.StatusId == ProductionStatus_Constants.Pending_ID)
-            {
 
-            production.StatusId = ProductionStatus_Constants.Approval_ID;
-            return await _prdRepo.Update(production);
-            } else
+            if (production.StatusId == ProductionStatus_Constants.Pending_ID)
+            {
+                production.StatusId = ProductionStatus_Constants.Approval_ID;
+                return await _prdRepo.Update(production);
+            }
+            else
             {
                 throw new ValidationException("Production chỉ Approve được khi đang ở trạng thái Chờ Xét Duyệt");
             }
@@ -288,6 +289,39 @@ namespace GPMS.APPLICATION.Services
 
                 default:
                     return "Unknown Status";
+            }
+        }
+
+        public async Task<Production> ApproveProductionPlan(int productionId)
+        {
+
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
+
+            if (production.StatusId == ProductionStatus_Constants.PendingPlan_ID)
+            {
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+               {
+                   // Chấp Nhận Production Plan Và Chuyển Về Trạng Thái Đang Sản Xuất và thông báo email đến PM
+
+                   production.StatusId = ProductionStatus_Constants.Producting_ID;
+                   // Cập Nhật Trạng Thái Order => Đang Sản Xuất Và thông báo đến email của người đặt hàng
+                   var order = await _orderRepo.GetById(production.OrderId);
+                   if (order != null) {
+                       throw new Exception("Không tồn tại đơn hàng trong hệ thống");
+                   }
+                   // Chuyển đơn hàng thành trạng thái đang sản xuất và thông báo đến Customer
+                   order.Status = OrderStatus_Constants.Producting_ID;
+                   await _orderRepo.Update(order);
+               
+               });
+                return await _prdRepo.Update(production);
+            }
+            else
+            {
+                throw new ValidationException("Production Plan chỉ chấp nhận được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
             }
         }
     }

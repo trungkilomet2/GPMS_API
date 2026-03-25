@@ -30,5 +30,9 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<ProductionIssueLog>> GetProductionIssueSummaryByType(int productionId);
         Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue);
 
+
+        // TrungNT - 25-03-25
+        Task<Production> ApproveProductionPlan(int productionId);
+
     }
 }

@@ -87,13 +87,11 @@ namespace GPMS.APPLICATION.Services
                 {
                     check_parts.Add(await _partRepo.Create(part));
                 }
-                    
 
                 // Chuyển trạng thái thành Chờ Xét Duyệt Của Chủ Xưởng
                 var production = await _productionRepo.GetById(productionId);
                 if (production is not null)
                 {   
-
                     // Chuyển đổi trạng thái thành Chờ Xét Duyệt Kế Hoạch
                     production.StatusId = ProductionStatus_Constants.PendingPlan_ID;
                     await _productionRepo.Update(production);
