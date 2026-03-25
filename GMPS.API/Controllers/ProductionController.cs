@@ -467,6 +467,29 @@ namespace GMPS.API.Controllers
         }
 
 
+        [HttpPatch("production/reject-reason/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<RejectReasonData>>> ProductionRejectReasonDetail(
+          [Range(1, int.MaxValue)] int production_id
+          )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.ProductionRejectReasonDetail(production_id);
+                
+                return Ok(new RestDTO<RejectReasonData> { Data = _mapper.Map<RejectReasonData>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
 
     }
 }

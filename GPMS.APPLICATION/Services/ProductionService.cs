@@ -308,9 +308,10 @@ namespace GPMS.APPLICATION.Services
                    production.StatusId = ProductionStatus_Constants.Producting_ID;
                    // Cập Nhật Trạng Thái Order => Đang Sản Xuất Và thông báo đến email của người đặt hàng
                    await _prdRepo.Update(production);
-                    // Update Order Status
+                   // Update Order Status
                    var order = await _orderRepo.GetById(production.OrderId);
-                   if (order is null) {
+                   if (order is null)
+                   {
                        throw new Exception("Không tồn tại đơn hàng trong hệ thống");
                    }
                    // Chuyển đơn hàng thành trạng thái đang sản xuất và thông báo đến Customer
@@ -339,6 +340,20 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Production chỉ Cần Cập Nhật được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
             }
+        }
+
+        public async Task<ProductionRejectReason> ProductionRejectReasonDetail(int productionId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+
+            var production_reject_reason_detail = await _productionRejectRepo.GetById(productionId);
+
+            if (production_reject_reason_detail is null)
+            {
+                throw new ValidationException("Không tổn tại lý do từ chối.");
+            }
+
+            return production_reject_reason_detail;
         }
     }
 }

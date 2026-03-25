@@ -37,7 +37,8 @@ namespace GPMS.APPLICATION.Repositories
         
         // Cần Cập Nhật Thêm Production
         Task<Production> NeedUpdateProductionPlan(int productionId);
-
+        // Lấy thông tin từ chối của Production đấy
+        Task<ProductionRejectReason> ProductionRejectReasonDetail(int productionId);
 
 
 
