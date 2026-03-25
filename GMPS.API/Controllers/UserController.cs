@@ -520,21 +520,32 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.UserController_Put, "Updating profile for UserId {UserId}", userId);
                 if (ModelState.IsValid)
                 {
-
+                    var existingUser = await _userRepo.GetUserById(userId);
+                    string finalEmail = existingUser.Email;
+                    bool isEmailChanged = false;
                     if (!string.IsNullOrEmpty(user.Email))
                     {
-                        var isVerified = _memoryCache.Get<bool?>($"{user.Email}_verified");
+                        var newEmail = user.Email.Trim().ToLower();
+                        var currentEmail = existingUser.Email.Trim().ToLower();
 
-                        if(isVerified != true)
+                        if (newEmail != currentEmail)
                         {
-                            _logger.LogWarning(CustomLogEvents.UserController_Put, "Email not verified for UserId {UserId}", userId);
-                            var errorDetails = new ValidationProblemDetails(ModelState);
-                            errorDetails.Status = StatusCodes.Status400BadRequest;
-                            errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                            errorDetails.Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.";
-                            return StatusCode(StatusCodes.Status400BadRequest,errorDetails.Detail);
+                            isEmailChanged = true;
+
+                            var isVerified = _memoryCache.Get<bool?>($"{user.Email}_verified");
+
+                            if (isVerified != true)
+                            {
+                                _logger.LogWarning(CustomLogEvents.UserController_Put, "Email not verified for UserId {UserId}", userId);
+                                var errorDetails = new ValidationProblemDetails(ModelState);
+                                errorDetails.Status = StatusCodes.Status400BadRequest;
+                                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+                                errorDetails.Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.";
+                                return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Detail);
+                            }
+                            finalEmail = newEmail;
                         }
-                        _memoryCache.Remove($"{user.Email}_verified");
+                        
                     }
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
@@ -552,6 +563,7 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
+                    _memoryCache.Remove($"{user.Email}_verified");
                     _memoryCache.Remove($"{user.Email}_email_otp");
                     _logger.LogInformation(CustomLogEvents.UserController_Put, "Profile updated successfully for UserId {UserId}", userId);
 
