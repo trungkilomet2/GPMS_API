@@ -27,7 +27,7 @@ namespace GMPS.API.DTOs
         public string? Size { get; set; }
 
         [Required(ErrorMessage = "Color is required")]
-        [StringLength(10, ErrorMessage = "Color cannot exceed 10 characters")]
+        [StringLength(30, ErrorMessage = "Color cannot exceed 10 characters")]
         public string Color { get; set; }
 
         [Required(ErrorMessage = "StartDate is required")]

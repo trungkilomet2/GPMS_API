@@ -634,8 +634,9 @@ namespace GMPS.API.Controllers
                         Material = input.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
-                            Image = m.Image,
+                            Image = m.Image,                            
                             Value = m.Value,
+                            Color = m.Color,
                             Uom = m.Uom,
                             Note = m.Note
                         }).ToList(),

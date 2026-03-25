@@ -12,6 +12,9 @@ namespace GMPS.API.DTOs
         [Url(ErrorMessage = "Image must be a valid URL")]
         [StringLength(2048, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
+        [Required(ErrorMessage = "Color is required")]
+        [MaxLength(30, ErrorMessage = "Note cannot exceed 30 characters")]
+        public string Color { get; set; }
 
         [Required(ErrorMessage = "Value is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Value must be greater than 0")]
