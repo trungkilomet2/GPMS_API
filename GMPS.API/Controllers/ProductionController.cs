@@ -467,7 +467,7 @@ namespace GMPS.API.Controllers
         }
 
 
-        [HttpPatch("production/reject-reason/{production_id:int}")]
+        [HttpPatch("production/reject-reason/detail/{production_id:int}")]
         public async Task<ActionResult<RestDTO<RejectReasonData>>> ProductionRejectReasonDetail(
           [Range(1, int.MaxValue)] int production_id
           )
