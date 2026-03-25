@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace GMPS.API.Controllers
@@ -52,21 +53,30 @@ namespace GMPS.API.Controllers
                     OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
                 };
 
-                if (!string.IsNullOrEmpty(input.Status) && !validStatuses.Contains(input.Status))
+                if (!string.IsNullOrEmpty(input.Status))
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "Invalid Status value '{Status}' provided", input.Status);
+                    var matched = validStatuses.FirstOrDefault(s =>
+                        s.Normalize(NormalizationForm.FormC).Equals(
+                            input.Status.Normalize(NormalizationForm.FormC), StringComparison.OrdinalIgnoreCase));
 
-                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    if (matched is null)
                     {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                        _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                            "Invalid Status value '{Status}' provided", input.Status);
+
+                        var errorDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status400BadRequest,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                        };
+                        errorDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
+                        };
+                        return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                    }
+
+                    input.Status = matched;
                 }
 
                 if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
@@ -112,8 +122,7 @@ namespace GMPS.API.Controllers
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
 
                 if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(o => o.StatusName != null &&
-                        o.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+                    result = result.Where(o => o.StatusName == input.Status);
 
                 if (input.StartDateFrom.HasValue)
                     result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
@@ -224,21 +233,30 @@ namespace GMPS.API.Controllers
                     OrderStatus_Constants.Approved, OrderStatus_Constants.Rejected, OrderStatus_Constants.Cancelled
                 };
 
-                if (!string.IsNullOrEmpty(input.Status) && !validStatuses.Contains(input.Status))
+                if (!string.IsNullOrEmpty(input.Status))
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Get,
-                        "UserId {UserId} provided invalid Status value '{Status}'", userId, input.Status);
+                    var matched = validStatuses.FirstOrDefault(s =>
+                        s.Normalize(NormalizationForm.FormC).Equals(
+                            input.Status.Normalize(NormalizationForm.FormC), StringComparison.OrdinalIgnoreCase));
 
-                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    if (matched is null)
                     {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                        _logger.LogWarning(CustomLogEvents.OrderController_Get,
+                            "UserId {UserId} provided invalid Status value '{Status}'", userId, input.Status);
+
+                        var errorDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status400BadRequest,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                        };
+                        errorDetails.Errors = new Dictionary<string, string[]>
+                        {
+                            { "status", new[] { $"Status must be one of: '{OrderStatus_Constants.Pending}', '{OrderStatus_Constants.Modification}', '{OrderStatus_Constants.Approved}', '{OrderStatus_Constants.Rejected}', '{OrderStatus_Constants.Cancelled}'." } }
+                        };
+                        return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                    }
+
+                    input.Status = matched;
                 }
 
                 if (input.StartDateFrom.HasValue && input.StartDateTo.HasValue && input.StartDateFrom > input.StartDateTo)
@@ -284,8 +302,7 @@ namespace GMPS.API.Controllers
                     result = result.Where(o => o.OrderName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
 
                 if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(o => o.StatusName != null &&
-                        o.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+                    result = result.Where(o => o.StatusName == input.Status);
 
                 if (input.StartDateFrom.HasValue)
                     result = result.Where(o => o.StartDate >= input.StartDateFrom.Value);
@@ -422,6 +439,17 @@ namespace GMPS.API.Controllers
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
 
+                if (User.IsInRole("Customer"))
+                {
+                    var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    if (order.UserId != requesterId)
+                        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                        {
+                            Detail = "You are not allowed to view this order.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                }
+
                 var orderUser = await _userRepo.GetUserById(order.UserId);
 
                 var data = new OrderDetailDTO
@@ -518,6 +546,17 @@ namespace GMPS.API.Controllers
                         { "id", new[] { $"Order with id '{id}' not found" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+                }
+
+                if (User.IsInRole("Customer"))
+                {
+                    var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                    if (order.UserId != requesterId)
+                        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+                        {
+                            Detail = "You are not allowed to view this order's history.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
                 }
 
                 if (!order.Histories.Any())

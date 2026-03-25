@@ -38,9 +38,9 @@ namespace GMPS.API.Controllers
                     input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
 
                 if (!string.IsNullOrEmpty(input.Status) &&
-                    input.Status != LeaveRequestStatus_Constants.Pending &&
-                    input.Status != LeaveRequestStatus_Constants.Approved &&
-                    input.Status != LeaveRequestStatus_Constants.Denied)
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Pending, StringComparison.OrdinalIgnoreCase) &&
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Approved, StringComparison.OrdinalIgnoreCase) &&
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Denied, StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
                         "Invalid Status value '{Status}' provided", input.Status);
@@ -195,9 +195,9 @@ namespace GMPS.API.Controllers
                     requesterId, input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
 
                 if (!string.IsNullOrEmpty(input.Status) &&
-                    input.Status != LeaveRequestStatus_Constants.Pending &&
-                    input.Status != LeaveRequestStatus_Constants.Approved &&
-                    input.Status != LeaveRequestStatus_Constants.Denied)
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Pending, StringComparison.OrdinalIgnoreCase) &&
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Approved, StringComparison.OrdinalIgnoreCase) &&
+                    !input.Status.Equals(LeaveRequestStatus_Constants.Denied, StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
                         "UserId {UserId} provided invalid Status value '{Status}'", requesterId, input.Status);

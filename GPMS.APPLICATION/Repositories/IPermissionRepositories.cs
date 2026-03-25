@@ -11,5 +11,6 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<IEnumerable<PermissionEntry>> GetAll();
         Task<Dictionary<string, string>> GetRoleMap();
+        Task<bool> UpdateRoleAuthorize(int id, string? roleAuthorize);
     }
 }
