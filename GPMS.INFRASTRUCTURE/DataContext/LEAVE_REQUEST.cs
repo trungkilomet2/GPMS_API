@@ -25,6 +25,12 @@ public partial class LEAVE_REQUEST
     [StringLength(100)]
     public string? DENY_CONTENT { get; set; }
 
+    [StringLength(100)]
+    public string? CANCEL_CONTENT { get; set; }
+
+    [StringLength(100)]
+    public string? REJECT_CANCEL_CONTENT { get; set; }
+
     public int LRS_ID { get; set; }
 
     [Column(TypeName = "datetime")]

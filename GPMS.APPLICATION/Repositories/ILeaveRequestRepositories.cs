@@ -12,5 +12,9 @@ namespace GPMS.APPLICATION.Repositories
         Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate);
         Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent, int approverId);
         Task<LeaveRequest> ApproveLeaveRequest(int id, int approverId);
+        Task<LeaveRequest> CancelLeaveRequest(int id, int userId, string cancelContent);
+        Task<LeaveRequest> RequestCancelLeaveRequest(int id, int userId, string cancelContent);
+        Task<LeaveRequest> ConfirmCancelLeaveRequest(int id, int approverId);
+        Task<LeaveRequest> RejectCancelLeaveRequest(int id, string rejectCancelContent, int approverId);
     }
 }
