@@ -181,14 +181,14 @@ namespace GPMS.APPLICATION.Services
             return result;
         }
 
-        // Chấp Nhận Yêu Cầu Sản Xuất Đến Từ Chủ Xưởng
+        // Chấp Nhận Yêu Cầu Sản Xuất Đến Từ Chủ Xưởng  
         public async Task<Production> ApproveProduction(int productionId, int actionByUserId)
         {
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
             var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
             production.StatusId = ProductionStatus_Constants.Approval_ID;
-            await _orderStatusRepo.ChangeStatus(production.Id,OrderStatus_Constants.Producting_ID);
-
             return await _prdRepo.Update(production);
         }
 
@@ -198,7 +198,6 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Lý do từ chối là bắt buộc");
             }
-
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
             var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
 
