@@ -164,6 +164,9 @@ builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCutti
 builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
 builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
 
+builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventRepository>();
+builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
+
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
 

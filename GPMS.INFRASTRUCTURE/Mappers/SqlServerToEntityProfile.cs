@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.DataContext;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -258,10 +260,14 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
                 .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
-
-
-
-
+            CreateMap<LOG_EVENTS, LogEvent>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ID))
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.MESSAGE))
+                .ForMember(dest => dest.MessageTemplate, opt => opt.MapFrom(src => src.MESSAGE_TEMPLATE))
+                .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.LEVEL))
+                .ForMember(dest => dest.TimeStemp, opt => opt.MapFrom(src => src.TIMPESTAMP))
+                .ForMember(dest => dest.Exception, opt => opt.MapFrom(src => src.EXCEPTION))
+                .ForMember(dest => dest.Properties, opt => opt.MapFrom(src => src.PROPERTIES)).ReverseMap();
         }
     }
 }
