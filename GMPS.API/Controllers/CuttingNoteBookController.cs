@@ -1,6 +1,8 @@
-﻿using GMPS.API.DTOs;
+﻿using AutoMapper;
+using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,10 +13,11 @@ namespace GMPS.API.Controllers
     public class CuttingNotebookController : ControllerBase
     {
         private readonly ICuttingNotebookRepositories _service;
-
-        public CuttingNotebookController(ICuttingNotebookRepositories service)
+        private readonly IMapper _mapper;
+        public CuttingNotebookController(ICuttingNotebookRepositories service,IMapper mapper)
         {
             _service = service;
+            _mapper = mapper;
         }
 
         [HttpPost("notebook/create")]
@@ -88,5 +91,80 @@ namespace GMPS.API.Controllers
             var data = await _service.GetLogs(notebookId);
             return Ok(new RestDTO<IEnumerable<CuttingNotebookLog>> { Data = data });
         }
+
+        // HTTP PUT : Cập Nhật SỔ CẮT
+        [HttpPut("notebook/update/{notebookId:int}")]
+        public async Task<ActionResult<RestDTO<CuttingNotebookResponseDTO>>> UpdateNotebook([Range(1, int.MaxValue)] int notebookId, [FromBody] UpdateCuttingNotebookDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _service.UpdateNotebook(new CuttingNotebook
+                {
+                    Id = notebookId,
+                    MarkerLength = dto.MarkerLength,
+                    FabricWidth = dto.FabricWidth
+                });
+                return Ok(new RestDTO<CuttingNotebookResponseDTO> { Data = _mapper.Map<CuttingNotebookResponseDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // HTTP PUT : Cập Nhật Log của sổ cắt
+        [HttpPut("notebook/log/update/{logId:int}")]
+        public async Task<ActionResult<RestDTO<CuttingNotebookLogResponseDTO>>> UpdateLog([Range(1, int.MaxValue)] int logId, [FromBody] UpdateCuttingNotebookLogDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _service.UpdateLog(new CuttingNotebookLog
+                {
+                    Id = logId,
+                    Color = dto.Color,
+                    MeterPerKg = dto.MeterPerKg,
+                    Layer = dto.Layer,
+                    ProductQty = dto.ProductQty,
+                    AvgConsumption = dto.AvgConsumption,
+                    Note = dto.Note
+                });
+                return Ok(new RestDTO<CuttingNotebookLogResponseDTO> { Data = _mapper.Map<CuttingNotebookLogResponseDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // HTTP DELETE: cập nhật xóa của sổ cắt
+        [HttpDelete("notebook/log/delete/{logId:int}")]
+        public async Task<ActionResult> DeleteLog([Range(1, int.MaxValue)] int logId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _service.DeleteLog(logId);
+                return Ok();
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
     }
 }

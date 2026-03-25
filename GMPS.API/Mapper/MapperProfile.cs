@@ -80,6 +80,17 @@ namespace GMPS.API.Mapper
 
             CreateMap<ProductionRejectReason, RejectReasonData>().ReverseMap();
 
+
+            //--------------------------------------------------------------------
+
+            CreateMap<CuttingNotebook, CuttingNotebookResponseDTO>()
+                .ForMember(dest => dest.NotebookId, opt => opt.MapFrom(src => src.Id));
+
+            CreateMap<CuttingNotebookLog, CuttingNotebookLogResponseDTO>()
+                .ForMember(dest => dest.LogId, opt => opt.MapFrom(src => src.Id));
+
+         //   CreateMap<ProductionPartProductivityViewDTO, ProductivityHistoryItemDTO>();
+
         }
 
     }

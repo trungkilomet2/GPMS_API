@@ -30,7 +30,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<CuttingNotebookLog>(db);
         }
 
-        public Task Delete(object id) => throw new NotImplementedException();
+        public async Task Delete(object id)
+        {
+            if (id is not int logId) return;
+            var db = await _context.CUTTING_NOTEBOOK_LOG.FirstOrDefaultAsync(x => x.CND_ID == logId);
+            if (db is null) return;
+            _context.CUTTING_NOTEBOOK_LOG.Remove(db);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<IEnumerable<CuttingNotebookLog>> GetAll(object? obj)
         {
@@ -50,6 +57,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return data is null ? null : _mapper.Map<CuttingNotebookLog>(data);
         }
 
-        public Task<CuttingNotebookLog> Update(CuttingNotebookLog entity) => throw new NotImplementedException();
+        public async Task<CuttingNotebookLog> Update(CuttingNotebookLog entity)
+        {
+            var db = await _context.CUTTING_NOTEBOOK_LOG.FirstOrDefaultAsync(x => x.CND_ID == entity.Id);
+            if (db is null) throw new KeyNotFoundException("Cutting notebook log not found");
+            db.COLOR = entity.Color;
+            db.METER_PER_KG = entity.MeterPerKg;
+            db.LAYER = entity.Layer;
+            db.PRODUCT_QTY = entity.ProductQty;
+            db.AVG_CONSUMPTION = entity.AvgConsumption;
+            db.NOTE = entity.Note;
+            await _context.SaveChangesAsync();
+            return _mapper.Map<CuttingNotebookLog>(db);
+        } 
     }
 }
