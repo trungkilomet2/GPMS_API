@@ -26,6 +26,80 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
+        private ActionResult? ValidateLeaveRequestQuery(LeaveRequestRequestDTO input)
+        {
+            if (!string.IsNullOrEmpty(input.Status) &&
+                !input.Status.Equals(LeaveRequestStatus_Constants.Pending, StringComparison.OrdinalIgnoreCase) &&
+                !input.Status.Equals(LeaveRequestStatus_Constants.Approved, StringComparison.OrdinalIgnoreCase) &&
+                !input.Status.Equals(LeaveRequestStatus_Constants.Denied, StringComparison.OrdinalIgnoreCase) &&
+                !input.Status.Equals(LeaveRequestStatus_Constants.Cancelled, StringComparison.OrdinalIgnoreCase) &&
+                !input.Status.Equals(LeaveRequestStatus_Constants.PendingCancellation, StringComparison.OrdinalIgnoreCase))
+            {
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}', '{LeaveRequestStatus_Constants.Cancelled}', '{LeaveRequestStatus_Constants.PendingCancellation}'." } }
+                };
+                return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+            }
+
+            if (input.DateCreateFrom.HasValue && input.DateCreateTo.HasValue
+                && input.DateCreateFrom > input.DateCreateTo)
+            {
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
+                };
+                return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                };
+                errorDetails.Errors = ModelState
+                    .Where(kvp => kvp.Value!.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+                return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+            }
+
+            return null;
+        }
+
+        private IEnumerable<LeaveRequest> ApplyLeaveRequestFilter(IEnumerable<LeaveRequest> source, LeaveRequestRequestDTO input, bool includeNameFilter)
+        {
+            if (includeNameFilter && !string.IsNullOrEmpty(input.FilterQuery))
+                source = source.Where(lr => lr.UserFullName != null &&
+                    lr.UserFullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(input.Status))
+                source = source.Where(lr => lr.StatusName != null &&
+                    lr.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
+
+            if (input.DateCreateFrom.HasValue)
+                source = source.Where(lr => lr.DateCreate >= input.DateCreateFrom.Value.Date);
+
+            if (input.DateCreateTo.HasValue)
+                source = source.Where(lr => lr.DateCreate < input.DateCreateTo.Value.Date.AddDays(1));
+
+            return source;
+        }
+
         // GET api/leaverequest/leave-request-list
         [HttpGet("leave-request-list", Name = "Get all leave request list")]
         [Authorize(Roles = "Owner,PM")]
@@ -37,79 +111,11 @@ namespace GMPS.API.Controllers
                     "Getting all leave requests - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, DateCreateFrom: {DateCreateFrom}, DateCreateTo: {DateCreateTo}",
                     input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
 
-                if (!string.IsNullOrEmpty(input.Status) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Pending, StringComparison.OrdinalIgnoreCase) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Approved, StringComparison.OrdinalIgnoreCase) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Denied, StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "Invalid Status value '{Status}' provided", input.Status);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}'." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (input.DateCreateFrom.HasValue && input.DateCreateTo.HasValue
-                    && input.DateCreateFrom > input.DateCreateTo)
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "DateCreateFrom {DateCreateFrom} is greater than DateCreateTo {DateCreateTo}",
-                        input.DateCreateFrom, input.DateCreateTo);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "Invalid model state while getting all leave requests");
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value!.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                var validationResult = ValidateLeaveRequestQuery(input);
+                if (validationResult is not null) return validationResult;
 
                 var result = await _leaveRequestRepo.GetAllLeaveRequests();
-
-                if (!string.IsNullOrEmpty(input.FilterQuery))
-                    result = result.Where(lr => lr.UserFullName != null &&
-                        lr.UserFullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(lr => lr.StatusName != null &&
-                        lr.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
-
-                if (input.DateCreateFrom.HasValue)
-                    result = result.Where(lr => lr.DateCreate >= input.DateCreateFrom.Value.Date);
-
-                if (input.DateCreateTo.HasValue)
-                    result = result.Where(lr => lr.DateCreate < input.DateCreateTo.Value.Date.AddDays(1));
+                result = ApplyLeaveRequestFilter(result, input, true);
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -194,75 +200,11 @@ namespace GMPS.API.Controllers
                     "Getting leave request history for UserId {UserId} - PageIndex: {PageIndex}, PageSize: {PageSize}, Status: {Status}, DateCreateFrom: {DateCreateFrom}, DateCreateTo: {DateCreateTo}",
                     requesterId, input.PageIndex, input.PageSize, input.Status, input.DateCreateFrom, input.DateCreateTo);
 
-                if (!string.IsNullOrEmpty(input.Status) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Pending, StringComparison.OrdinalIgnoreCase) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Approved, StringComparison.OrdinalIgnoreCase) &&
-                    !input.Status.Equals(LeaveRequestStatus_Constants.Denied, StringComparison.OrdinalIgnoreCase))
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "UserId {UserId} provided invalid Status value '{Status}'", requesterId, input.Status);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}'." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (input.DateCreateFrom.HasValue && input.DateCreateTo.HasValue
-                    && input.DateCreateFrom > input.DateCreateTo)
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "UserId {UserId}: DateCreateFrom {DateCreateFrom} is greater than DateCreateTo {DateCreateTo}",
-                        requesterId, input.DateCreateFrom, input.DateCreateTo);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
-                    };
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Get,
-                        "Invalid model state while getting leave request history for UserId {UserId}", requesterId);
-
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status400BadRequest,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                    };
-                    errorDetails.Errors = ModelState
-                        .Where(kvp => kvp.Value!.Errors.Count > 0)
-                        .ToDictionary(
-                            kvp => kvp.Key,
-                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
-                }
+                var validationResult = ValidateLeaveRequestQuery(input);
+                if (validationResult is not null) return validationResult;
 
                 var result = await _leaveRequestRepo.GetLeaveRequestsByUserId(requesterId);
-
-                if (!string.IsNullOrEmpty(input.Status))
-                    result = result.Where(lr => lr.StatusName != null &&
-                        lr.StatusName.Equals(input.Status, StringComparison.OrdinalIgnoreCase));
-
-                if (input.DateCreateFrom.HasValue)
-                    result = result.Where(lr => lr.DateCreate >= input.DateCreateFrom.Value.Date);
-
-                if (input.DateCreateTo.HasValue)
-                    result = result.Where(lr => lr.DateCreate < input.DateCreateTo.Value.Date.AddDays(1));
+                result = ApplyLeaveRequestFilter(result, input, false);
 
                 var recordCount = result.Count();
                 var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
@@ -413,6 +355,8 @@ namespace GMPS.API.Controllers
                     ToDate = leaveRequest.ToDate,
                     DateReply = leaveRequest.DateReply,
                     DenyContent = leaveRequest.DenyContent,
+                    CancelContent = leaveRequest.CancelContent,
+                    RejectCancelContent = leaveRequest.RejectCancelContent,
                     ApprovedByName = leaveRequest.ApprovedByName,
                     Status = leaveRequest.StatusName
                 };
@@ -503,6 +447,8 @@ namespace GMPS.API.Controllers
                     ToDate = leaveRequest.ToDate,
                     DateReply = leaveRequest.DateReply,
                     DenyContent = leaveRequest.DenyContent,
+                    CancelContent = leaveRequest.CancelContent,
+                    RejectCancelContent = leaveRequest.RejectCancelContent,
                     ApprovedByName = leaveRequest.ApprovedByName,
                     Status = leaveRequest.StatusName
                 };
@@ -585,6 +531,8 @@ namespace GMPS.API.Controllers
                     ToDate = created.ToDate,
                     DateReply = created.DateReply,
                     DenyContent = created.DenyContent,
+                    CancelContent = created.CancelContent,
+                    RejectCancelContent = created.RejectCancelContent,
                     ApprovedByName = created.ApprovedByName,
                     Status = created.StatusName
                 };
@@ -740,6 +688,445 @@ namespace GMPS.API.Controllers
             {
                 _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
                     "Error occurred while denying LeaveRequestId {LeaveRequestId}", id);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // PUT api/leaverequest/{id}/cancel
+        [HttpPut("{id}/cancel")]
+        [Authorize(Roles = "Owner,PM,Team_Leader,KCS,Worker")]
+        public async Task<ActionResult> CancelLeaveRequest(int id, [FromBody] CancelLeaveRequestDTO? input)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var userId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "UserId {UserId} cancelling LeaveRequestId {LeaveRequestId}", userId, id);
+
+                if (input is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                        "Request body is null while cancelling LeaveRequestId {LeaveRequestId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "body", new[] { "Request body is required." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                await _leaveRequestRepo.CancelLeaveRequest(id, userId, input!.CancelContent);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cancelled by UserId {UserId} successfully", id, userId);
+
+                return Ok($"Leave request '{id}' has been cancelled successfully.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} not found", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "id", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "Unauthorized cancel attempt on LeaveRequestId {LeaveRequestId}", id);
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cannot be cancelled - invalid status", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
+                    "Error occurred while cancelling LeaveRequestId {LeaveRequestId}", id);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // PUT api/leaverequest/{id}/request-cancel
+        [HttpPut("{id}/request-cancel")]
+        [Authorize(Roles = "Owner,PM,Team_Leader,KCS,Worker")]
+        public async Task<ActionResult> RequestCancelLeaveRequest(int id, [FromBody] CancelLeaveRequestDTO? input)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var userId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "UserId {UserId} requesting cancellation of approved LeaveRequestId {LeaveRequestId}", userId, id);
+
+                if (input is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                        "Request body is null while requesting cancellation of LeaveRequestId {LeaveRequestId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "body", new[] { "Request body is required." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                await _leaveRequestRepo.RequestCancelLeaveRequest(id, userId, input!.CancelContent);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cancellation requested by UserId {UserId}", id, userId);
+
+                return Ok($"Cancellation request for leave request '{id}' has been submitted successfully.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} not found", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "id", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "Unauthorized request-cancel attempt on LeaveRequestId {LeaveRequestId}", id);
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cannot request cancel - invalid status", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
+                    "Error occurred while requesting cancellation of LeaveRequestId {LeaveRequestId}", id);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // PUT api/leaverequest/{id}/confirm-cancel
+        [HttpPut("{id}/confirm-cancel")]
+        [Authorize(Roles = "Owner,PM")]
+        public async Task<ActionResult> ConfirmCancelLeaveRequest(int id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var approverId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "UserId {UserId} confirming cancellation of LeaveRequestId {LeaveRequestId}", approverId, id);
+
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                await _leaveRequestRepo.ConfirmCancelLeaveRequest(id, approverId);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cancellation confirmed successfully", id);
+
+                return Ok($"Leave request '{id}' has been cancelled successfully.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} not found", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "id", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cannot confirm cancel - invalid status", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
+                    "Error occurred while confirming cancellation of LeaveRequestId {LeaveRequestId}", id);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        // PUT api/leaverequest/{id}/reject-cancel
+        [HttpPut("{id}/reject-cancel")]
+        [Authorize(Roles = "Owner,PM")]
+        public async Task<ActionResult> RejectCancelLeaveRequest(int id, [FromBody] RejectCancelLeaveRequestDTO? input)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim is null || !int.TryParse(userIdClaim, out var approverId))
+                    return Unauthorized();
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "UserId {UserId} rejecting cancellation of LeaveRequestId {LeaveRequestId}", approverId, id);
+
+                if (input is null)
+                {
+                    _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                        "Request body is null while rejecting cancellation of LeaveRequestId {LeaveRequestId}", id);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "body", new[] { "Request body is required." } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (id <= 0)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = new Dictionary<string, string[]>
+                    {
+                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    errorDetails.Errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        );
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+
+                await _leaveRequestRepo.RejectCancelLeaveRequest(id, input!.RejectCancelContent, approverId);
+
+                _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cancellation rejected, restored to Approved", id);
+
+                return Ok($"Cancellation request for leave request '{id}' has been rejected. Leave remains approved.");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} not found", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "id", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status404NotFound, errorDetails);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Put,
+                    "LeaveRequestId {LeaveRequestId} cannot reject cancel - invalid status", id);
+
+                var errorDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+                };
+                errorDetails.Errors = new Dictionary<string, string[]>
+                {
+                    { "status", new[] { ex.Message } }
+                };
+                return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.LeaveRequestController_Put, ex,
+                    "Error occurred while rejecting cancellation of LeaveRequestId {LeaveRequestId}", id);
 
                 var exceptionDetails = new ProblemDetails
                 {
