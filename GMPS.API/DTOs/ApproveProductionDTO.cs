@@ -10,7 +10,6 @@ namespace GMPS.API.DTOs
 
     public class RejectProductionRequestDTO
     {
-
         [Required]
         [StringLength(150)]
         public string Reason { get; set; } = string.Empty;

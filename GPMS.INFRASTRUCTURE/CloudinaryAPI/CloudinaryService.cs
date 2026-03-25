@@ -89,12 +89,15 @@ namespace GPMS.INFRASTRUCTURE.CloudinaryAPI
                 ".plt",
                 ".pdf",
                 ".docx",
-                ".xlsx"
+                ".xlsx",
+                ".jpg",
+                ".jpeg",
+                ".png"
             };
 
             if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
             {
-                throw new InvalidOperationException("Only .DXF, .IBA, .MDL, .PLT, .PDF, .DOCX, .XLSX files are allowed.");
+                throw new InvalidOperationException("Only .DXF, .IBA, .MDL, .PLT, .PDF, .DOCX, .XLSX, .JPG, .JPEG, .PNG files are allowed.");
             }
 
             await using var stream = file.OpenReadStream();
