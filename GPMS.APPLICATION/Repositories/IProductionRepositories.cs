@@ -25,7 +25,6 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<ProductionDetailViewDTO>> GetProductionListViews();
 
         // Lacking Bussiness Logic -1
-
         // TrungNT - 22-03-26
         Task<Production> ApproveProduction(int productionId);
         Task<Production> RejectProduction(int productionId, string reason);

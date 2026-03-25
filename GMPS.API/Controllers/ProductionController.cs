@@ -257,7 +257,7 @@ namespace GMPS.API.Controllers
             {
                 var data = await _productionService.UpdatePMProduction(production_id,new_pm_id);
                 if (data is null) NoContent();
-                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate}) - Code : 200");
+                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái  - Code : 200");
                 return Ok(new RestDTO<Production>
                 {
                     Data = data,
