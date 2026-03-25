@@ -562,7 +562,7 @@ namespace GMPS.API.Controllers
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = imageUrl,
                         Location = user.Location,
-                        Email = user.Email
+                        Email = finalEmail
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
                     _memoryCache.Remove($"{user.Email}_verified");
