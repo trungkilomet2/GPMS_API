@@ -25,6 +25,7 @@ public class LeaveRequestServiceTest
             DateCreate = DateTime.UtcNow,
             DateReply = null,
             DenyContent = null,
+            CancelContent = null,
             StatusId = 1,
             StatusName = statusName
         };
@@ -336,5 +337,304 @@ public class LeaveRequestServiceTest
 
         Assert.NotNull(captured!.DateReply);
         Assert.InRange(captured.DateReply!.Value, before, after);
+    }
+
+    // ─── CancelLeaveRequest ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CancelLeaveRequest_ReturnsCancelledLeaveRequest_WhenSuccessful()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        var cancelled = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Cancelled);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(cancelled);
+
+        var result = await BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind.");
+
+        Assert.NotNull(result);
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled, result.StatusName);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsKeyNotFoundException_WhenNotFound()
+    {
+        _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => BuildService().CancelLeaveRequest(99, userId: 1, cancelContent: "Changed my mind."));
+
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsUnauthorizedAccessException_WhenUserIsNotOwner()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 5, statusName: LeaveRequestStatus_Constants.Pending);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => BuildService().CancelLeaveRequest(1, userId: 99, cancelContent: "Changed my mind."));
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsInvalidOperationException_WhenStatusIsApproved()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Approved);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind."));
+
+        Assert.Contains(LeaveRequestStatus_Constants.Pending, ex.Message);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_SetsStatusIdToCancelledId_BeforeUpdate()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind.");
+
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled_ID, captured!.StatusId);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_SetsCancelContent_BeforeUpdate()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "No longer needed.");
+
+        Assert.Equal("No longer needed.", captured!.CancelContent);
+    }
+
+    // ─── RequestCancelLeaveRequest ───────────────────────────────────────────
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_ReturnsPendingCancellation_WhenSuccessful()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Approved);
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(pendingCancel);
+
+        var result = await BuildService().RequestCancelLeaveRequest(1, userId: 1, cancelContent: "Personal reasons.");
+
+        Assert.NotNull(result);
+        Assert.Equal(LeaveRequestStatus_Constants.PendingCancellation, result.StatusName);
+    }
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_ThrowsKeyNotFoundException_WhenNotFound()
+    {
+        _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => BuildService().RequestCancelLeaveRequest(99, userId: 1, cancelContent: "Personal reasons."));
+
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_ThrowsUnauthorizedAccessException_WhenUserIsNotOwner()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 5, statusName: LeaveRequestStatus_Constants.Approved);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => BuildService().RequestCancelLeaveRequest(1, userId: 99, cancelContent: "Personal reasons."));
+    }
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_ThrowsInvalidOperationException_WhenStatusIsNotApproved()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildService().RequestCancelLeaveRequest(1, userId: 1, cancelContent: "Personal reasons."));
+
+        Assert.Contains(LeaveRequestStatus_Constants.Approved, ex.Message);
+    }
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_SetsStatusIdToPendingCancellationId_BeforeUpdate()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Approved);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().RequestCancelLeaveRequest(1, userId: 1, cancelContent: "Personal reasons.");
+
+        Assert.Equal(LeaveRequestStatus_Constants.PendingCancellation_ID, captured!.StatusId);
+    }
+
+    [Fact]
+    public async Task RequestCancelLeaveRequest_SetsCancelContent_BeforeUpdate()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Approved);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().RequestCancelLeaveRequest(1, userId: 1, cancelContent: "Family emergency.");
+
+        Assert.Equal("Family emergency.", captured!.CancelContent);
+    }
+
+    // ─── ConfirmCancelLeaveRequest ───────────────────────────────────────────
+
+    [Fact]
+    public async Task ConfirmCancelLeaveRequest_ReturnsCancelled_WhenSuccessful()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        var cancelled = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Cancelled);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(cancelled);
+
+        var result = await BuildService().ConfirmCancelLeaveRequest(1, approverId: 10);
+
+        Assert.NotNull(result);
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled, result.StatusName);
+    }
+
+    [Fact]
+    public async Task ConfirmCancelLeaveRequest_ThrowsKeyNotFoundException_WhenNotFound()
+    {
+        _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => BuildService().ConfirmCancelLeaveRequest(99, approverId: 10));
+
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public async Task ConfirmCancelLeaveRequest_ThrowsInvalidOperationException_WhenStatusIsNotPendingCancellation()
+    {
+        var pending = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Pending);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildService().ConfirmCancelLeaveRequest(1, approverId: 10));
+
+        Assert.Contains(LeaveRequestStatus_Constants.PendingCancellation, ex.Message);
+    }
+
+    [Fact]
+    public async Task ConfirmCancelLeaveRequest_SetsStatusIdToCancelledId_BeforeUpdate()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().ConfirmCancelLeaveRequest(1, approverId: 10);
+
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled_ID, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
+    }
+
+    // ─── RejectCancelLeaveRequest ────────────────────────────────────────────
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_ReturnsApproved_WhenSuccessful()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        var approved = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Approved);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(approved);
+
+        var result = await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.", approverId: 10);
+
+        Assert.NotNull(result);
+        Assert.Equal(LeaveRequestStatus_Constants.Approved, result.StatusName);
+    }
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_ThrowsKeyNotFoundException_WhenNotFound()
+    {
+        _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => BuildService().RejectCancelLeaveRequest(99, rejectCancelContent: "Already arranged coverage.", approverId: 10));
+
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_ThrowsInvalidOperationException_WhenStatusIsNotPendingCancellation()
+    {
+        var approved = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Approved);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.", approverId: 10));
+
+        Assert.Contains(LeaveRequestStatus_Constants.PendingCancellation, ex.Message);
+    }
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_SetsStatusIdToApprovedId_BeforeUpdate()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.", approverId: 10);
+
+        Assert.Equal(LeaveRequestStatus_Constants.Approved_ID, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
+    }
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_PreservesCancelContent_BeforeUpdate()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        pendingCancel.CancelContent = "Some reason";
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.", approverId: 10);
+
+        Assert.Equal("Some reason", captured!.CancelContent);
+    }
+
+    [Fact]
+    public async Task RejectCancelLeaveRequest_SetsRejectCancelContent_BeforeUpdate()
+    {
+        var pendingCancel = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pendingCancel);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.");
+
+        Assert.Equal("Already arranged coverage.", captured!.RejectCancelContent);
     }
 }
