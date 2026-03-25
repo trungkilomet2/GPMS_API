@@ -59,7 +59,6 @@ namespace GMPS.API.Controllers
                     {
                         Id = result.Id,
                         OrderId = result.OrderId,
-                        UserId = result.UserId,
                         Reason = result.Reason,
                         CreatedAt = result.CreatedAt
                     };
