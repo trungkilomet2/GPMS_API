@@ -328,13 +328,13 @@ namespace GMPS.API.Controllers
 
         [HttpPatch("production/approve/{production_id:int}")]
         public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> ApproveProduction(
-          [Range(1, int.MaxValue)] int production_id,
-          [FromBody] ApproveProductionDTO dto)
+          [Range(1, int.MaxValue)] int production_id
+          )
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                await _productionService.ApproveProduction(production_id, dto.UserId);
+                await _productionService.ApproveProduction(production_id);
                 var data = await _productionService.GetProductionDetail(production_id);
                 return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
             }
@@ -356,7 +356,7 @@ namespace GMPS.API.Controllers
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                await _productionService.RejectProduction(production_id, dto.UserId, dto.Reason);
+                await _productionService.RejectProduction(production_id, dto.Reason);
                 var data = await _productionService.GetProductionDetail(production_id);
                 return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
             }

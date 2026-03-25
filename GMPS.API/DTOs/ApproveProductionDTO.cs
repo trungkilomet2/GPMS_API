@@ -10,8 +10,6 @@ namespace GMPS.API.DTOs
 
     public class RejectProductionRequestDTO
     {
-        [Range(1, int.MaxValue)]
-        public int UserId { get; set; }
 
         [Required]
         [StringLength(150)]

@@ -27,8 +27,8 @@ namespace GPMS.APPLICATION.Repositories
         // Lacking Bussiness Logic -1
 
         // TrungNT - 22-03-26
-        Task<Production> ApproveProduction(int productionId, int actionByUserId);
-        Task<Production> RejectProduction(int productionId, int actionByUserId, string reason);
+        Task<Production> ApproveProduction(int productionId);
+        Task<Production> RejectProduction(int productionId, string reason);
         Task<IEnumerable<ProductionIssueLog>> GetProductionIssues(int productionId);
         Task<IEnumerable<ProductionIssueLog>> GetProductionIssueSummaryByType(int productionId);
         Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue);
