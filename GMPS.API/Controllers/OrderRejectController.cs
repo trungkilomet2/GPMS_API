@@ -5,6 +5,7 @@ using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -29,6 +30,79 @@ namespace GMPS.API.Controllers
             _emailRepo = emailRepo ?? throw new ArgumentNullException(nameof(emailRepo));
             _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
+        }
+
+        [HttpGet("order-reject-by-id/{orderId}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> GetOrderRejectById(int orderId)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Getting order reject for OrderId {OrderId}", orderId);
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                if (ModelState.IsValid)
+                {
+                    var result = await _orderRejectRepo.GetReasonById(orderId);
+                    if (result == null)
+                    {
+                        _logger.LogWarning(
+                            CustomLogEvents.OrderRejectController_Get,
+                            "Order reject not found for OrderId {OrderId}",
+                            orderId);
+
+                        return NotFound(new
+                        {
+                            Message = $"Order reject for OrderId '{orderId}' was not found"
+                        });
+                    }
+                    var reason = new OrderRejectDTO
+                    {
+                        Id = result.Id,
+                        OrderId = result.OrderId,
+                        Reason = result.Reason,
+                        CreatedAt = result.CreatedAt
+                    };
+                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully retrieved order reject for OrderId {OrderId}", orderId);
+                    var response = new RestDTO<OrderRejectDTO>
+                    {
+                        Data = reason,
+                        Links = new List<LinkDTO>
+                    {
+                        new LinkDTO(Url.Action(null, "Comment", null, Request.Scheme)!, "self", "GET")
+                    }
+                    };
+                    return Ok(response);
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state for creating order reject for OrderId {OrderId}", orderId);
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (KeyNotFoundException knfEx)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderRejectController_Get, knfEx, "Order reject not found for OrderId {OrderId}", orderId);
+                return NotFound(new
+                {
+                    Message = $"Order reject for OrderId '{orderId}' was not found"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Post, ex, "Error occurred while creating order reject for OrderId {OrderId}", orderId);
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails.Detail);
+            }
         }
 
         [HttpPost("order-reject")]

@@ -10,5 +10,6 @@ namespace GPMS.APPLICATION.Repositories
     public interface IOrderRejectRepositories
     {
         Task<OrderRejectReason> CreateReason(OrderRejectReason entity);
+        Task<OrderRejectReason> GetReasonById(int id);
     }
 }
