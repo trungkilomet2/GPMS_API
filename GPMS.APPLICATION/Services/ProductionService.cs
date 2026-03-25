@@ -305,19 +305,18 @@ namespace GPMS.APPLICATION.Services
                 await _unitOfWork.ExecuteInTransactionAsync(async () =>
                {
                    // Chấp Nhận Production Plan Và Chuyển Về Trạng Thái Đang Sản Xuất và thông báo email đến PM
-
                    production.StatusId = ProductionStatus_Constants.Producting_ID;
                    // Cập Nhật Trạng Thái Order => Đang Sản Xuất Và thông báo đến email của người đặt hàng
+                   await _prdRepo.Update(production);
+                    // Update Order Status
                    var order = await _orderRepo.GetById(production.OrderId);
-                   if (order != null) {
+                   if (order is null) {
                        throw new Exception("Không tồn tại đơn hàng trong hệ thống");
                    }
                    // Chuyển đơn hàng thành trạng thái đang sản xuất và thông báo đến Customer
-                   order.Status = OrderStatus_Constants.Producting_ID;
-                   await _orderRepo.Update(order);
-               
+                   await _orderStatusRepo.ChangeStatus(production.OrderId, OrderStatus_Constants.Producting_ID);
                });
-                return await _prdRepo.Update(production);
+                return await _prdRepo.GetById(productionId);
             }
             else
             {
