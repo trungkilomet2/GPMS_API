@@ -537,10 +537,12 @@ namespace GMPS.API.Controllers
                             if (isVerified != true)
                             {
                                 _logger.LogWarning(CustomLogEvents.UserController_Put, "Email not verified for UserId {UserId}", userId);
-                                var errorDetails = new ValidationProblemDetails(ModelState);
-                                errorDetails.Status = StatusCodes.Status400BadRequest;
-                                errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
-                                errorDetails.Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.";
+                                var errorDetails = new ValidationProblemDetails(ModelState)
+                                {
+                                    Status = StatusCodes.Status400BadRequest,
+                                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                                    Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.",
+                                };
                                 return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Detail);
                             }
                             finalEmail = newEmail;
