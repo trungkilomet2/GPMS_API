@@ -78,6 +78,8 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.DateLR, opt => opt.MapFrom(src => src.DateReply)).ReverseMap();
 
 
+            CreateMap<ProductionRejectReason, RejectReasonData>().ReverseMap();
+
         }
 
     }

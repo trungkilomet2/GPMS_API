@@ -17,17 +17,20 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<Order> _orderRepo;
         private readonly IBaseRepositories<ProductionRejectReason> _productionRejectRepo;
         private readonly IBaseRepositories<ProductionIssueLog> _productionIssueRepo;
+        private readonly IBaseOrderRepositories _orderStatusRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionService(
-            IBaseRepositories<Production> productionRepo, 
-            IUnitOfWork unitOfWork, 
-            IBaseRepositories<Role> roleRepositories, 
-            IBaseRepositories<User> userRepositories, 
+            IBaseRepositories<Production> productionRepo,
+            IUnitOfWork unitOfWork,
+            IBaseRepositories<Role> roleRepositories,
+            IBaseRepositories<User> userRepositories,
             IBaseRepositories<Order> orderRepo,
             IBaseRepositories<ProductionRejectReason> productionRejectRepo,
-            IBaseRepositories<ProductionIssueLog> productionIssueRepo
-            ) {
+            IBaseRepositories<ProductionIssueLog> productionIssueRepo,
+            IBaseOrderRepositories orderStatusRepo
+            )
+        {
             _unitOfWork = unitOfWork;
             _prdRepo = productionRepo;
             _roleRepositories = roleRepositories;
@@ -35,6 +38,7 @@ namespace GPMS.APPLICATION.Services
             _orderRepo = orderRepo;
             _productionRejectRepo = productionRejectRepo;
             _productionIssueRepo = productionIssueRepo;
+            _orderStatusRepo = orderStatusRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
@@ -54,7 +58,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new Exception("Người dùng không tồn tại role nào");
             }
-            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner) || r.Name.Equals( Roles_Constants.PM)).Count() == 0)
+            if (roles_of_user.Where(r => r.Name.Equals(Roles_Constants.Owner) || r.Name.Equals(Roles_Constants.PM)).Count() == 0)
             {
                 throw new ValidationException("Chỉ Owner và PM mới được quản lý Production");
             }
@@ -68,7 +72,7 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Đơn hàng không thể tạo kế hoạch sản xuất - Không ở trạng thái Chấp Nhận");
             }
-            if(_prdRepo.GetAll(check_order_system).Result.Count() > 0)
+            if (_prdRepo.GetAll(check_order_system).Result.Count() > 0)
             {
                 throw new ValidationException("Đơn hàng đang trong kế hoạch sản xuất hoặc đã hoàn thành rồi");
             }
@@ -101,7 +105,7 @@ namespace GPMS.APPLICATION.Services
             // Lấy toàn bộ thông tin của production đấy 
             var production = await _prdRepo.GetById(productionId);
             // Chueyenr đổi trạng thái thành yêu cầu chỉnh sửa
-    //        production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
+            //        production.StatusId = await _productionRepo.GetStatusIdByName(ProductionStatus_Constants.NeedUpdate);
             return await _prdRepo.Update(production);
         }
 
@@ -150,7 +154,7 @@ namespace GPMS.APPLICATION.Services
         // New Coding for DTOs
         public async Task<ProductionDetailViewDTO> GetProductionDetailView(int productionId)
         {
-            if(productionId <= 0)
+            if (productionId <= 0)
             {
                 throw new ValidationException("Production ID truyền vào phải là một số > 0");
             }
@@ -178,25 +182,43 @@ namespace GPMS.APPLICATION.Services
             return result;
         }
 
-
-
-        public async Task<Production> ApproveProduction(int productionId, int actionByUserId)
+        // Chấp Nhận Yêu Cầu Sản Xuất Đến Từ Chủ Xưởng  
+        public async Task<Production> ApproveProduction(int productionId)
         {
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
-            var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
-            production.StatusId = ProductionStatus_Constants.Approval_ID;
-            return await _prdRepo.Update(production);
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
+
+            if (production.StatusId == ProductionStatus_Constants.Pending_ID)
+            {
+                production.StatusId = ProductionStatus_Constants.Approval_ID;
+                return await _prdRepo.Update(production);
+            }
+            else
+            {
+                throw new ValidationException("Production chỉ Approve được khi đang ở trạng thái Chờ Xét Duyệt");
+            }
         }
 
-        public async Task<Production> RejectProduction(int productionId, int actionByUserId, string reason)
+        public async Task<Production> RejectProduction(int productionId, string reason)
         {
             if (string.IsNullOrWhiteSpace(reason))
             {
                 throw new ValidationException("Lý do từ chối là bắt buộc");
             }
-
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
-            var actor = await _userRepositories.GetById(actionByUserId) ?? throw new ValidationException("Người thao tác không tồn tại");
+
+            switch (production.StatusId)
+            {
+                case ProductionStatus_Constants.Approval_ID:
+                    throw new ValidationException("Production này đã được chấp nhận .");
+                case ProductionStatus_Constants.Producting_ID:
+                    throw new ValidationException("Production này đang được sản xuất .");
+                case ProductionStatus_Constants.Reject_ID:
+                    throw new ValidationException("Production này đã từ chối trước đó .");
+                case ProductionStatus_Constants.Done_ID:
+                    throw new ValidationException("Production này đã hoàn thành rồi .");
+            }
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -205,7 +227,7 @@ namespace GPMS.APPLICATION.Services
                 await _productionRejectRepo.Create(new ProductionRejectReason
                 {
                     ProductionId = productionId,
-                    UserId = actionByUserId,
+                    UserId = production.PmId,
                     Reason = reason.Trim(),
                     CreatedAt = DateTime.UtcNow
                 });
@@ -250,9 +272,6 @@ namespace GPMS.APPLICATION.Services
                 case ProductionStatus_Constants.Reject_ID:
                     return ProductionStatus_Constants.Reject;
 
-                case ProductionStatus_Constants.NeedUpdate_ID:
-                    return ProductionStatus_Constants.NeedUpdate;
-
                 case ProductionStatus_Constants.Approval_ID:
                     return ProductionStatus_Constants.Approval;
 
@@ -271,6 +290,70 @@ namespace GPMS.APPLICATION.Services
                 default:
                     return "Unknown Status";
             }
+        }
+
+        public async Task<Production> ApproveProductionPlan(int productionId)
+        {
+
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
+
+            if (production.StatusId == ProductionStatus_Constants.PendingPlan_ID)
+            {
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+               {
+                   // Chấp Nhận Production Plan Và Chuyển Về Trạng Thái Đang Sản Xuất và thông báo email đến PM
+                   production.StatusId = ProductionStatus_Constants.Producting_ID;
+                   // Cập Nhật Trạng Thái Order => Đang Sản Xuất Và thông báo đến email của người đặt hàng
+                   await _prdRepo.Update(production);
+                   // Update Order Status
+                   var order = await _orderRepo.GetById(production.OrderId);
+                   if (order is null)
+                   {
+                       throw new Exception("Không tồn tại đơn hàng trong hệ thống");
+                   }
+                   // Chuyển đơn hàng thành trạng thái đang sản xuất và thông báo đến Customer
+                   await _orderStatusRepo.ChangeStatus(production.OrderId, OrderStatus_Constants.Producting_ID);
+               });
+                return await _prdRepo.GetById(productionId);
+            }
+            else
+            {
+                throw new ValidationException("Production Plan chỉ chấp nhận được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
+            }
+        }
+
+        public async Task<Production> NeedUpdateProductionPlan(int productionId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
+
+            if (production.StatusId == ProductionStatus_Constants.PendingPlan_ID)
+            {
+                production.StatusId = ProductionStatus_Constants.NeedUpdatePlan_ID;
+                return await _prdRepo.Update(production);
+            }
+            else
+            {
+                throw new ValidationException("Production chỉ Cần Cập Nhật được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
+            }
+        }
+
+        public async Task<ProductionRejectReason> ProductionRejectReasonDetail(int productionId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+
+            var production_reject_reason_detail = await _productionRejectRepo.GetById(productionId);
+
+            if (production_reject_reason_detail is null)
+            {
+                throw new ValidationException("Không tổn tại lý do từ chối.");
+            }
+
+            return production_reject_reason_detail;
         }
     }
 }

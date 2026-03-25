@@ -257,7 +257,7 @@ namespace GMPS.API.Controllers
             {
                 var data = await _productionService.UpdatePMProduction(production_id,new_pm_id);
                 if (data is null) NoContent();
-                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái ({ProductionStatus_Constants.NeedUpdate}) - Code : 200");
+                _logger.LogInformation(CustomLogEvents.ProductionController_Put, $"Cập Nhật Thành Công Production ID = ({data.Id}) thành trạng thái  - Code : 200");
                 return Ok(new RestDTO<Production>
                 {
                     Data = data,
@@ -328,13 +328,13 @@ namespace GMPS.API.Controllers
 
         [HttpPatch("production/approve/{production_id:int}")]
         public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> ApproveProduction(
-          [Range(1, int.MaxValue)] int production_id,
-          [FromBody] ApproveProductionDTO dto)
+          [Range(1, int.MaxValue)] int production_id
+          )
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                await _productionService.ApproveProduction(production_id, dto.UserId);
+                await _productionService.ApproveProduction(production_id);
                 var data = await _productionService.GetProductionDetail(production_id);
                 return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
             }
@@ -356,7 +356,7 @@ namespace GMPS.API.Controllers
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                await _productionService.RejectProduction(production_id, dto.UserId, dto.Reason);
+                await _productionService.RejectProduction(production_id, dto.Reason);
                 var data = await _productionService.GetProductionDetail(production_id);
                 return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
             }
@@ -417,6 +417,78 @@ namespace GMPS.API.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
             }
         }
+
+
+
+        [HttpPatch("production/approve/production-plan/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> ApproveProductionPlan(
+          [Range(1, int.MaxValue)] int production_id
+          )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.ApproveProductionPlan(production_id);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+
+        [HttpPatch("production/need-update/production-plan/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> NeedUpdateProductionPlan(
+          [Range(1, int.MaxValue)] int production_id
+          )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.NeedUpdateProductionPlan(production_id);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+        [HttpPatch("production/reject-reason/detail/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<RejectReasonData>>> ProductionRejectReasonDetail(
+          [Range(1, int.MaxValue)] int production_id
+          )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.ProductionRejectReasonDetail(production_id);
+                
+                return Ok(new RestDTO<RejectReasonData> { Data = _mapper.Map<RejectReasonData>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
 
 
     }
