@@ -44,6 +44,21 @@ namespace GPMS.APPLICATION.Services
                 await _unitOfWork.SaveChangesAsync();
             });
             return entity;
-        }       
+        }
+
+        public async Task<OrderRejectReason> GetReasonById(int id)
+        {
+            if(id <= 0)
+            {
+                throw new Exception("Invalid ID. ID must be greater than zero.");
+            }
+            var existingOrder = await _orderRepo.GetById(id);
+            if (existingOrder == null)
+            {
+                throw new KeyNotFoundException($"Order with ID {id} does not exist.");
+            }
+            var reason = await _orderRejectRepo.GetById(id);
+            return reason;
+        }
     }
 }
