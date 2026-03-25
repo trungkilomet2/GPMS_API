@@ -17,6 +17,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Filters;
 using Serilog.Sinks.MSSqlServer;
 using System.Text;
 Console.OutputEncoding = Encoding.UTF8;
@@ -79,10 +80,16 @@ columnOptions.TimeStamp.ColumnName = "TIMPESTAMP";
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Console()
+    .WriteTo.Logger(lc => lc
+        .Filter.ByExcluding(logEvent =>
+            logEvent.Properties.ContainsKey("SourceContext") &&
+            (
+                logEvent.Properties["SourceContext"].ToString().Contains("Microsoft.") ||
+                logEvent.Properties["SourceContext"].ToString().Contains("EntityFrameworkCore") ||
+                logEvent.Properties["SourceContext"].ToString().Contains("System.")
+            )
+        )
     .WriteTo.MSSqlServer(
         connectionString: builder.Configuration.GetConnectionString("GPMSDB"),
         sinkOptions: new MSSqlServerSinkOptions
@@ -91,6 +98,7 @@ Log.Logger = new LoggerConfiguration()
         },
         columnOptions: columnOptions
     )
+)
     .CreateLogger();
 
 builder.Host.UseSerilog();
