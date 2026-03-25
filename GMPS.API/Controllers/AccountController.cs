@@ -69,6 +69,7 @@ namespace GMPS.API.Controllers
                             issuer: _configuration["JWT:Issuer"],
                             audience: _configuration["JWT:Audience"],
                             claims: claims,
+                            expires: DateTime.UtcNow.AddYears(10),
                             signingCredentials: signingCredentials);
                         // Ky token cuoi cung va gui tra ve cho user
                         var jwtString = new JwtSecurityTokenHandler().WriteToken(jwtObject);
