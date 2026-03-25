@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GMPS.API.Controllers
 {
@@ -51,6 +52,92 @@ namespace GMPS.API.Controllers
                         (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
                         u.Roles != null &&u.Roles.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
                         u.WorkerSkills != null &&u.WorkerSkills.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Status != null && u.Status.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
+                    );
+                }
+
+                var recordCount = result.Count();
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(u => new EmployeeDTO
+                    {
+                        Id = u.Id,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Email = u.Email,
+                        ManagerId = u.ManagerId,
+                        Role = string.Join(", ", u.Roles.Select(r => r.Name)),
+                        WorkerRole = string.Join(", ", u.WorkerSkills.Select(w => w.Name)),
+                        Status = u.Status?.Name ?? "Unknown"
+                    })
+                    .ToList();
+
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
+                    "Returned {Count} employees", data.Count);
+                return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
+                {
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
+                    Links = new List<LinkDTO>
+            {
+                new LinkDTO(
+                    Url.Action(null, "Worker",
+                        new { input.PageIndex, input.PageSize },
+                        Request.Scheme)!,
+                    "self",
+                    "GET"
+                )
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Get, ex,
+                    "Error while getting employees");
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = 500
+                });
+            }
+        }
+
+        [HttpGet("get-all-employees-by-pm-id")]
+        [Authorize(Roles = "PM")]
+        public async Task<IActionResult> GetEmployeesbyPMId([FromQuery] RequestDTO<EmployeeDTO> input)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
+                    "Getting all employees by PM id - PageIndex: {PageIndex}, PageSize: {PageSize}, SortColumn: {SortColumn}, SortOrder: {SortOrder}, FilterQuery: {FilterQuery} ",
+                    input.PageIndex, input.PageSize, input.SortColumn, input.SortOrder, input.FilterQuery);
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                var result = await _workerRepo.GetAllEmployeesByPMId(userId);
+                if (result == null)
+                    return NotFound("Not found any emloyee for PM");
+                if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
+                {
+                    result = result.Where(u =>
+                        (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserName != null && u.UserName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.Roles != null && u.Roles.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.WorkerSkills != null && u.WorkerSkills.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
                         (u.Status != null && u.Status.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
