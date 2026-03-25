@@ -1,5 +1,6 @@
 using GMPS.API.Controllers;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -506,25 +507,26 @@ public class OrderControllerTest
 
     // ─── UpdateOrder ──────────────────────────────────────────────────────────
 
-    [Fact]
-    public async Task UpdateOrder_Returns200_WhenSuccessful()
-    {
-        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
-        _orderRepo.Setup(x => x.UpdateOrder(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
-            .ReturnsAsync(existing);
-
-        var input = new UpdateOrderDTO
+    private static UpdateOrderDTO BuildUpdateOrderDTO(
+        DateOnly? startDate = null,
+        DateOnly? endDate = null) => new UpdateOrderDTO
         {
             OrderName = "Updated",
             Type = "Shirt",
             Color = "Blue",
-            StartDate = existing.StartDate,
-            EndDate = existing.EndDate,
+            StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+            EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 5
         };
 
-        var result = await BuildController(userId: 1).UpdateOrder(1, input);
+    [Fact]
+    public async Task UpdateOrder_Returns200_WhenSuccessful()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        _orderRepo.Setup(x => x.UpdateOrder(1, 1, It.IsAny<UpdateOrderInput>()))
+            .ReturnsAsync(existing);
+
+        var result = await BuildController(userId: 1).UpdateOrder(1, BuildUpdateOrderDTO());
 
         var obj = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(200, obj.StatusCode);
@@ -542,15 +544,10 @@ public class OrderControllerTest
     [Fact]
     public async Task UpdateOrder_Returns404_WhenOrderNotFound()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+        _orderRepo.Setup(x => x.UpdateOrder(99, It.IsAny<int>(), It.IsAny<UpdateOrderInput>()))
+            .ThrowsAsync(new KeyNotFoundException("Order with id '99' not exist in system."));
 
-        var result = await BuildController().UpdateOrder(99, new UpdateOrderDTO
-        {
-            OrderName = "X", Type = "X", Color = "X",
-            StartDate = DateOnly.FromDateTime(DateTime.Now),
-            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
-            Quantity = 1
-        });
+        var result = await BuildController().UpdateOrder(99, BuildUpdateOrderDTO());
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(404, obj.StatusCode);
@@ -559,16 +556,10 @@ public class OrderControllerTest
     [Fact]
     public async Task UpdateOrder_Returns403_WhenStatusNotModification()
     {
-        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Pending);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.UpdateOrder(1, It.IsAny<int>(), It.IsAny<UpdateOrderInput>()))
+            .ThrowsAsync(new InvalidOperationException($"Only modify order with status '{OrderStatus_Constants.Modification}'."));
 
-        var result = await BuildController(userId: 1).UpdateOrder(1, new UpdateOrderDTO
-        {
-            OrderName = "X", Type = "X", Color = "X",
-            StartDate = existing.StartDate,
-            EndDate = existing.EndDate,
-            Quantity = 1
-        });
+        var result = await BuildController(userId: 1).UpdateOrder(1, BuildUpdateOrderDTO());
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(403, obj.StatusCode);
@@ -577,16 +568,10 @@ public class OrderControllerTest
     [Fact]
     public async Task UpdateOrder_Returns403_WhenUserIsNotOwner()
     {
-        var existing = BuildFakeOrder(userId: 99, statusName: OrderStatus_Constants.Modification);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.UpdateOrder(1, It.IsAny<int>(), It.IsAny<UpdateOrderInput>()))
+            .ThrowsAsync(new UnauthorizedAccessException("You don't have permission to update this order."));
 
-        var result = await BuildController(userId: 1).UpdateOrder(1, new UpdateOrderDTO
-        {
-            OrderName = "X", Type = "X", Color = "X",
-            StartDate = existing.StartDate,
-            EndDate = existing.EndDate,
-            Quantity = 1
-        });
+        var result = await BuildController(userId: 1).UpdateOrder(1, BuildUpdateOrderDTO());
 
         Assert.IsType<ForbidResult>(result);
     }
@@ -594,15 +579,10 @@ public class OrderControllerTest
     [Fact]
     public async Task UpdateOrder_Returns500_OnException()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
+        _orderRepo.Setup(x => x.UpdateOrder(1, It.IsAny<int>(), It.IsAny<UpdateOrderInput>()))
+            .ThrowsAsync(new Exception("db error"));
 
-        var result = await BuildController().UpdateOrder(1, new UpdateOrderDTO
-        {
-            OrderName = "X", Type = "X", Color = "X",
-            StartDate = DateOnly.FromDateTime(DateTime.Now),
-            EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
-            Quantity = 1
-        });
+        var result = await BuildController().UpdateOrder(1, BuildUpdateOrderDTO());
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);
@@ -611,17 +591,8 @@ public class OrderControllerTest
     [Fact]
     public async Task DenyOrder_Returns200_WhenSuccessful()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
-
-        _orderRepo.Setup(x => x.GetOrderDetail(It.IsAny<int>()))
-            .ReturnsAsync(existing);
-
-        _orderRepo.Setup(x => x.DenyOrder(
-            It.IsAny<int>(),
-            It.IsAny<int>(),
-            It.IsAny<Order>(),
-            It.IsAny<List<OHistoryUpdate>>()
-        )).ReturnsAsync(BuildFakeOrder());
+        _orderRepo.Setup(x => x.DenyOrder(1, 1))
+            .ReturnsAsync(BuildFakeOrder());
 
         var result = await BuildController(userId: 1).DenyOrder(1);
 
@@ -641,7 +612,8 @@ public class OrderControllerTest
     [Fact]
     public async Task DenyOrder_Returns404_WhenOrderNotFound()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+        _orderRepo.Setup(x => x.DenyOrder(It.IsAny<int>(), 99))
+            .ThrowsAsync(new KeyNotFoundException("Order with id '99' not exist in system."));
 
         var result = await BuildController().DenyOrder(99);
 
@@ -650,11 +622,21 @@ public class OrderControllerTest
     }
 
     [Fact]
+    public async Task DenyOrder_Returns403_WhenUserIsNotOwner()
+    {
+        _orderRepo.Setup(x => x.DenyOrder(It.IsAny<int>(), It.IsAny<int>()))
+            .ThrowsAsync(new UnauthorizedAccessException("You don't have permission to deny this order."));
+
+        var result = await BuildController(userId: 1).DenyOrder(1);
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
     public async Task DenyOrder_Returns403_WhenStatusNotPending()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
-
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.DenyOrder(It.IsAny<int>(), It.IsAny<int>()))
+            .ThrowsAsync(new InvalidOperationException("Only modify order with status Chờ Xét Duyệt."));
 
         var result = await BuildController().DenyOrder(1);
 
@@ -665,7 +647,7 @@ public class OrderControllerTest
     [Fact]
     public async Task DenyOrder_Returns500_OnException()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(1))
+        _orderRepo.Setup(x => x.DenyOrder(It.IsAny<int>(), It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
         var result = await BuildController().DenyOrder(1);
@@ -679,14 +661,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns200_WhenSuccessful()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
-
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
-        _orderRepo.Setup(x => x.ApproveOrder(
-            It.IsAny<int>(),
-            It.IsAny<Order>(),
-            It.IsAny<List<OHistoryUpdate>>()
-        )).ReturnsAsync(BuildFakeOrder(statusName: OrderStatus_Constants.Approved));
+        _orderRepo.Setup(x => x.ApproveOrder(1))
+            .ReturnsAsync(BuildFakeOrder(statusName: OrderStatus_Constants.Approved));
 
         var result = await BuildController().ApproveOrder(1);
 
@@ -706,7 +682,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns404_WhenOrderNotFound()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+        _orderRepo.Setup(x => x.ApproveOrder(99))
+            .ThrowsAsync(new KeyNotFoundException("Order with id '99' not exist in system."));
 
         var result = await BuildController().ApproveOrder(99);
 
@@ -717,8 +694,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns409_WhenOrderAlreadyApproved()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.ApproveOrder(1))
+            .ThrowsAsync(new InvalidOperationException("This order request has already been processed."));
 
         var result = await BuildController().ApproveOrder(1);
 
@@ -729,8 +706,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns409_WhenOrderAlreadyRejected()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Rejected);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.ApproveOrder(1))
+            .ThrowsAsync(new InvalidOperationException("This order request has already been processed."));
 
         var result = await BuildController().ApproveOrder(1);
 
@@ -741,8 +718,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns403_WhenStatusNotPending()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(existing);
+        _orderRepo.Setup(x => x.ApproveOrder(1))
+            .ThrowsAsync(new InvalidOperationException("Only approve order with status Chờ Xét Duyệt."));
 
         var result = await BuildController().ApproveOrder(1);
 
@@ -753,7 +730,8 @@ public class OrderControllerTest
     [Fact]
     public async Task ApproveOrder_Returns500_OnException()
     {
-        _orderRepo.Setup(x => x.GetOrderDetail(1)).ThrowsAsync(new Exception("db error"));
+        _orderRepo.Setup(x => x.ApproveOrder(1))
+            .ThrowsAsync(new Exception("db error"));
 
         var result = await BuildController().ApproveOrder(1);
 
