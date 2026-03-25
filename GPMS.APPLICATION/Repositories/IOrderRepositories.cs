@@ -1,3 +1,4 @@
+using GPMS.APPLICATION.DTOs;
 using GPMS.DOMAIN.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,10 +12,10 @@ namespace GPMS.APPLICATION.Repositories
         Task<Order> GetOrderDetail(int orderId);
         Task<Order> CreateOrder(Order order);
         Task<OMaterial> AddMaterial(int orderId, OMaterial material);
-        Task<Order> UpdateOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
+        Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input);
         Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
 
-        Task<Order> DenyOrder(int userId,int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
-        Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
+        Task<Order> DenyOrder(int userId, int orderId);
+        Task<Order> ApproveOrder(int orderId);
     }
 }
