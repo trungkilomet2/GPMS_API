@@ -187,7 +187,7 @@ namespace GPMS.APPLICATION.Services
             var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
             if (production.StatusId == ProductionStatus_Constants.Reject_ID)
                 throw new ValidationException("Production này đã bị từ chối rồi");
-
+            if(production.StatusId == )
 
 
             
@@ -266,9 +266,6 @@ namespace GPMS.APPLICATION.Services
 
                 case ProductionStatus_Constants.Reject_ID:
                     return ProductionStatus_Constants.Reject;
-
-                case ProductionStatus_Constants.NeedUpdate_ID:
-                    return ProductionStatus_Constants.NeedUpdate;
 
                 case ProductionStatus_Constants.Approval_ID:
                     return ProductionStatus_Constants.Approval;
