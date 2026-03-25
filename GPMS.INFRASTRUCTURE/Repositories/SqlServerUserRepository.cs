@@ -110,7 +110,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {   
                 USER userSQL = _mapper.Map<USER>(user);
                 userSQL.US_ID = 1; // 1 equal Active status in User
-                await _context.AddAsync(userSQL);
+                userSQL.MANAGER_ID = null;
+                await _context.USER.AddAsync(userSQL);
                 return _mapper.Map<User>(userSQL);
             }
             catch (Exception ex)
