@@ -323,5 +323,22 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Production Plan chỉ chấp nhận được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
             }
         }
+
+        public async Task<Production> NeedUpdateProductionPlan(int productionId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            if (production.StatusId == ProductionStatus_Constants.Reject_ID)
+                throw new ValidationException("Production này đã bị từ chối rồi");
+
+            if (production.StatusId == ProductionStatus_Constants.PendingPlan_ID)
+            {
+                production.StatusId = ProductionStatus_Constants.NeedUpdatePlan_ID;
+                return await _prdRepo.Update(production);
+            }
+            else
+            {
+                throw new ValidationException("Production chỉ Cần Cập Nhật được khi đang ở trạng thái Chờ Xét Duyệt Kế Hoạch");
+            }
+        }
     }
 }

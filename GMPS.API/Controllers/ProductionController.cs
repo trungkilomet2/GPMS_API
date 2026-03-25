@@ -443,5 +443,30 @@ namespace GMPS.API.Controllers
         }
 
 
+
+        [HttpPatch("production/need-update/production-plan/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> NeedUpdateProductionPlan(
+          [Range(1, int.MaxValue)] int production_id
+          )
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.NeedUpdateProductionPlan(production_id);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+
     }
 }

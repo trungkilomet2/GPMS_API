@@ -32,7 +32,14 @@ namespace GPMS.APPLICATION.Repositories
 
 
         // TrungNT - 25-03-25
+        // Chấp Nhận - Duyệt Kế Hoạch Từ Production
         Task<Production> ApproveProductionPlan(int productionId);
+        
+        // Cần Cập Nhật Thêm Production
+        Task<Production> NeedUpdateProductionPlan(int productionId);
+
+
+
 
     }
 }
