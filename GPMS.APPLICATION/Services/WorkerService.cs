@@ -96,5 +96,11 @@ namespace GPMS.APPLICATION.Services
             }
             return await _workerRepo.Update(user);
         }
+
+        public async Task<IEnumerable<User>> GetAllEmployeesByPMId(int id)
+        {
+            var data = await _workerRepo.GetWorkerByPMId(id);
+            return data;
+        }
     }
 }
