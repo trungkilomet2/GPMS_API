@@ -40,6 +40,13 @@ namespace GPMS.APPLICATION.Repositories
         // Lấy thông tin từ chối của Production đấy
         Task<ProductionRejectReason> ProductionRejectReasonDetail(int productionId);
 
+        // 26-03-2026: Nghiệp vụ thống kê sản lượng / output
+        Task<IEnumerable<ProductionWorkerOutputViewDTO>> GetProductionWorkerOutput(int productionId);
+        Task<IEnumerable<WorkerProductivityHistoryViewDTO>> GetAllWorkersProductivityHistory();
+        Task<ProductionOutputSummaryViewDTO> GetProductionOutputSummary(int productionId);
+        Task<IEnumerable<WorkerProductivityHistoryViewDTO>> GetWorkerProductivityHistory(int workerId);
+        Task<IEnumerable<WorkerAssignedPlanViewDTO>> GetWorkerAssignedPlans(int workerId);
+
 
 
     }

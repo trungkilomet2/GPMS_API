@@ -9,5 +9,11 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<CuttingNotebook>> GetByProduction(int productionId);
         Task<CuttingNotebookLog> CreateLog(CuttingNotebookLog entity);
         Task<IEnumerable<CuttingNotebookLog>> GetLogs(int notebookId);
+
+        //26-03-26
+        Task<CuttingNotebook> UpdateNotebook(CuttingNotebook entity);
+        Task<CuttingNotebookLog> UpdateLog(CuttingNotebookLog entity);
+        Task DeleteLog(int logId);
+
     }
 }

@@ -15,6 +15,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net;
 using System.Net.WebSockets;
+using static GMPS.API.DTOs.ProductionOutputDTO;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GMPS.API.Controllers 
@@ -478,6 +479,126 @@ namespace GMPS.API.Controllers
                 var data = await _productionService.ProductionRejectReasonDetail(production_id);
                 
                 return Ok(new RestDTO<RejectReasonData> { Data = _mapper.Map<RejectReasonData>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+        //================================================================================================
+        // Nhóm API output/sản lượng (26-03-2026)
+        //================================================================================================
+
+
+        // API 1: Lấy output của toàn bộ nhân viên theo production.
+        [HttpGet("production/output/workers/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionWorkerOutputDTO>>>> GetProductionWorkerOutputs([Range(1, int.MaxValue)] int production_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.GetProductionWorkerOutput(production_id);
+                return Ok(new RestDTO<IEnumerable<ProductionWorkerOutputDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<ProductionWorkerOutputDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // API 2: Owner xem lịch sử sản lượng của toàn bộ worker trong hệ thống.
+        [HttpGet("production/output/history/workers")]
+        public async Task<ActionResult<RestDTO<IEnumerable<WorkerProductivityHistoryDTO>>>> GetAllWorkersOutputHistory()
+        {
+            try
+            {
+                var data = await _productionService.GetAllWorkersProductivityHistory();
+                return Ok(new RestDTO<IEnumerable<WorkerProductivityHistoryDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<WorkerProductivityHistoryDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // API 3: Output tổng của một production (sổ cắt + part work log + số lượng issue).
+        [HttpGet("production/output/summary/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionOutputSummaryDTO>>> GetProductionOutputSummary([Range(1, int.MaxValue)] int production_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.GetProductionOutputSummary(production_id);
+                return Ok(new RestDTO<ProductionOutputSummaryDTO>
+                {
+                    Data = _mapper.Map<ProductionOutputSummaryDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // API 4: Lịch sử sản lượng của một worker đã submit.
+        [HttpGet("production/output/history/worker/{worker_id:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<WorkerProductivityHistoryDTO>>>> GetWorkerOutputHistory([Range(1, int.MaxValue)] int worker_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.GetWorkerProductivityHistory(worker_id);
+                return Ok(new RestDTO<IEnumerable<WorkerProductivityHistoryDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<WorkerProductivityHistoryDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // API 5: Danh sách kế hoạch production giao cho worker.
+        [HttpGet("production/plan/worker/{worker_id:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<WorkerAssignedPlanDTO>>>> GetWorkerAssignedPlan([Range(1, int.MaxValue)] int worker_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionService.GetWorkerAssignedPlans(worker_id);
+                return Ok(new RestDTO<IEnumerable<WorkerAssignedPlanDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<WorkerAssignedPlanDTO>>(data)
+                });
             }
             catch (ValidationException ex)
             {

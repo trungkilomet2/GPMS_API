@@ -172,6 +172,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
                 .ToListAsync();
 
+            var pm = _context.USER.Include(u => u.WS)
+                              .Include(u => u.US).Where(u => u.USER_ID == pm_id).FirstOrDefault();
+
+            workers.Add(pm);
+
             return _mapper.Map<IEnumerable<User>>(workers);
         }
     }
