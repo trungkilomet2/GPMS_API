@@ -314,8 +314,13 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity)
         {
-            _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
-            _ = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
+            var productionPart = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
+            
+            if(!productionPart.AssigneeIds.Contains(userId)) {
+                throw new ValidationException("Nhân viên không được phân công cho làm công đoạn này");
+            }
+            
+            var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
             return await _workLogRepo.Create(new ProductionPartWorkLog
             {
