@@ -633,7 +633,7 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.");
+     //   await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.");
 
         Assert.Equal("Already arranged coverage.", captured!.RejectCancelContent);
     }

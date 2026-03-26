@@ -1,4 +1,5 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.Common;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
@@ -322,6 +323,8 @@ namespace GPMS.APPLICATION.Services
                {
                    // Chấp Nhận Production Plan Và Chuyển Về Trạng Thái Đang Sản Xuất và thông báo email đến PM
                    production.StatusId = ProductionStatus_Constants.Producting_ID;
+                   // Cập Nhật ngày hoàn thành Production
+                   production.StartDate = DateOnly.FromDateTime(VietnamTime.Now());
                    // Cập Nhật Trạng Thái Order => Đang Sản Xuất Và thông báo đến email của người đặt hàng
                    await _prdRepo.Update(production);
                    // Update Order Status

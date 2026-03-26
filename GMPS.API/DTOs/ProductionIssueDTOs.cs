@@ -7,7 +7,7 @@ namespace GMPS.API.DTOs
     {   
 
         public int IssueId { get; set; }
-        public int TypeIssue { get; set; }
+        public string TypeIssue { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Priority { get; set; }
@@ -18,7 +18,7 @@ namespace GMPS.API.DTOs
 
     public class ProductionIssueSummaryDTO
     {
-        public int TypeIssue { get; set; }
+        public string TypeIssue { get; set; }
         public int TotalIssues { get; set; }
         public int TotalQuantity { get; set; }
         public DateTime? LastIssueAt { get; set; }
@@ -35,6 +35,10 @@ namespace GMPS.API.DTOs
         [Required]
         [StringLength(150)]
         public string Title { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(150)]
+        public string TypeIssue { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }

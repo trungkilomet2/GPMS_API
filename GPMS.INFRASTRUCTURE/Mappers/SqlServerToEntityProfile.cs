@@ -104,8 +104,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.FromDate, opt => opt.MapFrom(src => src.FROM_DATE))
                 .ForMember(dest => dest.ToDate, opt => opt.MapFrom(src => src.TO_DATE))
                 .ForMember(dest => dest.DenyContent, opt => opt.MapFrom(src => src.DENY_CONTENT))
-                .ForMember(dest => dest.CancelContent, opt => opt.MapFrom(src => src.CANCEL_CONTENT))
-                .ForMember(dest => dest.RejectCancelContent, opt => opt.MapFrom(src => src.REJECT_CANCEL_CONTENT))
                 .ForMember(dest => dest.ApprovedBy, opt => opt.MapFrom(src => src.APPROVED_BY))
                 .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.APPROVED_BYNavigation != null ? src.APPROVED_BYNavigation.FULLNAME : null))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.LRS_ID))

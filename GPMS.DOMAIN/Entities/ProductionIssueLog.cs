@@ -12,7 +12,7 @@ namespace GPMS.DOMAIN.Entities
         public int ProductionId { get; set; }
         public int CreatedBy { get; set; }
         public int? AssignedTo { get; set; }
-        public int TypeIssue { get; set; }
+        public string TypeIssue { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Priority { get; set; } = 2;
