@@ -525,7 +525,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
-                    "Creating new order for UserId {UserId}", input?.UserId);
+                    "Tạo đơn hàng cho khách hàng có Id là: {UserId}", input?.UserId);
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
@@ -587,7 +587,7 @@ namespace GMPS.API.Controllers
                     }                   
 
                     _logger.LogInformation(CustomLogEvents.OrderController_Post,
-                        "Order {OrderId} created successfully for UserId {UserId}",
+                        "Order {OrderId} được tạo thành công cho khách hàng với Id là: {UserId}",
                         result.Id, input.UserId);
 
                     return StatusCode(StatusCodes.Status201Created,
@@ -596,7 +596,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Post,
-                        "Invalid model state while creating order for UserId {UserId}",
+                        "Lỗi model state khi tạo đơn hàng cho khách hàng với Id là: {UserId}",
                         input?.UserId);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
@@ -611,7 +611,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Post, ex,
-                    "Error occurred while creating order for UserId {UserId}", input?.UserId);
+                    "Lỗi khi tạo đơn hàng cho khách hàng với Id là: {UserId}", input?.UserId);
 
                 var exceptionDetails = new ProblemDetails
                 {

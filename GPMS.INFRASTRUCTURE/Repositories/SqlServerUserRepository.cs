@@ -131,9 +131,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.PHONE_NUMBER = entity.PhoneNumber;
                 existingUser.LOCATION = entity.Location;
                 existingUser.AVATAR = entity.AvartarUrl;
-                existingUser.EMAIL = entity.Email;
-                existingUser.US_ID = entity.StatusId;
-            
+                existingUser.EMAIL = entity.Email;           
                 _context.USER.Update(existingUser);
                 _context.SaveChanges();
             return _mapper.Map<User>(existingUser);       

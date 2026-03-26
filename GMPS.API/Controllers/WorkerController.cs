@@ -75,7 +75,7 @@ namespace GMPS.API.Controllers
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned {Count} employees", data.Count);
+                    "Trả về {Count} nhân viên", data.Count);
                 return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
@@ -97,7 +97,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting employees");
+                    "Lỗi khi lấy về nhân viên");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -129,7 +129,11 @@ namespace GMPS.API.Controllers
 
                 var result = await _workerRepo.GetAllEmployeesByPMId(userId);
                 if (result == null)
-                    return NotFound("Not found any emloyee for PM");
+                {
+                    _logger.LogInformation("Không tìm thấy nhân viên nào thuộc quyền quản lý của PM: {userId}", userId);
+                    return NotFound("Không tìm thấy nhân viên nào thuộc quyền quản lý của PM này");
+                }
+                    
                 if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
                 {
                     result = result.Where(u =>
@@ -161,7 +165,7 @@ namespace GMPS.API.Controllers
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned {Count} employees", data.Count);
+                    "trả về {Count} nhân viên", data.Count);
                 return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
@@ -183,7 +187,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting employees");
+                    "Lỗi khi lấy về nhân viên");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -200,23 +204,23 @@ namespace GMPS.API.Controllers
             if(userId <= 0)
                 {
                 _logger.LogWarning(CustomLogEvents.WorkerController_Get,
-                    "Invalid employee Id {EmployeeId}", userId);
-                return StatusCode(StatusCodes.Status400BadRequest,$"Invalid employee Id '{userId}'");
+                    "Id không hợp lệ {EmployeeId}", userId);
+                return StatusCode(StatusCodes.Status400BadRequest,$"Id không hợp lệ '{userId}'");
             }
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Getting employee with Id {EmployeeId}", userId);
+                    "Lấy về nhân viên với Id: {EmployeeId}", userId);
 
                 var result = await _workerRepo.GetEmployeeById(userId);
 
                 if (result == null)
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Get,
-                        "Employee with Id {EmployeeId} not found", userId);
+                        "Nhân viên với Id {EmployeeId} không tìm thấy", userId);
 
                     return StatusCode(StatusCodes.Status404NotFound,
-                        $"Employee with Id '{userId}' not found");
+                        $"Nhân viên với Id '{userId}' không tìm thấy");
                 }
 
                 var employee = new EmployeeDTO
@@ -234,7 +238,7 @@ namespace GMPS.API.Controllers
                 };
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned employee with Id {EmployeeId}", userId);
+                    "Trả về nhân viên với Id: {EmployeeId}", userId);
 
                 var response = new RestDTO<EmployeeDTO>
                 {
@@ -262,7 +266,7 @@ namespace GMPS.API.Controllers
                 };
 
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting employee with Id {EmployeeId}", userId);
+                    "Lỗi khi lấy về nhân viên với Id: {EmployeeId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
@@ -276,7 +280,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                    "Creating new worker {UserName}", input?.UserName);
+                    "Tạo nhân viên với tên tài khoản: {UserName}", input?.UserName);
 
                 if (ModelState.IsValid)
                 {
@@ -297,15 +301,15 @@ namespace GMPS.API.Controllers
                     var result = await _workerRepo.CreateEmployee(newUser);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                        "Worker {UserId} created successfully", result.Id);
+                        "Nhân viên có Id: {UserId} được tạo thành công", result.Id);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Worker '{result.Id}' has been created");
+                        $"Nhân viên có Id: '{result.Id}' được tạo thành công");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Post,
-                        "Invalid model state while creating Worker {UserName}", input?.UserName);
+                        "Lỗi model state khi tạo nhân viên: {UserName}", input?.UserName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -330,7 +334,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Error occurred while creating employee {UserName}", input?.UserName);
+                    "Lỗi khi tạo nhân viên: {UserName}", input?.UserName);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -351,12 +355,12 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Put,
-                    "Updating employee {UserId}", userId);
+                    "Cập nhật nhân viên có Id: {UserId}", userId);
 
                 if (userId <= 0)
                 {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        $"Invalid employee Id '{userId}'");
+                        $"Id không hợp lệ '{userId}'");
                 }
 
                 if (ModelState.IsValid)
@@ -376,9 +380,9 @@ namespace GMPS.API.Controllers
                     var result = await _workerRepo.UpdateEmployee(userId, updatedUser);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Put,
-                        "Employee {UserId} updated successfully", userId);
+                        "Nhân viên có Id: {UserId} cập nhật thành công", userId);
 
-                    return Ok($"Employee '{userId}' has been updated");
+                    return Ok($"Nhân viên có Id: '{userId}' cập nhật thành công");
                 }
                 else
                 {
@@ -397,7 +401,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Error occurred while updating employee {UserId}", userId);
+                    "Lỗi khi cập nhật nhân viên có Id: {UserId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
