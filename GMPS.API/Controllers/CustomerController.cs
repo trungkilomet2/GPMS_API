@@ -29,12 +29,12 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting all customers.");
+                _logger.LogInformation("đang lấy về tất cả khách hàng.");
                 var data = await _customerService.GetAllCustomer();
                 if(data == null || !data.Any())
                 {
-                    _logger.LogInformation("No customers found.");
-                    return StatusCode(StatusCodes.Status404NotFound, "No customer found.");
+                    _logger.LogInformation("không tìm thấy khách hàng nào.");
+                    return StatusCode(StatusCodes.Status404NotFound, "không tìm thấy khách hàng nào.");
                 }
 
                 if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
@@ -95,7 +95,7 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting customer");
+                    "Lỗi khi lấy về danh sách khách hàng");
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
