@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations;
 namespace GMPS.API.DTOs
 {
     public class ProductionIssueListItemDTO
-    {
+    {   
+
         public int IssueId { get; set; }
         public int TypeIssue { get; set; }
         public string Title { get; set; } = string.Empty;

@@ -17,7 +17,8 @@ public partial class PRODUCTION_ISSUE_LOG
     [StringLength(500)]
     public string? DESCRIPTION { get; set; }
 
-    public int TYPE_ISSUE { get; set; }
+    [StringLength(50)]
+    public string TYPE_ISSUE { get; set; } = null!;
 
     public int CREATED_BY { get; set; }
 
