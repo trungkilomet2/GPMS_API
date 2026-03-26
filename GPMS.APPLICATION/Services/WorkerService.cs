@@ -99,7 +99,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<User>> GetAllEmployeesByPMId(int id)
         {
-            var data = await _workerRepo.GetWorkerByPMId(id);
+            var data = await _workerRepo.GetAll(id);
             return data;
         }
     }

@@ -10,6 +10,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -44,6 +45,26 @@ namespace GPMS.TEST.Api.Controllers
                    .Returns("http://localhost/api/worker");
 
             _controller.Url = mockUrl.Object;
+        }
+
+        private void SetUserClaims(int userId, string role = "PM")
+        {
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+        new Claim(ClaimTypes.Role, role)
+    };
+
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = claimsPrincipal
+                }
+            };
         }
 
         [Fact]
@@ -127,6 +148,109 @@ namespace GPMS.TEST.Api.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result);
 
             Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEmployeesbyPMId_ReturnsOk_WhenEmployeesExist()
+        {
+            var pmId = 99;
+            SetUserClaims(pmId);
+            var users = new List<User>
+        {
+            new User
+            {
+                Id = 1,
+                UserName = "worker1",
+                FullName = "Worker One",
+                Email = "worker1@test.com",
+                PhoneNumber = "123",
+                ManagerId = pmId,
+                Roles = new List<Role> { new Role { Name = "Worker" } },
+                WorkerSkills = new List<WorkerSkill> { new WorkerSkill { Name = "Sewer" } },
+                Status = new UserStatus { Name = "Active" }
+            },
+            new User
+            {
+                Id = 2,
+                UserName = "worker2",
+                FullName = "Worker Two",
+                Email = "worker2@test.com",
+                PhoneNumber = "456",
+                ManagerId = pmId,
+                Roles = new List<Role> { new Role { Name = "Worker" } },
+                WorkerSkills = new List<WorkerSkill> { new WorkerSkill { Name = "Cutting" } },
+                Status = new UserStatus { Name = "Inactive" }
+            }
+        };
+            _mockRepo.Setup(x => x.GetAllEmployeesByPMId(pmId))
+                     .ReturnsAsync(users);
+            var input = new RequestDTO<EmployeeDTO>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
+            var result = await _controller.GetEmployeesbyPMId(input);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var data = Assert.IsType<RestDTO<IEnumerable<EmployeeDTO>>>(okResult.Value);
+            Assert.Equal(2, data.RecordCount);
+            Assert.Equal(2, data.Data.Count());
+        }
+
+        [Fact]
+        public async Task GetEmployeesbyPMId_ReturnsNotFound_WhenNoEmployeesFound()
+        {
+            var pmId = 99;
+            SetUserClaims(pmId);
+            _mockRepo.Setup(x => x.GetAllEmployeesByPMId(pmId))
+                     .ReturnsAsync((IEnumerable<User>)null);
+            var input = new RequestDTO<EmployeeDTO>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
+            var result = await _controller.GetEmployeesbyPMId(input);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
+            Assert.Equal("Not found any emloyee for PM", notFoundResult.Value);
+        }
+
+        [Fact]
+        public async Task GetEmployeesbyPMId_ReturnsBadRequest_WhenModelStateInvalid()
+        {
+            var pmId = 99;
+            SetUserClaims(pmId);
+            _controller.ModelState.AddModelError("PageSize", "Invalid PageSize");
+            var input = new RequestDTO<EmployeeDTO>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
+            var result = await _controller.GetEmployeesbyPMId(input);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetEmployeesbyPMId_ReturnsInternalServerError_WhenExceptionThrown()
+        {
+            var pmId = 99;
+            SetUserClaims(pmId);
+
+            _mockRepo.Setup(x => x.GetAllEmployeesByPMId(pmId))
+                     .ThrowsAsync(new Exception("Database error"));
+
+            var input = new RequestDTO<EmployeeDTO>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
+            var result = await _controller.GetEmployeesbyPMId(input);
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
+            var problemDetails = Assert.IsType<ProblemDetails>(objectResult.Value);
+            Assert.Equal(500, problemDetails.Status);
+            Assert.Equal("Database error", problemDetails.Detail);
         }
 
         [Fact]
