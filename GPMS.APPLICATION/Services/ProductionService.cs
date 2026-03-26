@@ -317,6 +317,7 @@ namespace GPMS.APPLICATION.Services
             if (production.StatusId == ProductionStatus_Constants.Reject_ID)
                 throw new ValidationException("Production này đã bị từ chối rồi");
 
+
             if (production.StatusId == ProductionStatus_Constants.PendingPlan_ID)
             {
                 await _unitOfWork.ExecuteInTransactionAsync(async () =>
