@@ -18,7 +18,13 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<ProductionRejectReason> _productionRejectRepo;
         private readonly IBaseRepositories<ProductionIssueLog> _productionIssueRepo;
         private readonly IBaseOrderRepositories _orderStatusRepo;
+        private readonly IBaseWorkerRepository _workerRepo;
         private readonly IUnitOfWork _unitOfWork;
+
+        private readonly IBaseRepositories<ProductionPart> _productionPartRepo;
+        private readonly IBaseRepositories<ProductionPartWorkLog> _productionPartWorkLogRepo;
+        private readonly IBaseRepositories<CuttingNotebook> _cuttingNotebookRepo;
+        private readonly IBaseRepositories<CuttingNotebookLog> _cuttingNotebookLogRepo;
 
         public ProductionService(
             IBaseRepositories<Production> productionRepo,
@@ -28,7 +34,12 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<Order> orderRepo,
             IBaseRepositories<ProductionRejectReason> productionRejectRepo,
             IBaseRepositories<ProductionIssueLog> productionIssueRepo,
-            IBaseOrderRepositories orderStatusRepo
+            IBaseOrderRepositories orderStatusRepo,
+            IBaseRepositories<ProductionPart> productionPartRepo,
+            IBaseRepositories<ProductionPartWorkLog> productionPartWorkLogRepo,
+            IBaseRepositories<CuttingNotebook> cuttingNotebookRepo,
+            IBaseRepositories<CuttingNotebookLog> cuttingNotebookLogRepo,
+            IBaseWorkerRepository workerRepo
             )
         {
             _unitOfWork = unitOfWork;
@@ -39,6 +50,11 @@ namespace GPMS.APPLICATION.Services
             _productionRejectRepo = productionRejectRepo;
             _productionIssueRepo = productionIssueRepo;
             _orderStatusRepo = orderStatusRepo;
+            _productionPartRepo = productionPartRepo;
+            _productionPartWorkLogRepo = productionPartWorkLogRepo;
+            _cuttingNotebookRepo = cuttingNotebookRepo;
+            _cuttingNotebookLogRepo = cuttingNotebookLogRepo;
+            _workerRepo = workerRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
@@ -355,5 +371,141 @@ namespace GPMS.APPLICATION.Services
 
             return production_reject_reason_detail;
         }
+
+
+        //========================================================================================
+        // 26-03-2026: Nhóm API phân tích sản lượng
+        //========================================================================================
+        public async Task<IEnumerable<ProductionWorkerOutputViewDTO>> GetProductionWorkerOutput(int productionId)
+        {
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            // Lấy danh sách Worker làm việc trong Production đấy => Lấy từ PM được assign
+            WorkerByManagerDTO managerData = new WorkerByManagerDTO() { ManagerId = production.PmId };
+
+            var users = (await _workerRepo.GetAll(managerData)).ToList();
+            var partIds = (await _productionPartRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var notebookIds = (await _cuttingNotebookRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var partLogs = (await _productionPartWorkLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var cuttingLogs = (await _cuttingNotebookLogRepo.GetAll(null)).Where(x => notebookIds.Contains(x.NotebookId)).ToList();
+            var issueLogs = (await _productionIssueRepo.GetAll(productionId)).ToList();
+
+            return users.Select(user => new ProductionWorkerOutputViewDTO
+            {
+                WorkerId = user.Id,
+                WorkerName = user.FullName,
+                ProductionId = productionId,
+                CuttingOutput = cuttingLogs.Where(x => x.UserId == user.Id).Sum(x => x.ProductQty),
+                SewingOutput = partLogs.Where(x => x.UserId == user.Id).Sum(x => x.Quantity),
+                IssueCount = issueLogs.Count(x => x.CreatedBy == user.Id || x.AssignedTo == user.Id)
+            }).ToList();
+        }
+
+        public async Task<IEnumerable<WorkerProductivityHistoryViewDTO>> GetAllWorkersProductivityHistory()
+        {
+            var users = (await _userRepositories.GetAll(null)).ToDictionary(x => x.Id, x => x.FullName);
+            var parts = (await _productionPartRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.ProductionId);
+            var notebooks = (await _cuttingNotebookRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.ProductionId);
+            var result = new List<WorkerProductivityHistoryViewDTO>();
+
+            foreach (var workLog in await _productionPartWorkLogRepo.GetAll(null))
+            {
+                if (!users.ContainsKey(workLog.UserId) || !parts.ContainsKey(workLog.PartId)) continue;
+                result.Add(new WorkerProductivityHistoryViewDTO
+                {
+                    WorkerId = workLog.UserId,
+                    WorkerName = users[workLog.UserId],
+                    ProductionId = parts[workLog.PartId],
+                    SourceType = "PartWorkLog",
+                    SourceId = workLog.Id,
+                    Quantity = workLog.Quantity,
+                    SubmittedAt = workLog.WorkDate
+                });
+            }
+
+            foreach (var cuttingLog in await _cuttingNotebookLogRepo.GetAll(null))
+            {
+                if (!users.ContainsKey(cuttingLog.UserId) || !notebooks.ContainsKey(cuttingLog.NotebookId)) continue;
+                result.Add(new WorkerProductivityHistoryViewDTO
+                {
+                    WorkerId = cuttingLog.UserId,
+                    WorkerName = users[cuttingLog.UserId],
+                    ProductionId = notebooks[cuttingLog.NotebookId],
+                    SourceType = "CuttingNotebookLog",
+                    SourceId = cuttingLog.Id,
+                    Quantity = cuttingLog.ProductQty,
+                    SubmittedAt = cuttingLog.DateCreate?.ToDateTime(TimeOnly.MinValue),
+                    Note = cuttingLog.Note
+                });
+            }
+
+            return result.OrderByDescending(x => x.SubmittedAt).ToList();
+        }
+
+        public async Task<ProductionOutputSummaryViewDTO> GetProductionOutputSummary(int productionId)
+        {
+            _ = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+
+            var partIds = (await _productionPartRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var notebookIds = (await _cuttingNotebookRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+
+            var partOutput = (await _productionPartWorkLogRepo.GetAll(null))
+                .Where(x => partIds.Contains(x.PartId))
+                .Sum(x => x.Quantity);
+
+            var cuttingOutput = (await _cuttingNotebookLogRepo.GetAll(null))
+                .Where(x => notebookIds.Contains(x.NotebookId))
+                .Sum(x => x.ProductQty);
+
+            var issueCount = (await _productionIssueRepo.GetAll(productionId)).Count();
+
+            return new ProductionOutputSummaryViewDTO
+            {
+                ProductionId = productionId,
+                TotalCuttingOutput = cuttingOutput,
+                TotalSewingOutput = partOutput,
+                TotalIssueCount = issueCount
+            };
+        }
+
+        public async Task<IEnumerable<WorkerProductivityHistoryViewDTO>> GetWorkerProductivityHistory(int workerId)
+        {
+            _ = await _userRepositories.GetById(workerId) ?? throw new ValidationException("Worker không tồn tại");
+            return (await GetAllWorkersProductivityHistory()).Where(x => x.WorkerId == workerId);
+        }
+
+        public async Task<IEnumerable<WorkerAssignedPlanViewDTO>> GetWorkerAssignedPlans(int workerId)
+        {
+            _ = await _userRepositories.GetById(workerId) ?? throw new ValidationException("Worker không tồn tại");
+
+            var workerParts = (await _productionPartRepo.GetAll(null))
+                .Where(x => x.AssigneeIds.Contains(workerId))
+                .ToList();
+
+            var groupedByProduction = workerParts.GroupBy(x => x.ProductionId);
+            var result = new List<WorkerAssignedPlanViewDTO>();
+
+            foreach (var group in groupedByProduction)
+            {
+                var production = await _prdRepo.GetById(group.Key);
+                if (production is null) continue;
+
+                var order = await _orderRepo.GetById(production.OrderId);
+                if (order is null) continue;
+
+                result.Add(new WorkerAssignedPlanViewDTO
+                {
+                    ProductionId = production.Id,
+                    OrderId = order.Id,
+                    OrderName = order.OrderName,
+                    StatusId = production.StatusId,
+                    PartNames = group.Select(x => x.PartName).Distinct().ToList()
+                });
+            }
+
+            return result;
+        }
+
+
+
     }
 }

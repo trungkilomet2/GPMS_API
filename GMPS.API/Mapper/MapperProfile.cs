@@ -2,6 +2,7 @@
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.DTOs;
 using GPMS.DOMAIN.Entities;
+using static GMPS.API.DTOs.ProductionOutputDTO;
 
 namespace GMPS.API.Mapper
 {
@@ -89,7 +90,15 @@ namespace GMPS.API.Mapper
             CreateMap<CuttingNotebookLog, CuttingNotebookLogResponseDTO>()
                 .ForMember(dest => dest.LogId, opt => opt.MapFrom(src => src.Id));
 
-         //   CreateMap<ProductionPartProductivityViewDTO, ProductivityHistoryItemDTO>();
+            //   CreateMap<ProductionPartProductivityViewDTO, ProductivityHistoryItemDTO>();
+
+
+
+            CreateMap<ProductionWorkerOutputViewDTO, ProductionWorkerOutputDTO>();
+            CreateMap<WorkerProductivityHistoryViewDTO, WorkerProductivityHistoryDTO>();
+            CreateMap<ProductionOutputSummaryViewDTO, ProductionOutputSummaryDTO>();
+            CreateMap<WorkerAssignedPlanViewDTO, WorkerAssignedPlanDTO>();
+
 
         }
 
