@@ -30,7 +30,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Getting all worker skills - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    "Lấy về kỹ năng của nhân viên - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     input.PageIndex, input.PageSize);
 
                 if (!ModelState.IsValid)
@@ -46,8 +46,8 @@ namespace GMPS.API.Controllers
                 if(result == null || !result.Any())
                 {
                     _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                        "No worker Skills found");
-                    return NotFound("Worker Skill not found");
+                        "Không tìm thấy kỹ năng của nhân viên");
+                    return NotFound("Không tìm thấy kỹ năng của nhân viên");
                 }
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                 {
@@ -56,32 +56,20 @@ namespace GMPS.API.Controllers
                         x.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase));
                 }
 
-                var recordCount = result.Count();
-                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
-
-                if (recordCount > 0 && input.PageIndex >= totalPages)
-                {
-                    return NotFound(new
-                    {
-                        message = $"Page {input.PageIndex} not exist",
-                        totalPages
-                    });
-                }
-
                 var data = result
                     .Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize)
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Returned {Count} worker skills", data.Count);
+                    "Trả về {Count} kỹ năng của nhân viên", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<WorkerSkill>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,
                     PageSize = input.PageSize,
-                    RecordCount = recordCount,
+                    RecordCount = data.Count(),
                     Links = new List<LinkDTO>
             {
                 new LinkDTO(
@@ -97,7 +85,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting worker skills");
+                    "Lỗi khi lấy về kỹ năng của nhân viên");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -114,7 +102,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                    "Creating new worker role {Name}", input?.Name);
+                    "Tạo kỹ năng mới: {Name}", input?.Name);
 
                 if (ModelState.IsValid)
                 {
@@ -126,15 +114,15 @@ namespace GMPS.API.Controllers
                     var result = await _workerroleRepo.CreateWorkerRole(newRole);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                        "Worker Role {Id} created successfully", result.Id);
+                        "Kỹ năng {Id} được tạo thành công", result.Id);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Worker Role '{result.Id}' has been created");
+                        $"Kỹ năng '{result.Id}' được tạo thành công");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Post,
-                        "Invalid model state while creating Worker Role {Name}", input?.Name);
+                        "Lỗi model state khi tạo kỹ năng: {Name}", input?.Name);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -148,7 +136,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Error occurred while creating worker role {Name}", input?.Name);
+                    "Lỗi khi tạo kỹ năng: {Name}", input?.Name);
 
                 var exceptionDetails = new ProblemDetails
                 {

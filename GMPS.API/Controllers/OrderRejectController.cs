@@ -38,7 +38,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Getting order reject for OrderId {OrderId}", orderId);
+                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Đang lấy lý do từ chối đơn hàng có Id là: {OrderId}", orderId);
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
@@ -47,7 +47,7 @@ namespace GMPS.API.Controllers
                     {
                         _logger.LogWarning(
                             CustomLogEvents.OrderRejectController_Get,
-                            "Order reject not found for OrderId {OrderId}",
+                            "không tìm thấy lý do từ chối đơn hàng có Id là: {OrderId}",
                             orderId);
 
                         return NotFound(new
@@ -62,7 +62,7 @@ namespace GMPS.API.Controllers
                         Reason = result.Reason,
                         CreatedAt = result.CreatedAt
                     };
-                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully retrieved order reject for OrderId {OrderId}", orderId);
+                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Thành công lấy lý do từ chối đơn hàng có Id là: {OrderId}", orderId);
                     var response = new RestDTO<OrderRejectDTO>
                     {
                         Data = reason,
@@ -75,7 +75,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state for creating order reject for OrderId {OrderId}", orderId);
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Lỗi model state khi lấy lý do từ chối đơn hàng có Id là: {OrderId}", orderId);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -86,7 +86,7 @@ namespace GMPS.API.Controllers
             }
             catch (KeyNotFoundException knfEx)
             {
-                _logger.LogWarning(CustomLogEvents.OrderRejectController_Get, knfEx, "Order reject not found for OrderId {OrderId}", orderId);
+                _logger.LogWarning(CustomLogEvents.OrderRejectController_Get, knfEx, "không tìm thấy lý do từ chối đơn hàng có Id là: {OrderId}", orderId);
                 return NotFound(new
                 {
                     Message = $"Order reject for OrderId '{orderId}' was not found"
@@ -94,7 +94,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.Error_Post, ex, "Error occurred while creating order reject for OrderId {OrderId}", orderId);
+                _logger.LogError(CustomLogEvents.Error_Post, ex, "Lỗi khi lấy lý do từ chối đơn hàng có Id là: {OrderId}", orderId);
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -112,7 +112,7 @@ namespace GMPS.API.Controllers
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
-                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Creating order reject for OrderId {OrderId}", input?.OrderId);
+                _logger.LogInformation(CustomLogEvents.OrderController_Post, "Tạo lý do từ chối cho đơn hàng có Id là: {OrderId}", input?.OrderId);
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
@@ -128,12 +128,12 @@ namespace GMPS.API.Controllers
                     var user = await _userRepo.GetUserById(order.UserId);
                     await _emailRepo.SendEmailAsync(user.Email, "Thông báo từ chối đơn hàng", 
                         $"Đơn hàng với Id: '{input.OrderId}' đã bị từ chối bởi lý do như sau: {input.Reason}", EmailType.OrderNotification);
-                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Successfully created order reject for OrderId {OrderId}", input.OrderId);
+                    _logger.LogInformation(CustomLogEvents.OrderRejectController_Post, "Tạo lý do từ chối thành công cho đơn hàng có Id là: {OrderId}", input.OrderId);
                     return StatusCode(StatusCodes.Status201Created, $"Order reject with OrderId '{result.OrderId}' has been created");
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Invalid model state for creating order reject for OrderId {OrderId}", input?.OrderId);
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post, "Lỗi model state khi tạo lý do từ chối cho đơn hàng có Id là: {OrderId}", input?.OrderId);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -144,7 +144,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.Error_Post, ex, "Error occurred while creating order reject for OrderId {OrderId}", input?.OrderId);
+                _logger.LogError(CustomLogEvents.Error_Post, ex, "Lỗi khi tạo lý do từ chối cho đơn hàng có Id là: {OrderId}", input?.OrderId);
                 var exceptionDetails = new ProblemDetails
                 {
                     Detail = ex.Message,
