@@ -60,6 +60,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
+            if(obj is int id)
+            {
+                var workers = await _context.USER
+                      .Include(u => u.ROLE)
+                      .Include(u => u.WS)
+                      .Include(u => u.US)
+                      .Where(u => u.MANAGER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
+                      r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
+                return _mapper.Map<IEnumerable<User>>(workers);
+            }
             var users = await _context.USER
                               .Include(u => u.ROLE)
                               .Include(u => u.WS)
@@ -78,17 +88,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                               .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
                               r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();
             return _mapper.Map<User>(users);
-        }
-
-        public async Task<IEnumerable<User>> GetWorkerByPMId(int id)
-        {
-            var users = await _context.USER
-                  .Include(u => u.ROLE)
-                  .Include(u => u.WS)
-                  .Include(u => u.US)
-                  .Where(u => u.MANAGER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                  r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
-            return _mapper.Map<IEnumerable<User>>(users);
         }
 
         #region Insert by TrungNT | 22-03-2026

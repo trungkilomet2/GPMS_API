@@ -35,7 +35,7 @@ namespace GPMS.TEST.Api.Controllers
             var controller = BuildController();
 
             _userRepo.Setup(x => x.IsEmailExists(It.IsAny<string>()))
-                     .ReturnsAsync(true);
+                     .ReturnsAsync(false);
 
             var input = new VerifyEmailDTO
             {
