@@ -24,10 +24,9 @@ namespace GPMS.DOMAIN.Constants
         public const int NeedUpdatePlan_ID = 5; //5
         public const int Producting_ID = 6; //6 
         public const int Done_ID = 7; //7
-        
 
         // NAME
-        public const string Pending = "Chờ kiếm tra"; //1
+        public const string Pending = "Chờ xét duyệt"; //1
         public const string Reject = "Từ Chối"; //2 
         public const string Approval = "Chấp Nhận"; //3
         public const string PendingPlan = "Chờ Xét Duyệt Kế Hoạch"; //4
