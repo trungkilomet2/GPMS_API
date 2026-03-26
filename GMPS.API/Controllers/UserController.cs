@@ -526,9 +526,10 @@ namespace GMPS.API.Controllers
                     if (!string.IsNullOrEmpty(user.Email))
                     {
                         var newEmail = user.Email.Trim().ToLower();
-                        var currentEmail = existingUser.Email.Trim().ToLower();
+                        var currentEmail = existingUser.Email?.Trim().ToLower();
 
-                        if (newEmail != currentEmail)
+
+                        if (string.IsNullOrEmpty(currentEmail) || newEmail != currentEmail)
                         {
                             isEmailChanged = true;
 
