@@ -74,8 +74,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 var workerByManager = await _context.USER.Include(u => u.ROLE)
                               .Include(u => u.WS)
                               .Include(u => u.US)
-                              .Where(u=> u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS) && u.MANAGER_ID == worker.ManagerId).ToListAsync();
+                              .Where(u=> u.ROLE.Any(r => r.NAME == Roles_Constants.Worker) && u.MANAGER_ID == worker.ManagerId).ToListAsync();
                 
                 var pm = _context.USER.Include(u => u.WS)
                               .Include(u => u.US).Where(u => u.USER_ID == worker.ManagerId).FirstOrDefault();

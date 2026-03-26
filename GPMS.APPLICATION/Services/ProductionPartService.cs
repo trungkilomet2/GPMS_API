@@ -269,10 +269,7 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { updated })).First();
         }
 
-        public Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id)
-        {
-            throw new NotImplementedException();
-        }
+      
 
         public async Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id,DateTime fromDate, DateTime toDate)
         {   
