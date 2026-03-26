@@ -10,15 +10,15 @@ namespace GMPS.API.DTOs
         public int UserId { get; set; }
 
         [Url(ErrorMessage = "Image must be a valid URL")]
-        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        [StringLength(255, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
 
         [Required(ErrorMessage = "Order name is required")]
-        [StringLength(50, MinimumLength = 3, ErrorMessage = "Order name must be between 3 and 50 characters")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Order name must be between 3 and 100 characters")]
         public string OrderName { get; set; }
 
         [Required(ErrorMessage = "Type is required")]
-        [StringLength(30, ErrorMessage = "Type cannot exceed 30 characters")]
+        [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
         public string Type { get; set; }
 
         [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
@@ -27,7 +27,7 @@ namespace GMPS.API.DTOs
         public string? Size { get; set; }
 
         [Required(ErrorMessage = "Color is required")]
-        [StringLength(10, ErrorMessage = "Color cannot exceed 10 characters")]
+        [StringLength(30, ErrorMessage = "Color cannot exceed 30 characters")]
         public string Color { get; set; }
 
         [Required(ErrorMessage = "StartDate is required")]

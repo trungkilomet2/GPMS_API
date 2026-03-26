@@ -111,14 +111,13 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new Exception("you can only update your own profile");
             }
-            user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;
         }
 
-        public Task<User> GetUserById(int id)
+        public async Task<User> GetUserById(int id)
         {
-            var data = _userBaseRepo.GetById(id);
+            var data = await _userBaseRepo.GetById(id);
             if(data == null)
                 {
                 throw new KeyNotFoundException("User not found");
