@@ -11,8 +11,6 @@ namespace GMPS.API.DTOs
         public DateTime? ToDate { get; set; }
         public DateTime? DateReply { get; set; }
         public string? DenyContent { get; set; }
-        public string? CancelContent { get; set; }
-        public string? RejectCancelContent { get; set; }
         public string? ApprovedByName { get; set; }
         public string? Status { get; set; }
     }

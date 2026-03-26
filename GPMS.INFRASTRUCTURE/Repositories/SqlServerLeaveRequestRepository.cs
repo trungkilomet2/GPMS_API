@@ -71,8 +71,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             existing.LRS_ID = status.LRS_ID;
             existing.DENY_CONTENT = entity.DenyContent;
-            existing.CANCEL_CONTENT = entity.CancelContent;
-            existing.REJECT_CANCEL_CONTENT = entity.RejectCancelContent;
             existing.DATE_REPLY = entity.DateReply;
             existing.APPROVED_BY = entity.ApprovedBy;
 
