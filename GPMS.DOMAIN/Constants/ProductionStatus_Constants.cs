@@ -27,7 +27,7 @@ namespace GPMS.DOMAIN.Constants
         
 
         // NAME
-        public const string Pending = "Chờ kiếm tra"; //1
+        public const string Pending = "Chờ xét duyệt"; //1
         public const string Reject = "Từ Chối"; //2 
         public const string Approval = "Chấp Nhận"; //3
         public const string PendingPlan = "Chờ Xét Duyệt Kế Hoạch"; //4
