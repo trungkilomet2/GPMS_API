@@ -38,9 +38,9 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<Order> CreateOrder(Order order)
         {
-            var existing = await _userBaseRepo.GetById(order.UserId);
             if (order == null)
                 throw new Exception("Failed to create order.");
+            var existing = await _userBaseRepo.GetById(order.UserId);
             if (existing == null)
                 throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
