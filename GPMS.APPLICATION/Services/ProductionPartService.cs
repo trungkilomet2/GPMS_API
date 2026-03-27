@@ -95,7 +95,6 @@ namespace GPMS.APPLICATION.Services
                     // Chuyển đổi trạng thái thành Chờ Xét Duyệt Kế Hoạch
                     production.StatusId = ProductionStatus_Constants.PendingPlan_ID;
                     await _productionRepo.Update(production);
-                
                 }
                 
             });
@@ -196,28 +195,28 @@ namespace GPMS.APPLICATION.Services
 
             if (part is null)
             {
-                throw new ValidationException("Production part data is required");
+                throw new ValidationException("Yêu cầu thông tin công đoạn");
             }
 
             if (string.IsNullOrWhiteSpace(part.PartName))
             {
-                throw new ValidationException("PartName không được để trống");
+                throw new ValidationException("Tên công đoạn không được để trống");
             }
           
 
             if (part.Cpu <= 0)
             {
-                throw new ValidationException("Cpu phải > 0");
+                throw new ValidationException("Đơn giá bán thành phẩm phải > 0");
             }
 
             if (part.StatusId <= 0)
             {
-                throw new ValidationException("StatusId phải > 0");
+                throw new ValidationException("Trạng thái phải > 0");
             }
 
             if (part.StartDate.HasValue && part.EndDate.HasValue && part.EndDate < part.StartDate)
             {
-                throw new ValidationException("EndDate phải lớn hơn hoặc bằng StartDate");
+                throw new ValidationException("Ngày kết thúc phải lớn hơn hoặc bằng Ngày bắt đầu");
             }
         }
 

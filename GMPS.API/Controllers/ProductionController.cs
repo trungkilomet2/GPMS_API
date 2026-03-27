@@ -96,28 +96,72 @@ namespace GMPS.API.Controllers
         //  [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
-            // Lấy danh sách theo input từ csdl
-            var data = await _productionService.GetProductionListViews();
+            try
+            {
+                // Lấy danh sách theo input từ csdl
+                var data = await _productionService.GetProductionListViews();
 
-            if (data.Count() == 0)
-            {
-                return NoContent();
-            }
-            //filter data
-            var result = data.Skip(input.PageIndex * input.PageSize)
-                        .Take(input.PageSize);
-            _logger.LogInformation(CustomLogEvents.ProductionController_Get,$" Đã lấy được ({data.Count()}) Production");
-            return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
-            {
-                Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
-                PageIndex = input.PageIndex,
-                PageSize = input.PageSize,
-                RecordCount = data.Count(),
-                Links = new List<LinkDTO>
+                if (data.Count() == 0)
                 {
-             //      new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
+                    return NoContent();
                 }
-            });
+                //filter data
+                var result = data.Skip(input.PageIndex * input.PageSize)
+                            .Take(input.PageSize);
+                
+                if (input.FilterQuery is not null && input.FilterQuery.Contains("="))
+                {
+                    string[] filter = input.FilterQuery.Trim().Split("=");
+
+                    if (filter[0].Trim().Equals("PM"))
+                    {
+                        if (int.TryParse(filter[1].Trim(), out int pmId))
+                        {
+                            result = data
+                                .Where(p => p.ProjectManager.Id == pmId)
+                                .Skip(input.PageIndex * input.PageSize)
+                                .Take(input.PageSize);
+                        }
+                        else
+                        {
+                            throw new ValidationException("Lỗi ở trường nhập liệu filter.");
+                        }
+                    }
+                }
+                _logger.LogInformation(CustomLogEvents.ProductionController_Get, $" Đã lấy được ({data.Count()}) Production");
+                return Ok(new RestDTO<IEnumerable<ListProductionDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<ListProductionDTO>>(result),
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = data.Count(),
+                    Links = new List<LinkDTO>
+                    {
+                        //      new LinkDTO(Url.Action(null,"production/list",input,Request.Scheme!),"self","GET")
+                    }
+                });
+
+            }
+            catch (ValidationException ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status400BadRequest;
+                return StatusCode(
+                StatusCodes.Status400BadRequest,
+                exceptionDetails);
+            }
+            catch (Exception ex)
+            {
+                var exceptionDetails = new ProblemDetails();
+                exceptionDetails.Detail = ex.Message;
+                exceptionDetails.Status =
+                StatusCodes.Status500InternalServerError;
+                return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                exceptionDetails);
+            }
         }
 
         //Get: Lấy thông tin chi tiết của production đấy

@@ -151,6 +151,11 @@ namespace GMPS.API.Controllers
                     StatusId = ProductionPart_Constrants.ToDo_ID
                 });
 
+                if(parts.Count() < 3)
+                {
+                    throw new ValidationException("Số lượng công đoạn phải từ 3 trở lên");
+                }
+
                 foreach (var part in parts)
                 {
                     if(part.StartDate > part.EndDate)
@@ -454,11 +459,11 @@ namespace GMPS.API.Controllers
                 {
                     ProductionId = part.Part.ProductionId,
                     CreatedBy = dto.CreatedBy,
-                    TypeIssue = partId,
+                    TypeIssue = dto.TypeIssue,
                     Title = dto.Title,
                     Description = dto.Description,
                     Priority = dto.Priority,
-                    StatusId = 1,
+                    StatusId = IssueStatus_Constrants.ToDo_ID,
                     ImageUrl = imageUrl
                 });
 
