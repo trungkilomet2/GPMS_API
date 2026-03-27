@@ -6,6 +6,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
@@ -64,6 +65,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     {
                         ORDER_ID = orderEntity.ORDER_ID,
                         NAME = m.MaterialName,
+                        COLOR = m.Color,
                         IMAGE = m.Image,
                         VALUE = m.Value,
                         UOM = m.Uom,
@@ -119,38 +121,32 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             existing.OS_ID = pendingStatus.OS_ID;
 
-            if (updatedOrder.Template is not null)
+            _context.O_TEMPLATE.RemoveRange(existing.O_TEMPLATE);
+            foreach (var t in updatedOrder.Template ?? Enumerable.Empty<OrderTemplate>())
             {
-                _context.O_TEMPLATE.RemoveRange(existing.O_TEMPLATE);
-                foreach (var t in updatedOrder.Template)
+                await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
                 {
-                    await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
-                    {
-                        ORDER_ID = orderId,
-                        NAME = t.TemplateName,
-                        TYPE = t.Type,
-                        FILE = t.File,
-                        NOTE = t.Note
-                    });
-                }
+                    ORDER_ID = orderId,
+                    NAME = t.TemplateName,
+                    TYPE = t.Type,
+                    FILE = t.File,
+                    NOTE = t.Note
+                });
             }
 
-            // delete old add new
-            if (updatedOrder.Material is not null)
+            _context.O_MATERIAL.RemoveRange(existing.O_MATERIAL);
+            foreach (var m in updatedOrder.Material ?? Enumerable.Empty<OrderMaterial>())
             {
-                _context.O_MATERIAL.RemoveRange(existing.O_MATERIAL);
-                foreach (var m in updatedOrder.Material)
+                await _context.O_MATERIAL.AddAsync(new O_MATERIAL
                 {
-                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
-                    {
-                        ORDER_ID = orderId,
-                        NAME = m.MaterialName,
-                        IMAGE = m.Image,
-                        VALUE = m.Value,
-                        UOM = m.Uom,
-                        NOTE = m.Note
-                    });
-                }
+                    ORDER_ID = orderId,
+                    NAME = m.MaterialName,
+                    COLOR = m.Color,
+                    IMAGE = m.Image,
+                    VALUE = m.Value,
+                    UOM = m.Uom,
+                    NOTE = m.Note
+                });
             }
 
             foreach (var history in histories)

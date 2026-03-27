@@ -51,10 +51,12 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_MATERIAL, GPMS.DOMAIN.Entities.OMaterial>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OM_ID))
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
                 .ForMember(dest => dest.Uom, opt => opt.MapFrom(src => src.UOM))
                 .ReverseMap()
                 .ForMember(dest => dest.OM_ID, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.OrderId))
+                .ForMember(dest => dest.COLOR, opt => opt.MapFrom(src => src.Color))
                 .ForMember(dest => dest.UOM, opt => opt.MapFrom(src => src.Uom));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_HISTORY_UPDATE, GPMS.DOMAIN.Entities.OHistoryUpdate>()
