@@ -65,17 +65,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                       .Include(u => u.ROLE)
                       .Include(u => u.WS)
                       .Include(u => u.US)
-                      .Where(u => u.MANAGER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                      r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
+                      .Where(u => u.MANAGER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                      r.NAME == Roles_Constants.Worker)).ToListAsync();
                 return _mapper.Map<IEnumerable<User>>(workers);
             }
             var users = await _context.USER
                               .Include(u => u.ROLE)
                               .Include(u => u.WS)
                               .Include(u => u.US)
-                              .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-            
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
+                              .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                              r.NAME == Roles_Constants.Worker)).ToListAsync();
             
             // Insert by TrungNT 26-03-2026
             // Lấy danh sách người phụ trách production đấy
@@ -103,8 +102,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                               .Include(u => u.ROLE)
                               .Include(u => u.WS)
                               .Include(u => u.US)
-                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();
+                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                              r.NAME == Roles_Constants.Worker)).FirstOrDefaultAsync();
             return _mapper.Map<User>(users);
         }
 
