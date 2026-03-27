@@ -10,5 +10,7 @@ namespace GMPS.API.DTOs
         public string? Location { get; set; }
         public string? Email { get; set; }
         public int StatusId { get; set; }
+        public string? StatusName { get; set; }
+        public List<string> Roles { get; set; } = new();
     }
 }
