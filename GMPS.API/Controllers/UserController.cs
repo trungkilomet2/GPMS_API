@@ -100,7 +100,7 @@ namespace GMPS.API.Controllers
                         AvatarUrl = user.AvartarUrl,
                         Location = user.Location,
                         Status = user.Status?.Name ?? "Unknown",
-                        Role = string.Join(", ", user.Roles.Select(r => r.Name)),
+                        Roles = user.Roles.Select(r => r.Name).ToList(),
                         WorkerRole = string.Join(", ", user.WorkerSkills.Select(w => w.Name))
                     };
 
@@ -167,7 +167,9 @@ namespace GMPS.API.Controllers
                     AvartarUrl = u.AvartarUrl,
                     Location = u.Location,
                     Email = u.Email,
-                    StatusId = u.StatusId
+                    StatusId = u.StatusId,
+                    StatusName = u.Status?.Name ?? "Unknown",
+                    Roles = u.Roles.Select(r => r.Name).ToList()
                 }).ToList();
 
                 _logger.LogInformation(CustomLogEvents.UserController_Get, "Retrieved {Count} users successfully", data.Count);
@@ -235,7 +237,9 @@ namespace GMPS.API.Controllers
                     AvartarUrl = createdUser.AvartarUrl,
                     Location = createdUser.Location,
                     Email = createdUser.Email,
-                    StatusId = createdUser.StatusId
+                    StatusId = createdUser.StatusId,
+                    StatusName = "Active",
+                    Roles = new List<string>()
                 };
 
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<UserListDTO>
@@ -440,7 +444,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("view-profile")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
-        [Authorize(Roles = "Admin,Customer,Owner,PM,Team Leader,Worker,KCS")]
+        [Authorize(Roles = "Admin,Customer,Owner,PM,Worker")]
         public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -510,7 +514,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
+        [Authorize(Roles = "Admin,Owner,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser([FromForm] UpdatedUserDTO? user)
         {
