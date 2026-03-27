@@ -82,6 +82,7 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
     .WriteTo.Logger(lc => lc
+    .MinimumLevel.Warning()
         .Filter.ByExcluding(logEvent =>
             logEvent.Properties.ContainsKey("SourceContext") &&
             (

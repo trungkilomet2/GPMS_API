@@ -25,7 +25,6 @@ public class LeaveRequestServiceTest
             DateCreate = DateTime.UtcNow,
             DateReply = null,
             DenyContent = null,
-            CancelContent = null,
             StatusId = 1,
             StatusName = statusName
         };
@@ -220,6 +219,7 @@ public class LeaveRequestServiceTest
         await BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10);
 
         Assert.Equal(3, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
     }
 
     [Fact]
@@ -318,6 +318,7 @@ public class LeaveRequestServiceTest
         await BuildService().ApproveLeaveRequest(1, approverId: 10);
 
         Assert.Equal(2, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
     }
 
     [Fact]
@@ -349,7 +350,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
         _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(cancelled);
 
-        var result = await BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind.");
+        var result = await BuildService().CancelLeaveRequest(1, userId: 1);
 
         Assert.NotNull(result);
         Assert.Equal(LeaveRequestStatus_Constants.Cancelled, result.StatusName);
@@ -361,7 +362,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => BuildService().CancelLeaveRequest(99, userId: 1, cancelContent: "Changed my mind."));
+            () => BuildService().CancelLeaveRequest(99, userId: 1));
 
         Assert.Contains("99", ex.Message);
     }
@@ -373,7 +374,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => BuildService().CancelLeaveRequest(1, userId: 99, cancelContent: "Changed my mind."));
+            () => BuildService().CancelLeaveRequest(1, userId: 99));
     }
 
     [Fact]
@@ -383,7 +384,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind."));
+            () => BuildService().CancelLeaveRequest(1, userId: 1));
 
         Assert.Contains(LeaveRequestStatus_Constants.Pending, ex.Message);
     }
@@ -398,13 +399,13 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().CancelLeaveRequest(1, userId: 1, cancelContent: "Changed my mind.");
+        await BuildService().CancelLeaveRequest(1, userId: 1);
 
         Assert.Equal(LeaveRequestStatus_Constants.Cancelled_ID, captured!.StatusId);
     }
 
     [Fact]
-    public async Task CancelLeaveRequest_SetsCancelContent_BeforeUpdate()
+    public async Task CancelLeaveRequest_SetsDateReply_BeforeUpdate()
     {
         var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
         LeaveRequest? captured = null;
@@ -634,7 +635,12 @@ public class LeaveRequestServiceTest
             .ReturnsAsync(BuildFakeLeaveRequest());
 
      //   await BuildService().RejectCancelLeaveRequest(1, rejectCancelContent: "Already arranged coverage.");
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        await BuildService().CancelLeaveRequest(1, userId: 1);
+        var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
-        Assert.Equal("Already arranged coverage.", captured!.RejectCancelContent);
+        Assert.NotNull(captured!.DateReply);
+        Assert.InRange(captured.DateReply!.Value, before, after);
     }
 }

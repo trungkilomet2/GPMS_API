@@ -95,7 +95,7 @@ namespace GPMS.APPLICATION.Services
             var data = await _userBaseRepo.GetById(id);
             if(data == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
             return data;
         }
@@ -105,11 +105,11 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
-                throw new Exception("User not found");
+                throw new Exception("Không tìm thấy người dùng");
             }
             if (userId != result.Id)
             {
-                throw new Exception("you can only update your own profile");
+                throw new Exception("Chỉ có thể cập nhật chính bản thân");
             }
             var data = await _userBaseRepo.Update(user);
             return data;
@@ -120,7 +120,7 @@ namespace GPMS.APPLICATION.Services
             var data = await _userBaseRepo.GetById(id);
             if(data == null)
                 {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
             return data;
         }
@@ -130,9 +130,8 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
-            user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;
         }
@@ -142,7 +141,7 @@ namespace GPMS.APPLICATION.Services
             var data = _accRepo.GetOwner();
             if (data == null)
             {
-                throw new KeyNotFoundException("Owner not found");
+                throw new KeyNotFoundException("Không tìm thấy chủ xưởng");
             }
             return data;
         }

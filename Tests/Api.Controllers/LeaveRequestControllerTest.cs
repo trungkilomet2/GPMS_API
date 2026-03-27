@@ -51,7 +51,6 @@ public class LeaveRequestControllerTest
             DateCreate = DateTime.UtcNow,
             DateReply = null,
             DenyContent = null,
-            CancelContent = null,
             StatusId = 1,
             StatusName = statusName
         };
@@ -439,6 +438,15 @@ public class LeaveRequestControllerTest
     }
 
     [Fact]
+    public async Task CreateLeaveRequest_Returns400_WhenBodyIsNull()
+    {
+        var result = await BuildController(userId: 1).CreateLeaveRequest(null);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateLeaveRequest_Returns400_WhenModelStateInvalid()
     {
         var controller = BuildController(userId: 1);
@@ -632,12 +640,10 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_Returns200_WhenSuccessful()
     {
-        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>()))
             .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Cancelled));
 
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController(userId: 1).CancelLeaveRequest(1, input);
+        var result = await BuildController(userId: 1).CancelLeaveRequest(1);
 
         var obj = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(200, obj.StatusCode);
@@ -646,21 +652,16 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_Returns400_WhenIdInvalid()
     {
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController().CancelLeaveRequest(0, input);
+        var result = await BuildController().CancelLeaveRequest(0);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(400, obj.StatusCode);
     }
 
     [Fact]
-    public async Task CancelLeaveRequest_Returns400_WhenModelStateInvalid()
+    public async Task CancelLeaveRequest_Returns400_WhenIdNegative()
     {
-        var controller = BuildController();
-        controller.ModelState.AddModelError("CancelContent", "Cancel reason is required.");
-
-        var result = await controller.CancelLeaveRequest(1, new CancelLeaveRequestDTO { CancelContent = "" });
+        var result = await BuildController().CancelLeaveRequest(-1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(400, obj.StatusCode);
@@ -669,12 +670,10 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_Returns404_WhenLeaveRequestNotFound()
     {
-        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(99, It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(99, It.IsAny<int>()))
             .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
 
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController().CancelLeaveRequest(99, input);
+        var result = await BuildController().CancelLeaveRequest(99);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(404, obj.StatusCode);
@@ -683,12 +682,10 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_ReturnsForbid_WhenUserIsNotOwner()
     {
-        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>()))
             .ThrowsAsync(new UnauthorizedAccessException("You don't have permission to cancel this leave request."));
 
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController().CancelLeaveRequest(1, input);
+        var result = await BuildController().CancelLeaveRequest(1);
 
         Assert.IsType<ForbidResult>(result);
     }
@@ -696,12 +693,10 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_Returns403_WhenStatusIsNotPending()
     {
-        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(1, It.IsAny<int>()))
             .ThrowsAsync(new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be cancelled."));
 
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController().CancelLeaveRequest(1, input);
+        var result = await BuildController().CancelLeaveRequest(1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(403, obj.StatusCode);
@@ -710,246 +705,10 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CancelLeaveRequest_Returns500_OnException()
     {
-        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
+        _leaveRequestRepo.Setup(x => x.CancelLeaveRequest(It.IsAny<int>(), It.IsAny<int>()))
             .ThrowsAsync(new Exception("db error"));
 
-        var input = new CancelLeaveRequestDTO { CancelContent = "Changed my mind." };
-
-        var result = await BuildController().CancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, obj.StatusCode);
-    }
-
-    // ─── RequestCancelLeaveRequest ───────────────────────────────────────────
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns200_WhenSuccessful()
-    {
-        _leaveRequestRepo.Setup(x => x.RequestCancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
-            .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.PendingCancellation));
-
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController(userId: 1).RequestCancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(200, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns400_WhenIdInvalid()
-    {
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController().RequestCancelLeaveRequest(0, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns400_WhenModelStateInvalid()
-    {
-        var controller = BuildController();
-        controller.ModelState.AddModelError("CancelContent", "Cancel reason is required.");
-
-        var result = await controller.RequestCancelLeaveRequest(1, new CancelLeaveRequestDTO { CancelContent = "" });
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns404_WhenNotFound()
-    {
-        _leaveRequestRepo.Setup(x => x.RequestCancelLeaveRequest(99, It.IsAny<int>(), It.IsAny<string>()))
-            .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
-
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController().RequestCancelLeaveRequest(99, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(404, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_ReturnsForbid_WhenUserIsNotOwner()
-    {
-        _leaveRequestRepo.Setup(x => x.RequestCancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
-            .ThrowsAsync(new UnauthorizedAccessException());
-
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController().RequestCancelLeaveRequest(1, input);
-
-        Assert.IsType<ForbidResult>(result);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns403_WhenStatusIsNotApproved()
-    {
-        _leaveRequestRepo.Setup(x => x.RequestCancelLeaveRequest(1, It.IsAny<int>(), It.IsAny<string>()))
-            .ThrowsAsync(new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Approved}' can be requested for cancellation."));
-
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController().RequestCancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RequestCancelLeaveRequest_Returns500_OnException()
-    {
-        _leaveRequestRepo.Setup(x => x.RequestCancelLeaveRequest(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>()))
-            .ThrowsAsync(new Exception("db error"));
-
-        var input = new CancelLeaveRequestDTO { CancelContent = "Personal reasons." };
-
-        var result = await BuildController().RequestCancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, obj.StatusCode);
-    }
-
-    // ─── ConfirmCancelLeaveRequest ───────────────────────────────────────────
-
-    [Fact]
-    public async Task ConfirmCancelLeaveRequest_Returns200_WhenSuccessful()
-    {
-        _leaveRequestRepo.Setup(x => x.ConfirmCancelLeaveRequest(1, It.IsAny<int>()))
-            .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Cancelled));
-
-        var result = await BuildController().ConfirmCancelLeaveRequest(1);
-
-        var obj = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(200, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task ConfirmCancelLeaveRequest_Returns400_WhenIdInvalid()
-    {
-        var result = await BuildController().ConfirmCancelLeaveRequest(0);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task ConfirmCancelLeaveRequest_Returns404_WhenNotFound()
-    {
-        _leaveRequestRepo.Setup(x => x.ConfirmCancelLeaveRequest(99, It.IsAny<int>()))
-            .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
-
-        var result = await BuildController().ConfirmCancelLeaveRequest(99);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(404, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task ConfirmCancelLeaveRequest_Returns403_WhenStatusIsNotPendingCancellation()
-    {
-        _leaveRequestRepo.Setup(x => x.ConfirmCancelLeaveRequest(1, It.IsAny<int>()))
-            .ThrowsAsync(new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.PendingCancellation}' can be confirmed for cancellation."));
-
-        var result = await BuildController().ConfirmCancelLeaveRequest(1);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task ConfirmCancelLeaveRequest_Returns500_OnException()
-    {
-        _leaveRequestRepo.Setup(x => x.ConfirmCancelLeaveRequest(It.IsAny<int>(), It.IsAny<int>()))
-            .ThrowsAsync(new Exception("db error"));
-
-        var result = await BuildController().ConfirmCancelLeaveRequest(1);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, obj.StatusCode);
-    }
-
-    // ─── RejectCancelLeaveRequest ────────────────────────────────────────────
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns200_WhenSuccessful()
-    {
-        _leaveRequestRepo.Setup(x => x.RejectCancelLeaveRequest(1, It.IsAny<string>(), It.IsAny<int>()))
-            .ReturnsAsync(BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Approved));
-
-        var input = new RejectCancelLeaveRequestDTO { RejectCancelContent = "Already arranged coverage." };
-
-        var result = await BuildController().RejectCancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(200, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns400_WhenIdInvalid()
-    {
-        var input = new RejectCancelLeaveRequestDTO { RejectCancelContent = "Already arranged coverage." };
-
-        var result = await BuildController().RejectCancelLeaveRequest(0, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns400_WhenModelStateInvalid()
-    {
-        var controller = BuildController();
-        controller.ModelState.AddModelError("RejectCancelContent", "Reject reason is required.");
-
-        var result = await controller.RejectCancelLeaveRequest(1, new RejectCancelLeaveRequestDTO { RejectCancelContent = "" });
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns404_WhenNotFound()
-    {
-        _leaveRequestRepo.Setup(x => x.RejectCancelLeaveRequest(99, It.IsAny<string>(), It.IsAny<int>()))
-            .ThrowsAsync(new KeyNotFoundException("Leave request with id '99' not found."));
-
-        var input = new RejectCancelLeaveRequestDTO { RejectCancelContent = "Already arranged coverage." };
-
-        var result = await BuildController().RejectCancelLeaveRequest(99, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(404, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns403_WhenStatusIsNotPendingCancellation()
-    {
-        _leaveRequestRepo.Setup(x => x.RejectCancelLeaveRequest(1, It.IsAny<string>(), It.IsAny<int>()))
-            .ThrowsAsync(new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.PendingCancellation}' can be rejected for cancellation."));
-
-        var input = new RejectCancelLeaveRequestDTO { RejectCancelContent = "Already arranged coverage." };
-
-        var result = await BuildController().RejectCancelLeaveRequest(1, input);
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(403, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task RejectCancelLeaveRequest_Returns500_OnException()
-    {
-        _leaveRequestRepo.Setup(x => x.RejectCancelLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()))
-            .ThrowsAsync(new Exception("db error"));
-
-        var input = new RejectCancelLeaveRequestDTO { RejectCancelContent = "Already arranged coverage." };
-
-        var result = await BuildController().RejectCancelLeaveRequest(1, input);
+        var result = await BuildController().CancelLeaveRequest(1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);

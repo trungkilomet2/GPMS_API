@@ -29,12 +29,12 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting all customers.");
+                _logger.LogInformation("đang lấy về tất cả khách hàng.");
                 var data = await _customerService.GetAllCustomer();
                 if(data == null || !data.Any())
                 {
-                    _logger.LogInformation("No customers found.");
-                    return StatusCode(StatusCodes.Status404NotFound, "No customer found.");
+                    _logger.LogInformation("không tìm thấy khách hàng nào.");
+                    return StatusCode(StatusCodes.Status404NotFound, "không tìm thấy khách hàng nào.");
                 }
 
                 if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
@@ -95,7 +95,7 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting customer");
+                    "Lỗi khi lấy về danh sách khách hàng");
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
@@ -107,10 +107,10 @@ namespace GMPS.API.Controllers
 
             try
             {
-                _logger.LogInformation("Getting orders for customer {UserId}", CustomerId);
+                _logger.LogInformation("Lấy đơn hàng của khách hàng {UserId}", CustomerId);
                 if(CustomerId <= 0)
                     {
-                    _logger.LogInformation("Invalid CustomerId {UserId}", CustomerId);
+                    _logger.LogInformation("Lỗi Id khách hàng {UserId}", CustomerId);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -123,12 +123,12 @@ namespace GMPS.API.Controllers
 
                 if (orders == null || !orders.Any())
                 {
-                    _logger.LogInformation("No orders found for customer {UserId}", CustomerId);
+                    _logger.LogInformation("Không tìm thấy đơn hàng cho khách hàng {UserId}", CustomerId);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status404NotFound,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-                        Errors = { { "CustomerId", new[] { $"No orders found for customer '{CustomerId}'." } } }
+                        Errors = { { "CustomerId", new[] { $"Không tìm thấy đơn hàng cho khách hàng '{CustomerId}'." } } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound,errorDetails.Errors);
                 }
@@ -178,7 +178,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Get, ex,
-                    "Error occurred while getting order", CustomerId);
+                    "Lỗi khi lấy về đơn hàng", CustomerId);
 
                 var exceptionDetails = new ProblemDetails
                 {

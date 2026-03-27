@@ -13,8 +13,6 @@ namespace GPMS.DOMAIN.Entities
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public string? DenyContent { get; set; }
-        public string? CancelContent { get; set; }
-        public string? RejectCancelContent { get; set; }
         public int? ApprovedBy { get; set; }
         public string? ApprovedByName { get; set; }
         public int StatusId { get; set; }

@@ -32,7 +32,7 @@ namespace GMPS.API.DTOs
         public int Quantity { get; set; }
 
         [Url(ErrorMessage = "Image must be a valid URL")]
-        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        [StringLength(255, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
 
         [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters")]

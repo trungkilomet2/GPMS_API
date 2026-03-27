@@ -30,13 +30,13 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Post, "Sending OTP to {Email}", email?.Email);
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "Đang gửi OTP tới {Email}", email?.Email);
 
                 if (ModelState.IsValid)
                 {
                     if (string.IsNullOrEmpty(email?.Email))
                     {
-                        _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid email");
+                        _logger.LogWarning(CustomLogEvents.UserController_Put, "Email không hợp lệ");
 
                         var errorDetails = new ValidationProblemDetails(ModelState)
                         {
@@ -50,7 +50,7 @@ namespace GMPS.API.Controllers
                     var existingUser = await _userRepo.IsEmailExists(email.Email.ToLower());
                     if (existingUser)
                     {
-                        _logger.LogWarning("Email already exists: {Email}", email.Email);
+                        _logger.LogWarning("Email đã tồn tại: {Email}", email.Email);
 
                         var errorDetails = new ValidationProblemDetails(ModelState)
                         {
@@ -64,13 +64,13 @@ namespace GMPS.API.Controllers
 
                     await _emailRepo.SendEmailAsync(email.Email, null, null, EmailType.Verification);
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Post, "OTP email sent to {Email}", email.Email);
+                    _logger.LogInformation(CustomLogEvents.UserController_Post, "OTP đã được gửi tới {Email}", email.Email);
 
                     return StatusCode(StatusCodes.Status200OK, "OTP đã được gửi");
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Invalid model state");
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Lỗi model state");
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -83,7 +83,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending OTP email to {Email}", email?.Email);
+                _logger.LogError(ex, "Lỗi khi gửi OTP tới {Email}", email?.Email);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -99,14 +99,14 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Post, "Verifying OTP for {Email}", model?.Email);
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "Xác thực OTP {Email}", model?.Email);
 
                 if (ModelState.IsValid)
                 {
                     var cachedOtp = _memoryCache.Get<string>($"{model.Email}_otp");
                     if (cachedOtp == null)
                     {
-                        _logger.LogWarning("OTP not found for {Email}", model.Email);
+                        _logger.LogWarning("OTP không tìm thấy cho {Email}", model.Email);
 
                         return NotFound(new ProblemDetails
                         {
@@ -117,7 +117,7 @@ namespace GMPS.API.Controllers
                     }
                     if (model.Otp != cachedOtp)
                     {
-                        _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid OTP for {Email}", model.Email);
+                        _logger.LogWarning(CustomLogEvents.UserController_Put, "Lỗi OTP của {Email}", model.Email);
 
                         var errorDetails = new ValidationProblemDetails(ModelState)
                         {
@@ -131,7 +131,7 @@ namespace GMPS.API.Controllers
                     var isVerified = _memoryCache.Get<bool?>($"{model.Email}_verified");
                     if (isVerified == true)
                     {
-                        _logger.LogWarning("Email already verified: {Email}", model.Email);
+                        _logger.LogWarning("Email đã được xác thực trước đó: {Email}", model.Email);
 
                         var errorDetails = new ValidationProblemDetails(ModelState)
                         {
@@ -145,13 +145,13 @@ namespace GMPS.API.Controllers
                     _memoryCache.Set($"{model.Email}_verified", true, TimeSpan.FromMinutes(10));
                     _memoryCache.Remove($"{model.Email}_otp");
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Post, "Email verified successfully for {Email}", model.Email);
+                    _logger.LogInformation(CustomLogEvents.UserController_Post, "Xác thực email thành công {Email}", model.Email);
 
                     return StatusCode(StatusCodes.Status200OK, "Xác thực email thành công");
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Invalid model state");
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Lỗi model state");
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
