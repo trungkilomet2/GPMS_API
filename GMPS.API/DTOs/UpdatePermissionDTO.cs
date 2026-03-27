@@ -1,7 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace GMPS.API.DTOs
 {
     public class UpdatePermissionDTO
     {
-        public string? RoleAuthorize { get; set; }
+        [Required]
+        public List<int> RoleIds { get; set; } = new();
     }
 }
