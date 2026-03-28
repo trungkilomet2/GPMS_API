@@ -284,6 +284,29 @@ namespace GMPS.API.Controllers
 
                 if (ModelState.IsValid)
                 {
+
+                    if (input.RoleIds == null || !input.RoleIds.Any())
+                    {
+                        return StatusCode(StatusCodes.Status400BadRequest, "Phải chọn ít nhất 1 role");
+                    }
+
+                    int? managerId = input.ManagerId;
+
+                    if (input.RoleIds.Contains(4))
+                    {
+                        managerId = 1;
+                    }
+
+                    if (input.RoleIds.Contains(5))
+                    {
+                        if (input.ManagerId == null)
+                        {
+                            return StatusCode(StatusCodes.Status400BadRequest,
+                                "Worker bắt buộc phải chọn PM quản lý");
+                        }
+
+                        managerId = input.ManagerId;
+                    }
                     var passwordHasher = new PasswordHasher<User>();
                     var newUser = new User
                     {
@@ -297,6 +320,7 @@ namespace GMPS.API.Controllers
                             Id = r
                         }).ToList()
                     };
+
 
                     var result = await _workerRepo.CreateEmployee(newUser);
 
