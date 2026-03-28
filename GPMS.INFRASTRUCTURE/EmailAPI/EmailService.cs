@@ -42,9 +42,17 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
             {
                 case EmailType.Verification:
                     var otp = GenerateOtp();
-                    _memoryCache.Set(toEmail + "_otp", otp, TimeSpan.FromMinutes(5));
+                    _memoryCache.Set(toEmail.Trim().ToLower() + "_otp", otp, TimeSpan.FromMinutes(5));
                     subject = "Xác nhận email";
                     body = $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực 5 phút.";
+                    break;
+                case EmailType.ResendOTP:
+                    _memoryCache.Remove(toEmail.Trim().ToLower() + "_otp");
+                    var newOtp = GenerateOtp();
+                    _memoryCache.Set(toEmail.Trim().ToLower() + "_otp", newOtp, TimeSpan.FromMinutes(5));
+
+                    subject = "Gửi lại mã OTP";
+                    body = $"Mã OTP mới của bạn là: <b>{newOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.PasswordReset:
                     subject = "Password Reset Request";

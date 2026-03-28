@@ -10,7 +10,8 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
     {
         Verification = 1,
         PasswordReset = 2,
-        OrderNotification = 3
+        OrderNotification = 3,
+        ResendOTP = 4
     }
     public interface IEmailRepositories
     {
