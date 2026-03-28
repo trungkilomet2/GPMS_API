@@ -55,6 +55,8 @@ namespace GPMS.APPLICATION.Services
         {
             if (input.EndDate < input.StartDate)
                 throw new Exception("End date must be greater than start date.");
+            if (input.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new Exception("Start date must be greater than current date.");
 
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)

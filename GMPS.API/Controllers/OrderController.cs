@@ -686,6 +686,7 @@ namespace GMPS.API.Controllers
                     var material = new OMaterial
                     {
                         Name = input.MaterialName,
+                        Color = input.Color,
                         Image = imageUrl ?? input.Image,
                         Value = input.Value,
                         Uom = input.Uom,
@@ -811,6 +812,7 @@ namespace GMPS.API.Controllers
                     Materials = input.Materials?.Select(m => new OrderMaterial
                     {
                         MaterialName = m.MaterialName,
+                        Color = m.Color,
                         Image = m.Image,
                         Value = m.Value,
                         Uom = m.Uom,

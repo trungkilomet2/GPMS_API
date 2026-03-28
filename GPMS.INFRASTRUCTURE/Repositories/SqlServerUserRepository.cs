@@ -60,8 +60,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
-
-            var data = await _context.USER.ToListAsync();
+            var data = await _context.USER
+                .Include(u => u.ROLE)
+                .Include(u => u.US)
+                .ToListAsync();
 
             return _mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
