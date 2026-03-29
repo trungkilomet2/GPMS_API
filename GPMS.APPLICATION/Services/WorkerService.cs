@@ -41,13 +41,15 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> CreateEmployee(User user)
         {
-            var owner = await _accRepo.GetOwner();
             if (user == null)
                 throw new Exception("Failed to create worker.");
 
             var status = await _userStatusRepo.GetById(user.StatusId);
             if (status == null)
                 throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
+            var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
+            if (existManager == null)
+                throw new KeyNotFoundException($"Manager with Id '{user.ManagerId}' not found.");
             User createdUser = null;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -61,28 +63,6 @@ namespace GPMS.APPLICATION.Services
                         if (existingRole == null)
                             throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
                     }
-                }
-                if (user.Roles.Any(r => r.Id == RoleId_Constants.PM))
-                {
-                    user.ManagerId = owner.Id;
-
-                    var existOwner = await _workerRepo.GetWorkerById(user.ManagerId);
-                    if (existOwner == null)
-                        throw new KeyNotFoundException($"Không tìm thấy Owner với Id '{user.ManagerId}'.");
-                }
-
-                if (user.Roles.Any(r => r.Id == RoleId_Constants.Worker))
-                {
-                    if (user.ManagerId == null)
-                        throw new KeyNotFoundException("Worker phải có ManagerId.");
-
-                    var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
-                    if (existManager == null)
-                        throw new KeyNotFoundException($"Không tìm thấy quản lý '{user.ManagerId}'.");
-
-                    var isPM = existManager.Roles != null && existManager.Roles.Any(r => r.Id == RoleId_Constants.PM);
-                    if (!isPM)
-                        throw new KeyNotFoundException("Manager được chọn không phải là PM.");
                 }
 
                 createdUser = await _workerRepo.Create(user);
