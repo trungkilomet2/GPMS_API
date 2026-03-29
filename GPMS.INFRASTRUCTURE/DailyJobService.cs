@@ -12,6 +12,10 @@ public class DailyJobService : BackgroundService
         _scopeFactory = scopeFactory;
     }
 
+    // Tự động xử lý trong cở sở dữ liệu để set IS_READ_ONLY = 1
+    // cho các bản ghi cũ hơn ngày hiện tại trong
+    // PART_WORK_LOG và CUTTING_NOTEBOOK_LOG,
+    // chạy vào lúc 00:00 hàng ngày
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -32,6 +36,12 @@ public class DailyJobService : BackgroundService
                 UPDATE [PART_WORK_LOG]
                 SET IS_READ_ONLY = 1
                 WHERE CAST(CREATE_DATE AS DATE) < CAST(GETDATE() AS DATE)
+                AND IS_READ_ONLY = 0
+            ");
+            await db.Database.ExecuteSqlRawAsync(@"
+                UPDATE [CUTTING_NOTEBOOK_LOG]
+                SET IS_READ_ONLY = 1
+                WHERE CAST(DATE_CREATE AS DATE) < CAST(GETDATE() AS DATE)
                 AND IS_READ_ONLY = 0
             ");
         }
