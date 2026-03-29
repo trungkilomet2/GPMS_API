@@ -246,7 +246,7 @@ namespace GPMS.APPLICATION.Services
                     ProductionId = productionId,
                     UserId = production.PmId,
                     Reason = reason.Trim(),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = VietnamTime.Now()
                 });
             });
 
@@ -275,7 +275,7 @@ namespace GPMS.APPLICATION.Services
         {
             _ = await _prdRepo.GetById(issue.ProductionId) ?? throw new ValidationException("Production không tồn tại");
             _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
-            issue.CreatedAt = DateTime.UtcNow;
+            issue.CreatedAt = VietnamTime.Now();
             return await _productionIssueRepo.Create(issue);
         }
 

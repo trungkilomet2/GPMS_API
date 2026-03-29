@@ -420,6 +420,10 @@ namespace GMPS.API.Controllers
             {
                 return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
         }
 
         [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]

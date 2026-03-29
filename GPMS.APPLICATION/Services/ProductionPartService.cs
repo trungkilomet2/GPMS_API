@@ -1,10 +1,12 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.Common;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net.WebSockets;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -17,6 +19,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseWorkerRepository _workerSkill;
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
         private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
+        private readonly IBaseRepositories<Order> _orderRepo;
 
         private readonly IUnitOfWork _unitOfWork;
 
@@ -28,7 +31,8 @@ namespace GPMS.APPLICATION.Services
             IBaseProductionPartAssignRepositories partAssignRepo,
             IBaseWorkerRepository workerSkill,
             IBaseRepositories<LeaveRequest> leaveRequestRepo,
-            IBaseRepositories<ProductionPartWorkLog> workLogRepo
+            IBaseRepositories<ProductionPartWorkLog> workLogRepo,
+            IBaseRepositories<Order> orderRepo
             )
         {
             _partRepo = partRepo;
@@ -39,6 +43,7 @@ namespace GPMS.APPLICATION.Services
             _workerSkill = workerSkill;
             _leaveRequestRepo = leaveRequestRepo;
             _workLogRepo = workLogRepo;
+            _orderRepo = orderRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -298,7 +303,7 @@ namespace GPMS.APPLICATION.Services
         {
             _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
             var logs = await _workLogRepo.GetAll(partId);
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.Now();
             var normalized = new List<ProductionPartWorkLog>();
             foreach (var log in logs)
             {
@@ -317,16 +322,63 @@ namespace GPMS.APPLICATION.Services
             }
             
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
+
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
-            return await _workLogRepo.Create(new ProductionPartWorkLog
+            
+            ProductionPartWorkLog returnData = null;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                PartId = partId,
-                UserId = userId,
-                Quantity = quantity,
-                WorkDate = DateTime.UtcNow,
-                IsReadOnly = false,
-                IsPayment = false
+                //Lấy thông tin production part hiện tại
+                var part = await _partRepo.GetById(partId);
+                // Nếu production part đang ở trạng thái là chưa thực hiện hoặc đang sản xuất thì mới có thể cập nhật số lượng được
+                if(part.StatusId != ProductionPart_Constrants.ToDo_ID || part.StatusId != ProductionPart_Constrants.OnGoing_ID)
+                {
+                    throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
+                }
+                // lấy thông tin đơn hàng
+                var getOrder =  await _orderRepo.GetById(productionPart.ProductionId); 
+                // Nếu như số lượng ở trong đơn hàng vượt quá số lượng đơn hàng giao cho => Không thể cập nhật số lượng
+                if(quantity > getOrder.Quantity)
+                {
+                    throw new ValidationException("Số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
+                }   
+                // Lấy lịch sử submit sản lượng ở trong production part đấy
+                var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
+
+                int historyQuantitySubmits = 0;
+
+                foreach (var logpart in allWorkLogsInAPart)
+                {
+                    historyQuantitySubmits += logpart.Quantity;
+                }
+
+                if(historyQuantitySubmits > 0 && historyQuantitySubmits < getOrder.Quantity )
+                {
+                    productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
+                }
+
+                if (historyQuantitySubmits + partId > getOrder.Quantity)
+                {
+                    throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
+                }
+                if(historyQuantitySubmits + partId == getOrder.Quantity)
+                {
+                    productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
+                }
+                await _partRepo.Update(productionPart);
+                returnData = await _workLogRepo.Create(new ProductionPartWorkLog
+                {
+                    PartId = partId,
+                    UserId = userId,
+                    Quantity = quantity,
+                    WorkDate = VietnamTime.Now(),
+                    IsReadOnly = false,
+                    IsPayment = false
+                });
             });
+
+           return returnData;
         }
 
         public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity)
@@ -334,7 +386,7 @@ namespace GPMS.APPLICATION.Services
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
             var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
             if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
-            var elapsed = DateTime.UtcNow - log.WorkDate;
+            var elapsed = VietnamTime.Now() - log.WorkDate;
             if (log.IsReadOnly || elapsed > TimeSpan.FromHours(24))
             {
                 throw new ValidationException("Work log đã quá 24h, chỉ được xem");
