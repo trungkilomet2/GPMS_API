@@ -347,26 +347,27 @@ namespace GPMS.APPLICATION.Services
                 var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
 
                 int historyQuantitySubmits = 0;
-
+                int nowQuantitySubmit = historyQuantitySubmits + quantity;   
                 foreach (var logpart in allWorkLogsInAPart)
                 {
                     historyQuantitySubmits += logpart.Quantity;
                 }
-
-                if(historyQuantitySubmits > 0 && historyQuantitySubmits < getOrder.Quantity )
+                // Nếu như đơn hàng chưa hoàn thành thì cập nhật trạng thái thành đang sản xuất
+                if (nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity )
                 {
                     productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
                 }
-
-                if (historyQuantitySubmits + partId > getOrder.Quantity)
+                if (nowQuantitySubmit > getOrder.Quantity)
                 {
                     throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
                 }
-                if(historyQuantitySubmits + partId == getOrder.Quantity)
+                if(nowQuantitySubmit == getOrder.Quantity)
                 {
                     productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
                 }
+
                 await _partRepo.Update(productionPart);
+                
                 returnData = await _workLogRepo.Create(new ProductionPartWorkLog
                 {
                     PartId = partId,
