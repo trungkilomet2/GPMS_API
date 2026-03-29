@@ -6,6 +6,7 @@ using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net.WebSockets;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -319,15 +320,36 @@ namespace GPMS.APPLICATION.Services
             
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
-            return await _workLogRepo.Create(new ProductionPartWorkLog
+            ProductionPartWorkLog returnData = null;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                PartId = partId,
-                UserId = userId,
-                Quantity = quantity,
-                WorkDate = VietnamTime.Now(),
-                IsReadOnly = false,
-                IsPayment = false
+                returnData = await _workLogRepo.Create(new ProductionPartWorkLog
+                {
+                    PartId = partId,
+                    UserId = userId,
+                    Quantity = quantity,
+                    WorkDate = VietnamTime.Now(),
+                    IsReadOnly = false,
+                    IsPayment = false
+                });
+
+                var getPart = _partRepo.GetById(partId);
+
+                if(getPart.Result.StatusName == ProductionPart_Constrants.ToDo)
+                {
+                    getPart.Result.StatusId = ProductionPart_Constrants.OnGoing_ID;
+                    getPart.Result.StatusName = ProductionPart_Constrants.OnGoing;
+                    await _partRepo.Update(getPart.Result);
+                }
+                if (getPart.Result.StatusName == ProductionPart_Constrants.Done)
+                {
+                    throw new Exception("Công đoạn đã hoàn thành, không thể tạo log mới");
+                }
+            
             });
+
+           return returnData;
         }
 
         public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity)
