@@ -21,7 +21,8 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId);
         Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity);
         Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity);
-
+        // TrungNT 29-03-2026
+        Task<ProductionPartDetailViewDTO> DoneAPart(int partId);
 
     }
 }

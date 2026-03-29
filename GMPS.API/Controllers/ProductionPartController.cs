@@ -498,6 +498,44 @@ namespace GMPS.API.Controllers
 
 
 
+        // PATCH : Cập nhật trạng thái cho một Production khi nó đã hoàn thành
+        [HttpPatch("parts/done-a-part/{partId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> DoneAPart(
+                    [Range(1, int.MaxValue)] int partId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ValidationProblemDetails(ModelState));
+            }
+            try
+            {
+                var data = await _productionPartService.DoneAPart(partId);
+                return Ok(new RestDTO<ProductionPartDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionPartDetailDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to assign workers to part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        }
+
+
+
 
 
 
