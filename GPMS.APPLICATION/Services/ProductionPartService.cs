@@ -19,6 +19,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseWorkerRepository _workerSkill;
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
         private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
+        private readonly IBaseRepositories<Order> _orderRepo;
 
         private readonly IUnitOfWork _unitOfWork;
 
@@ -30,7 +31,8 @@ namespace GPMS.APPLICATION.Services
             IBaseProductionPartAssignRepositories partAssignRepo,
             IBaseWorkerRepository workerSkill,
             IBaseRepositories<LeaveRequest> leaveRequestRepo,
-            IBaseRepositories<ProductionPartWorkLog> workLogRepo
+            IBaseRepositories<ProductionPartWorkLog> workLogRepo,
+            IBaseRepositories<Order> orderRepo
             )
         {
             _partRepo = partRepo;
@@ -41,6 +43,7 @@ namespace GPMS.APPLICATION.Services
             _workerSkill = workerSkill;
             _leaveRequestRepo = leaveRequestRepo;
             _workLogRepo = workLogRepo;
+            _orderRepo = orderRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -319,11 +322,51 @@ namespace GPMS.APPLICATION.Services
             }
             
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
+
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
+            
             ProductionPartWorkLog returnData = null;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
+                //Lấy thông tin production part hiện tại
+                var part = await _partRepo.GetById(partId);
+                // Nếu production part đang ở trạng thái là chưa thực hiện hoặc đang sản xuất thì mới có thể cập nhật số lượng được
+                if(part.StatusId != ProductionPart_Constrants.ToDo_ID || part.StatusId != ProductionPart_Constrants.OnGoing_ID)
+                {
+                    throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
+                }
+                // lấy thông tin đơn hàng
+                var getOrder =  await _orderRepo.GetById(productionPart.ProductionId); 
+                // Nếu như số lượng ở trong đơn hàng vượt quá số lượng đơn hàng giao cho => Không thể cập nhật số lượng
+                if(quantity > getOrder.Quantity)
+                {
+                    throw new ValidationException("Số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
+                }   
+                // Lấy lịch sử submit sản lượng ở trong production part đấy
+                var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
+
+                int historyQuantitySubmits = 0;
+
+                foreach (var logpart in allWorkLogsInAPart)
+                {
+                    historyQuantitySubmits += logpart.Quantity;
+                }
+
+                if(historyQuantitySubmits > 0 && historyQuantitySubmits < getOrder.Quantity )
+                {
+                    productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
+                }
+
+                if (historyQuantitySubmits + partId > getOrder.Quantity)
+                {
+                    throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
+                }
+                if(historyQuantitySubmits + partId == getOrder.Quantity)
+                {
+                    productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
+                }
+                await _partRepo.Update(productionPart);
                 returnData = await _workLogRepo.Create(new ProductionPartWorkLog
                 {
                     PartId = partId,
@@ -333,20 +376,6 @@ namespace GPMS.APPLICATION.Services
                     IsReadOnly = false,
                     IsPayment = false
                 });
-
-                var getPart = _partRepo.GetById(partId);
-
-                if(getPart.Result.StatusName == ProductionPart_Constrants.ToDo)
-                {
-                    getPart.Result.StatusId = ProductionPart_Constrants.OnGoing_ID;
-                    getPart.Result.StatusName = ProductionPart_Constrants.OnGoing;
-                    await _partRepo.Update(getPart.Result);
-                }
-                if (getPart.Result.StatusName == ProductionPart_Constrants.Done)
-                {
-                    throw new Exception("Công đoạn đã hoàn thành, không thể tạo log mới");
-                }
-            
             });
 
            return returnData;
