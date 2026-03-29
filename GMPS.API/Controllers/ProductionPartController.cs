@@ -248,7 +248,6 @@ namespace GMPS.API.Controllers
             {
                 return BadRequest(new ValidationProblemDetails(ModelState));
             }
-
             try
             {
                 var data = await _productionPartService.AssignWorkers(partId, dto.WorkerIds);

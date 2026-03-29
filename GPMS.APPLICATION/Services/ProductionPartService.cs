@@ -159,6 +159,21 @@ namespace GPMS.APPLICATION.Services
                     throw new ValidationException($"Worker id '{workerId}' không tồn tại");
                 }
             }
+
+            var part = await _partRepo.GetById(partId);
+            if (part is null)
+            {
+                throw new ValidationException("Production part không tồn tại trong hệ thống");
+            }
+            var production = await _productionRepo.GetById(part.ProductionId);
+            if (production is null)
+            {
+                throw new ValidationException("Production không tồn tại trong hệ thống");
+            }
+            if (production.StatusId != ProductionStatus_Constants.Producting_ID)
+            {
+                throw new ValidationException("Chỉ có thể phân công công đoạn khi production đang ở trạng thái Đang Sản Xuất");
+            }
             //     var updated = new ProductionPartDetailViewDTO();
             var updated = await _partAssignRepo.AssignWorkers(partId, workers);
             //   return null;
@@ -402,7 +417,7 @@ namespace GPMS.APPLICATION.Services
              */
             ProductionPartWorkLog returnData = null;
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {   
+            {
                 // Lấy thông tin production part hiện tại
                 var part = await _partRepo.GetById(partId);
                 // lấy thông tin production
@@ -416,21 +431,21 @@ namespace GPMS.APPLICATION.Services
                 // Lấy thông tin ghi chép của công nhân hiện tại
                 var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
                 if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
-                
+
                 foreach (var worklog in historyWorkLogs)
                 {
-                    if(worklog.Id != workLogId)
+                    if (worklog.Id != workLogId)
                     {
                         quantityHistoryWorkLog += worklog.Quantity;
                     }
                 }
                 int nowQuantitySubmit = quantityHistoryWorkLog + quantity;
-                if(nowQuantitySubmit < getOrder.Quantity)
+                if (nowQuantitySubmit < getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.OnGoing_ID;
                     log.Quantity = quantity;
                 }
-                if(nowQuantitySubmit == getOrder.Quantity)
+                if (nowQuantitySubmit == getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.Reviewing_ID;
                     log.Quantity = quantity;
