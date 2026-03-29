@@ -332,7 +332,7 @@ namespace GPMS.APPLICATION.Services
                 //Lấy thông tin production part hiện tại
                 var part = await _partRepo.GetById(partId);
                 // Nếu production part đang ở trạng thái là chưa thực hiện hoặc đang sản xuất thì mới có thể cập nhật số lượng được
-                if(part.StatusId != ProductionPart_Constrants.ToDo_ID || part.StatusId != ProductionPart_Constrants.OnGoing_ID)
+                if(part.StatusId > ProductionPart_Constrants.OnGoing_ID)
                 {
                     throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
                 }
