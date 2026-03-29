@@ -71,6 +71,8 @@ namespace GPMS.APPLICATION.Services
             var user = await _userBaseRepo.GetById(userId);
             if (user == null)
                 throw new KeyNotFoundException($"User with ID {userId} not found.");
+            if (user.StatusId == UserStatus_Constants.Inactive)
+                throw new InvalidOperationException("Cannot assign roles to a disabled user.");
 
             var roleNames = new List<string>();
             foreach (var roleId in roleIds)
@@ -129,9 +131,9 @@ namespace GPMS.APPLICATION.Services
         {
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
-            {
                 throw new KeyNotFoundException("Không tìm thấy người dùng");
-            }
+            if (result.StatusId == UserStatus_Constants.Inactive)
+                throw new InvalidOperationException("Cannot update a disabled user.");
             var data = await _userBaseRepo.Update(user);
             return data;
         }

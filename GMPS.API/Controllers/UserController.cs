@@ -134,6 +134,16 @@ namespace GMPS.API.Controllers
                     return BadRequest(details);
                 }
             }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Get, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Get, ex,
@@ -339,6 +349,16 @@ namespace GMPS.API.Controllers
                     Detail = ex.Message
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while assigning roles to UserId {UserId}", id);
@@ -424,6 +444,16 @@ namespace GMPS.API.Controllers
                     Detail = ex.Message,
                     Status = StatusCodes.Status404NotFound,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
                 });
             }
             catch (Exception ex)

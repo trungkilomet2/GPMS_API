@@ -28,7 +28,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.ROLE))
                 .ForMember(dest => dest.WorkerSkills, opt => opt.MapFrom(src => src.WS))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.US))
-                .ReverseMap();
+                .ReverseMap()
+                .ForMember(dest => dest.MANAGER_ID, opt => opt.MapFrom(src => src.ManagerId == 0 ? (int?)null : src.ManagerId));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ROLE, GPMS.DOMAIN.Entities.Role>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ROLE_ID))

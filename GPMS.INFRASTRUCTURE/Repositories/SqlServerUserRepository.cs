@@ -39,6 +39,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             USER userSQL = _mapper.Map<USER>(entity);
             await _context.AddAsync(userSQL);
+            await _context.SaveChangesAsync();
             return _mapper.Map<User>(userSQL);
 
         }
@@ -133,9 +134,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.PHONE_NUMBER = entity.PhoneNumber;
                 existingUser.LOCATION = entity.Location;
                 existingUser.AVATAR = entity.AvartarUrl;
-                existingUser.EMAIL = entity.Email;           
+                existingUser.EMAIL = entity.Email;
+                existingUser.US_ID = entity.StatusId;
                 _context.USER.Update(existingUser);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             return _mapper.Map<User>(existingUser);       
         }
     }
