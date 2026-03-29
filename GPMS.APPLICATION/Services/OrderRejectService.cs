@@ -38,7 +38,7 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new Exception($"Order with ID {entity.OrderId} is not in a pending state and cannot be rejected.");
                 }
-                await _baseOrderRepo.ChangeStatus(entity.OrderId, 4);
+                await _baseOrderRepo.ChangeStatus(entity.OrderId, OrderStatus_Constants.Rejected_ID);
                 await _unitOfWork.SaveChangesAsync();
                 await _orderRejectRepo.Create(entity);
                 await _unitOfWork.SaveChangesAsync();

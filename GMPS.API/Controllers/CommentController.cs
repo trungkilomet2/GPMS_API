@@ -28,7 +28,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
-        public async Task<IActionResult> GetCommentByOrderId(int orderId)
+        public async Task<ActionResult<RestDTO<IEnumerable<CommentDTO>>>> GetCommentByOrderId(int orderId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);           
             try
@@ -200,7 +200,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpDelete("delete-comment/{CommentId}")]
-        public async Task<IActionResult> DeleteComment(int CommentId)
+        public async Task<ActionResult> DeleteComment(int CommentId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try

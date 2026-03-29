@@ -542,7 +542,7 @@ namespace GMPS.API.Controllers
                         Quantity = input.Quantity,
                         Cpu = input.Cpu,
                         Note = input.Note,
-                        Status = 1,
+                        Status = OrderStatus_Constants.Pending_ID,
                         CreateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone),
                         Material = input.Materials?.Select(m => new OrderMaterial
                         {
@@ -565,8 +565,6 @@ namespace GMPS.API.Controllers
 
                     var result = await _orderRepo.CreateOrder(newOrder);
                     var owner = await _userRepo.GetOwner();
-                    foreach (var anowner in owner.ToList())
-                    {
                         if (owner != null)
                         {
                             var subject = $"Đơn hàng mới đã được tạo với Id là - {result.Id}";
@@ -582,10 +580,8 @@ namespace GMPS.API.Controllers
                                            <p>Ghi chú: {result.Note}</p>
                                            <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
 
-                            await _emailRepo.SendEmailAsync(anowner.Email, subject, body, EmailType.OrderNotification);
-                        }
-                    }                   
-
+                            await _emailRepo.SendEmailAsync(owner.Email, subject, body, EmailType.OrderNotification);
+                        }                
                     _logger.LogInformation(CustomLogEvents.OrderController_Post,
                         "Order {OrderId} được tạo thành công cho khách hàng với Id là: {UserId}",
                         result.Id, input.UserId);

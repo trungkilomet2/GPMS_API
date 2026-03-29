@@ -22,7 +22,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-log-events")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetLogs([FromQuery] RequestDTO<LogEventDTO> input, [FromQuery] DateTime? fromTimestamp,
+        public async Task<ActionResult<RestDTO<IEnumerable<LogEventDTO>>>> GetLogs([FromQuery] RequestDTO<LogEventDTO> input, [FromQuery] DateTime? fromTimestamp,
     [FromQuery] DateTime? toTimestamp)
         {
             try
@@ -81,7 +81,7 @@ namespace GMPS.API.Controllers
 
                 _logger.LogInformation(CustomLogEvents.LogController_Get,
                     "Returned {Count} log events", data.Count);
-                return Ok(new RestDTO<IEnumerable<LogEventDTO>>
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<LogEventDTO>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,

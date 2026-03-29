@@ -25,7 +25,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-employees")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace GMPS.API.Controllers
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "Trả về {Count} nhân viên", data.Count);
-                return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,
@@ -109,7 +109,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-employees-by-pm-id")]
         [Authorize(Roles = "PM")]
-        public async Task<IActionResult> GetEmployeesbyPMId([FromQuery] RequestDTO<EmployeeDTO> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployeesbyPMId([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
@@ -166,7 +166,7 @@ namespace GMPS.API.Controllers
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
                     "trả về {Count} nhân viên", data.Count);
-                return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,
@@ -199,7 +199,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-employee-by-id/{userId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetEmployeeById(int userId)
+        public async Task<ActionResult<RestDTO<EmployeeDTO>>> GetEmployeeById(int userId)
         {
             if(userId <= 0)
                 {
@@ -284,6 +284,29 @@ namespace GMPS.API.Controllers
 
                 if (ModelState.IsValid)
                 {
+
+                    if (input.RoleIds == null || !input.RoleIds.Any())
+                    {
+                        return StatusCode(StatusCodes.Status400BadRequest, "Phải chọn ít nhất 1 role");
+                    }
+
+                    int? managerId = input.ManagerId;
+
+                    if (input.RoleIds.Contains(RoleId_Constants.PM))
+                    {
+                        managerId = 1;
+                    }
+
+                    if (input.RoleIds.Contains(RoleId_Constants.Worker))
+                    {
+                        if (input.ManagerId == null)
+                        {
+                            return StatusCode(StatusCodes.Status400BadRequest,
+                                "Worker bắt buộc phải chọn PM quản lý");
+                        }
+
+                        managerId = input.ManagerId;
+                    }
                     var passwordHasher = new PasswordHasher<User>();
                     var newUser = new User
                     {
@@ -291,12 +314,13 @@ namespace GMPS.API.Controllers
                         PasswordHash = passwordHasher.HashPassword(null, input.Password),
                         FullName = input.FullName,
                         ManagerId = input.ManagerId,
-                        StatusId = 1,
+                        StatusId = UserStatus_Constants.Active,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r
                         }).ToList()
                     };
+
 
                     var result = await _workerRepo.CreateEmployee(newUser);
 

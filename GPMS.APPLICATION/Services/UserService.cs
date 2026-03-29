@@ -138,7 +138,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public Task<IEnumerable<User>> GetOwner()
+        public Task<User> GetOwner()
         {
             var data = _accRepo.GetOwner();
             if (data == null)
