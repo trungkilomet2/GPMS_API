@@ -100,7 +100,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 DATE_CREATE = entity.DateCreate,
                 FROM_DATE = entity.FromDate,
                 TO_DATE = entity.ToDate,
-                LRS_ID = pendingStatus.LRS_ID
+                LRS_ID = pendingStatus.LRS_ID,
+                APPROVED_BY = entity.UserId
             };
 
             _context.LEAVE_REQUEST.Add(newLeaveRequest);

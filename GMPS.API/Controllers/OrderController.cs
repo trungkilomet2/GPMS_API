@@ -838,6 +838,17 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                 });
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.OrderController_Put,
+                    "Invalid date input for Order {OrderId}: {Message}", id, ex.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                });
+            }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(CustomLogEvents.OrderController_Put,

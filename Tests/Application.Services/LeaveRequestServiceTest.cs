@@ -142,6 +142,35 @@ public class LeaveRequestServiceTest
     }
 
     [Fact]
+    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsToday()
+    {
+        var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).Date;
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: today));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsInThePast()
+    {
+        var yesterday = DateTime.Today.AddDays(-1);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: yesterday));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsBeforeFromDate()
+    {
+        var fromDate = DateTime.Today.AddDays(3);
+        var toDate = DateTime.Today.AddDays(2);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: fromDate, toDate: toDate));
+    }
+
+    [Fact]
     public async Task CreateLeaveRequest_SetsDateCreateToVietnamTime()
     {
         LeaveRequest? captured = null;
