@@ -47,6 +47,8 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<WorkerProductivityHistoryViewDTO>> GetWorkerProductivityHistory(int workerId);
         Task<IEnumerable<WorkerAssignedPlanViewDTO>> GetWorkerAssignedPlans(int workerId);
 
+        // Trung NT - 2026-03-30: Nghiệp vụ Hoàn thành Production
+        Task<Production> CompleteProduction(int productionId);
 
 
     }

@@ -654,6 +654,27 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // Hoàn thành Production (Trung NT - 2026-03-30)
+        [HttpPatch("production/complete/{production_id:int}")]
+        public async Task<ActionResult<RestDTO<ProductionDetailDTO>>> CompleteProduction([Range(1, int.MaxValue)] int production_id)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionService.CompleteProduction(production_id);
+                var data = await _productionService.GetProductionDetail(production_id);
+                return Ok(new RestDTO<ProductionDetailDTO> { Data = _mapper.Map<ProductionDetailDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
 
 
     }
