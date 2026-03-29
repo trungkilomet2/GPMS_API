@@ -416,6 +416,7 @@ namespace GPMS.APPLICATION.Services
                 // Lấy thông tin ghi chép của công nhân hiện tại
                 var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
                 if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
+                
                 foreach (var worklog in historyWorkLogs)
                 {
                     if(worklog.Id != workLogId)
@@ -424,23 +425,21 @@ namespace GPMS.APPLICATION.Services
                     }
                 }
                 int nowQuantitySubmit = quantityHistoryWorkLog + quantity;
-
                 if(nowQuantitySubmit < getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.OnGoing_ID;
                     log.Quantity = quantity;
                 }
-
                 if(nowQuantitySubmit == getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.Reviewing_ID;
                     log.Quantity = quantity;
                 }
-
                 if (nowQuantitySubmit > getOrder.Quantity)
                 {
                     throw new ValidationException("Không thể cập nhật số lượng vượt quá số lượng đơn hàng đặt ra.");
                 }
+                await _partRepo.Update(part);
                 returnData = await _workLogRepo.Update(log);
             });
 
