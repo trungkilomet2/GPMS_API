@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.Common;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -72,7 +73,7 @@ namespace GMPS.API.Controllers
                     ProductQty = dto.ProductQty,
                     AvgConsumption = dto.AvgConsumption,
                     Note = dto.Note,
-                    DateCreate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    DateCreate = DateOnly.FromDateTime(VietnamTime.Now()),
                     IsPayment = false,
                     IsReadOnly = false
                 });
