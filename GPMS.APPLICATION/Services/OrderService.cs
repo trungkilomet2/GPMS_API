@@ -54,9 +54,9 @@ namespace GPMS.APPLICATION.Services
         public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)
         {
             if (input.EndDate < input.StartDate)
-                throw new Exception("End date must be greater than start date.");
+                throw new ArgumentException("End date must be greater than start date.");
             if (input.StartDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new Exception("Start date must be greater than current date.");
+                throw new ArgumentException("Start date must be greater than current date.");
 
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
@@ -115,13 +115,13 @@ namespace GPMS.APPLICATION.Services
         {
             var order = await _orderBaseRepo.GetById(orderId);
             if (order is null)
-                throw new Exception($"Order with id '{orderId}' not found.");
+                throw new KeyNotFoundException($"Order with id '{orderId}' not found.");
 
             if (order.StatusName == OrderStatus_Constants.Approved)
                 throw new InvalidOperationException("Cannot add material to an approved order.");
 
             if (material.Value <= 0)
-                throw new Exception("Quantity must be greater than zero.");
+                throw new InvalidOperationException("Quantity must be greater than zero.");
 
             material.OrderId = orderId;
             return await _materialBaseRepo.Create(material);
@@ -130,12 +130,12 @@ namespace GPMS.APPLICATION.Services
         public async Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
         {
             if (updatedOrder == null)
-                throw new Exception("Failed to update order.");
+                throw new ArgumentNullException(nameof(updatedOrder), "Failed to update order.");
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
-                throw new Exception($"Order with id '{orderId}' not exist in system.");
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
             if (existing.StatusName != OrderStatus_Constants.Pending)
-                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+                throw new InvalidOperationException("Only modify order with status Chờ Xét Duyệt.");
 
             return await _orderStatusRepo.RequestOrderModification(orderId, updatedOrder, histories);
         }
