@@ -426,7 +426,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]
-        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog([Range(1, int.MaxValue)] int partId, [Range(1, int.MaxValue)] int workLogId, [FromBody] UpdatePartWorkLogDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog([Range(1, int.MaxValue)] int partId, [Range(0, int.MaxValue)] int workLogId, [FromBody] UpdatePartWorkLogDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
