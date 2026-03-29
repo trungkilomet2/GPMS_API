@@ -25,7 +25,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-worker-roles")]
         [Authorize(Roles = "Admin,Owner,PM")]
-        public async Task<IActionResult> GetAllWorkerRoles([FromQuery] RequestDTO<WorkerSkill> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<WorkerSkill>>>> GetAllWorkerRoles([FromQuery] RequestDTO<WorkerSkill> input)
         {
             try
             {
@@ -64,7 +64,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
                     "Trả về {Count} kỹ năng của nhân viên", data.Count);
 
-                return Ok(new RestDTO<IEnumerable<WorkerSkill>>
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<WorkerSkill>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,

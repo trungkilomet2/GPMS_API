@@ -75,11 +75,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<User>(data);
         }
 
-        public async Task<IEnumerable<User>> GetOwner()
+        public async Task<User> GetOwner()
         {
             var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
-                              .Include(u => u.WS).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).ToListAsync();
-            return _mapper.Map<IEnumerable<User>>(data);
+                              .Include(u => u.WS).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).FirstOrDefaultAsync();
+            return _mapper.Map<User>(data);
         }
 
         public async Task<User> GetUserByMail(string mail)

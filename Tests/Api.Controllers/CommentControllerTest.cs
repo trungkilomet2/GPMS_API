@@ -19,22 +19,16 @@ namespace GPMS.TEST.Api.Controllers
     public class CommentControllerTest
     {
         private readonly Mock<ICommentRepositories> _mockRepo;
-        private readonly Mock<IOrderRepositories> _mockOrder;
         private readonly Mock<ILogger<CommentController>> _mockLogger;
-        private readonly Mock<IUserRepositories> _mockUser;
         private readonly CommentController _controller;
 
         public CommentControllerTest()
         {
             _mockRepo = new Mock<ICommentRepositories>();
-            _mockOrder = new Mock<IOrderRepositories>();
             _mockLogger = new Mock<ILogger<CommentController>>();
-            _mockUser = new Mock<IUserRepositories>();
             _controller = new CommentController(
                 _mockRepo.Object,
-                null,
-                _mockLogger.Object, _mockUser.Object,_mockOrder.Object
-            );
+                _mockLogger.Object);
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
                       {
                        new Claim(ClaimTypes.NameIdentifier, "1")

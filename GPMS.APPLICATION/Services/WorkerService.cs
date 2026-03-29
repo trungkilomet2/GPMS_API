@@ -1,5 +1,6 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,17 @@ namespace GPMS.APPLICATION.Services
     {
         private readonly IBaseRepositories<Role> _roleRepo;
         private readonly IBaseRepositories<UserStatus> _userStatusRepo;
+        private readonly IBaseAccountRepositories _accRepo;
         private readonly IBaseWorkerRepository _workerRepo;
         private readonly IUnitOfWork _unitOfWork;
 
-        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork)
+        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork, IBaseAccountRepositories accRepo)
         {
-            _roleRepo = roleRepo;
+            _roleRepo = roleRepo ?? throw new ArgumentNullException(nameof(roleRepo));
             _userStatusRepo = userStatusRepo ?? throw new ArgumentNullException(nameof(userStatusRepo));
-            _workerRepo = workerRepo;
+            _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
             _unitOfWork = unitOfWork;
+            _accRepo = accRepo ?? throw new ArgumentNullException(nameof(accRepo));
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
@@ -38,6 +41,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> CreateEmployee(User user)
         {
+            var owner = await _accRepo.GetOwner();
             if (user == null)
                 throw new Exception("Failed to create worker.");
 
@@ -58,16 +62,16 @@ namespace GPMS.APPLICATION.Services
                             throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
                     }
                 }
-                if (user.Roles.Any(r => r.Id == 4))
+                if (user.Roles.Any(r => r.Id == RoleId_Constants.PM))
                 {
-                    user.ManagerId = 1;
+                    user.ManagerId = owner.Id;
 
                     var existOwner = await _workerRepo.GetWorkerById(user.ManagerId);
                     if (existOwner == null)
                         throw new KeyNotFoundException($"Không tìm thấy Owner với Id '{user.ManagerId}'.");
                 }
 
-                if (user.Roles.Any(r => r.Id == 5))
+                if (user.Roles.Any(r => r.Id == RoleId_Constants.Worker))
                 {
                     if (user.ManagerId == null)
                         throw new KeyNotFoundException("Worker phải có ManagerId.");
@@ -76,7 +80,7 @@ namespace GPMS.APPLICATION.Services
                     if (existManager == null)
                         throw new KeyNotFoundException($"Không tìm thấy quản lý '{user.ManagerId}'.");
 
-                    var isPM = existManager.Roles != null && existManager.Roles.Any(r => r.Id == 4);
+                    var isPM = existManager.Roles != null && existManager.Roles.Any(r => r.Id == RoleId_Constants.PM);
                     if (!isPM)
                         throw new KeyNotFoundException("Manager được chọn không phải là PM.");
                 }
@@ -91,6 +95,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> UpdateEmployee(int userId, User user)
         {
+            var owner = await _accRepo.GetOwner();
             if (user == null)
                 throw new Exception("Failed to update employee.");
             var status = await _userStatusRepo.GetById(user.StatusId);
@@ -109,16 +114,16 @@ namespace GPMS.APPLICATION.Services
             User updateUser = null;
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                if (user.Roles.Any(r => r.Id == 4))
+                if (user.Roles.Any(r => r.Id == RoleId_Constants.PM))
             {
-                user.ManagerId = 1;
+                user.ManagerId = owner.Id;
 
                 var existOwner = await _workerRepo.GetWorkerById(user.ManagerId);
                 if (existOwner == null)
                     throw new KeyNotFoundException($"Không tìm thấy Owner với Id '{user.ManagerId}'.");
             }
 
-            if (user.Roles.Any(r => r.Id == 5))
+            if (user.Roles.Any(r => r.Id == RoleId_Constants.Worker))
             {
                 if (user.ManagerId == null)
                     throw new KeyNotFoundException("Worker phải có ManagerId.");
@@ -127,7 +132,7 @@ namespace GPMS.APPLICATION.Services
                 if (existManager == null)
                     throw new KeyNotFoundException($"Không tìm thấy quản lý '{user.ManagerId}'.");
 
-                var isPM = existManager.Roles != null && existManager.Roles.Any(r => r.Id == 4);
+                var isPM = existManager.Roles != null && existManager.Roles.Any(r => r.Id == RoleId_Constants.PM);
                 if (!isPM)
                     throw new KeyNotFoundException("Manager được chọn không phải là PM.");
             }

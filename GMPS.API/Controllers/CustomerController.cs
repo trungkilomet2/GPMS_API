@@ -25,7 +25,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-customer")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult> GetAllCustomer([FromQuery] RequestDTO<CustomerDTO>? input)
+        public async Task<ActionResult<RestDTO<IEnumerable<CustomerDTO>>>> GetAllCustomer([FromQuery] RequestDTO<CustomerDTO>? input)
         {
             try
             {
@@ -45,24 +45,6 @@ namespace GMPS.API.Controllers
                         (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
-                var recordCount = data.Count();
-                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
-
-                if (recordCount > 0 && input.PageIndex >= totalPages)
-                {
-                    _logger.LogWarning("PageIndex {PageIndex} out of range. Total pages: {TotalPages}", input.PageIndex, totalPages);
-                    var errorDetails = new ValidationProblemDetails(ModelState)
-                    {
-                        Status = StatusCodes.Status404NotFound,
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
-                    };
-                    errorDetails.Errors = new Dictionary<string, string[]>
-                    {
-                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
-                    };
-                    return StatusCode(StatusCodes.Status404NotFound, errorDetails);
-                }
-
                 var customer = data.Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize).Select(c => new CustomerDTO
                 {
@@ -78,7 +60,7 @@ namespace GMPS.API.Controllers
                     Data = customer,
                     PageIndex = input.PageIndex,
                     PageSize = input.PageSize,
-                    RecordCount = recordCount,
+                    RecordCount = data.Count(),
                     Links = new List<LinkDTO>
                     {
                         new LinkDTO(Url.Action(null, "Customer", null, Request.Scheme)!, "self", "GET")
@@ -102,7 +84,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-order-by-customer/{CustomerId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetOrderByCustomer(int CustomerId, [FromQuery] RequestDTO<OrderListDTO>? input)
+        public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrderByCustomer(int CustomerId, [FromQuery] RequestDTO<OrderListDTO>? input)
         {            
 
             try

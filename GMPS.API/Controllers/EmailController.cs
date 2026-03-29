@@ -26,7 +26,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("sent-otp-email")]
-        public async Task<IActionResult> SendOTPEmail([FromBody] VerifyEmailDTO email)
+        public async Task<ActionResult> SendOTPEmail([FromBody] VerifyEmailDTO email)
         {
             try
             {
@@ -94,8 +94,77 @@ namespace GMPS.API.Controllers
             }
         }
 
+        [HttpPost("resent-otp-email")]
+        public async Task<ActionResult> ResendOTPEmail([FromBody] VerifyEmailDTO email)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "Đang gửi OTP tới {Email}", email?.Email);
+
+                if (ModelState.IsValid)
+                {
+                    if (string.IsNullOrEmpty(email?.Email))
+                    {
+                        _logger.LogWarning(CustomLogEvents.UserController_Put, "Email không hợp lệ");
+
+                        var errorDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status400BadRequest,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                            Detail = "Email không hợp lệ"
+                        };
+
+                        return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Detail);
+                    }
+                    var existingUser = await _userRepo.IsEmailExists(email.Email.ToLower());
+                    if (existingUser)
+                    {
+                        _logger.LogWarning("Email đã tồn tại: {Email}", email.Email);
+
+                        var errorDetails = new ValidationProblemDetails(ModelState)
+                        {
+                            Status = StatusCodes.Status409Conflict,
+                            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+                            Detail = "Email đã được đăng ký"
+                        };
+
+                        return StatusCode(StatusCodes.Status409Conflict, errorDetails.Detail);
+                    }
+
+                    await _emailRepo.SendEmailAsync(email.Email, null, null, EmailType.ResendOTP);
+
+                    _logger.LogInformation(CustomLogEvents.UserController_Post, "OTP đã được gửi tới {Email}", email.Email);
+
+                    return StatusCode(StatusCodes.Status200OK, "OTP đã được gửi");
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Lỗi model state");
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+
+                    return BadRequest(errorDetails.Errors);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi OTP tới {Email}", email?.Email);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    Detail = ex.Message
+                });
+            }
+        }
+
         [HttpPost("verify-email")]
-        public IActionResult VerifyEmail([FromBody] VerifyOtpDTO model)
+        public async Task<ActionResult> VerifyEmail([FromBody] VerifyOtpDTO model)
         {
             try
             {
