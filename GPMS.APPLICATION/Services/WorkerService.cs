@@ -42,14 +42,14 @@ namespace GPMS.APPLICATION.Services
         public async Task<User> CreateEmployee(User user)
         {
             if (user == null)
-                throw new Exception("Failed to create worker.");
+                throw new Exception("Lỗi khi tạo nhân viên.");
 
             var status = await _userStatusRepo.GetById(user.StatusId);
             if (status == null)
-                throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
+                throw new KeyNotFoundException($"Trạng thái với Id: '{user.StatusId}' không tồn tại.");
             var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
             if (existManager == null)
-                throw new KeyNotFoundException($"Manager with Id '{user.ManagerId}' not found.");
+                throw new KeyNotFoundException($"Người dùng với Id: '{user.ManagerId}' không tồn tại.");
             User createdUser = null;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -61,7 +61,7 @@ namespace GPMS.APPLICATION.Services
                         var existingRole = await _roleRepo.GetById(role.Id);
 
                         if (existingRole == null)
-                            throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                            throw new KeyNotFoundException($"Role với Id '{role.Id}' không tồn tại.");
                     }
                 }
 
@@ -76,16 +76,16 @@ namespace GPMS.APPLICATION.Services
         public async Task<User> UpdateEmployee(int userId, User user)
         {
             if (user == null)
-                throw new Exception("Failed to update employee.");
+                throw new Exception("Lỗi khi cập nhật nhân viên.");
             var status = await _userStatusRepo.GetById(user.StatusId);
             if (status == null)
-                throw new KeyNotFoundException($"Status with Id '{user.StatusId}' not found.");
+                throw new KeyNotFoundException($"Trạng thái với Id: '{user.StatusId}' không tồn tại.");
             var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
             if (existManager == null)
-                throw new KeyNotFoundException($"Manager with Id '{user.ManagerId}' not found.");
+                throw new KeyNotFoundException($"Người dùng với Id: '{user.ManagerId}' không tồn tại.");
             var existing = await _workerRepo.GetWorkerById(userId);
             if (existing == null)
-                throw new KeyNotFoundException($"Employee with id '{userId}' not found.");
+                throw new KeyNotFoundException($"nhân viên với Id: '{userId}' không tồn tại.");
 
             if (user.Roles != null && user.Roles.Any())
             {
@@ -94,7 +94,7 @@ namespace GPMS.APPLICATION.Services
                     var existingRole = await _roleRepo.GetById(role.Id);
 
                     if (existingRole == null)
-                        throw new KeyNotFoundException($"Role with Id '{role.Id}' not found.");
+                        throw new KeyNotFoundException($"Role với Id '{role.Id}' không tồn tại.");
                 }
             }
             return await _workerRepo.Update(user);

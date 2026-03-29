@@ -314,7 +314,7 @@ namespace GMPS.API.Controllers
                         PasswordHash = passwordHasher.HashPassword(null, input.Password),
                         FullName = input.FullName,
                         ManagerId = input.ManagerId,
-                        StatusId = 1,
+                        StatusId = UserStatus_Constants.Active,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r
