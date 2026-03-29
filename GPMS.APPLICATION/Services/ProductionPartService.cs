@@ -347,13 +347,13 @@ namespace GPMS.APPLICATION.Services
                 var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
 
                 int historyQuantitySubmits = 0;
-
+                int nowQuantitySubmit = historyQuantitySubmits + quantity;   
                 foreach (var logpart in allWorkLogsInAPart)
                 {
                     historyQuantitySubmits += logpart.Quantity;
                 }
 
-                if(historyQuantitySubmits > 0 && historyQuantitySubmits < getOrder.Quantity )
+                if(nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity )
                 {
                     productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
                 }
