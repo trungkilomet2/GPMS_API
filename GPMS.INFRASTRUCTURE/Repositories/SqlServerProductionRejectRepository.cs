@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using GPMS.APPLICATION.Common;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
@@ -24,7 +25,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 existing.USER_ID = entity.UserId;
                 existing.REASON = entity.Reason;
-                existing.CREATED_AT = DateTime.UtcNow;
+                existing.CREATED_AT = VietnamTime.Now();
                 await _context.SaveChangesAsync();
                 return _mapper.Map<ProductionRejectReason>(existing);
             }

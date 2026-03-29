@@ -1,4 +1,5 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+﻿using GPMS.APPLICATION.Common;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
@@ -298,7 +299,7 @@ namespace GPMS.APPLICATION.Services
         {
             _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
             var logs = await _workLogRepo.GetAll(partId);
-            var now = DateTime.UtcNow;
+            var now = VietnamTime.Now();
             var normalized = new List<ProductionPartWorkLog>();
             foreach (var log in logs)
             {
@@ -323,7 +324,7 @@ namespace GPMS.APPLICATION.Services
                 PartId = partId,
                 UserId = userId,
                 Quantity = quantity,
-                WorkDate = DateTime.UtcNow,
+                WorkDate = VietnamTime.Now(),
                 IsReadOnly = false,
                 IsPayment = false
             });
@@ -334,7 +335,7 @@ namespace GPMS.APPLICATION.Services
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
             var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
             if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
-            var elapsed = DateTime.UtcNow - log.WorkDate;
+            var elapsed = VietnamTime.Now() - log.WorkDate;
             if (log.IsReadOnly || elapsed > TimeSpan.FromHours(24))
             {
                 throw new ValidationException("Work log đã quá 24h, chỉ được xem");
