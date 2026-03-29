@@ -352,21 +352,22 @@ namespace GPMS.APPLICATION.Services
                 {
                     historyQuantitySubmits += logpart.Quantity;
                 }
-
-                if(nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity )
+                // Nếu như đơn hàng chưa hoàn thành thì cập nhật trạng thái thành đang sản xuất
+                if (nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity )
                 {
                     productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
                 }
-
-                if (historyQuantitySubmits + partId > getOrder.Quantity)
+                if (nowQuantitySubmit > getOrder.Quantity)
                 {
                     throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
                 }
-                if(historyQuantitySubmits + partId == getOrder.Quantity)
+                if(nowQuantitySubmit == getOrder.Quantity)
                 {
                     productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
                 }
+
                 await _partRepo.Update(productionPart);
+                
                 returnData = await _workLogRepo.Create(new ProductionPartWorkLog
                 {
                     PartId = partId,
