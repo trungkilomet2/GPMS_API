@@ -535,9 +535,26 @@ namespace GMPS.API.Controllers
         }
 
 
-
-
-
+        [HttpGet("parts/issues/workers/{partId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartUserDTO>>>> GetIssueWorkers([Range(1, int.MaxValue)] int partId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var workersByWorkLogs = await _productionPartService.GetIssueWorkersByWorkLogs(partId);
+                var workers = workersByWorkLogs.Select(x => _mapper.Map<ProductionPartUserDTO>(x));
+                return Ok(new RestDTO<IEnumerable<ProductionPartUserDTO>> { Data = workers });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get issue workers failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
 
     }
 }
