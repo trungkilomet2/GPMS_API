@@ -93,6 +93,12 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Đơn hàng đang trong kế hoạch sản xuất hoặc đã hoàn thành rồi");
             }
+            // TrungNT 30-03-2026: Nếu là Owner thì tự động duyệt kế hoạch sản xuất luôn, không cần phải qua bước chờ xét duyệt nữa.
+            if (roles_of_user.Any(r => r.Name.Equals(Roles_Constants.Owner)))
+            {
+                production.StatusId = ProductionStatus_Constants.Approval_ID;
+            }
+
             var new_production = await _prdRepo.Create(production);
             return new_production is null ? throw new Exception("Tạo đơn hàng không thành công") : new_production;
         }
@@ -507,6 +513,42 @@ namespace GPMS.APPLICATION.Services
             }
 
             return result;
+        }
+
+        public async Task<Production> CompleteProduction(int productionId)
+        {   
+            // Lấy thông tin production
+            var production = await _prdRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            // Lấy thông tin production trở thành trạng thái đang sản xuất
+            if (production.StatusId != ProductionStatus_Constants.Producting_ID)
+            {
+                throw new ValidationException("Chỉ có thể hoàn thành production đang ở trạng thái Đang Sản Xuất");
+            }
+            // Lấy thông tin tất cả các Production Part trong hệ thống
+            var parts = (await _productionPartRepo.GetAll(productionId)).ToList();
+            if (parts.Count == 0)
+            {
+                throw new ValidationException("Production chưa có công đoạn để hoàn thành");
+            }
+
+            if (parts.Any(x => x.StatusId != ProductionPart_Constrants.Done_ID))
+            {
+                throw new ValidationException("Chỉ có thể hoàn thành production khi tất cả công đoạn đã Hoàn Thành");
+            }
+            
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {   
+                // Set trạng thái cho production thành hoàn thành
+                production.StatusId = ProductionStatus_Constants.Done_ID;
+                // Cập nhật thời gian kết thúc của một production
+                production.EndDate = DateOnly.FromDateTime(VietnamTime.Now());
+                // Cập nhật trạng thái của production
+                await _prdRepo.Update(production);
+                // Cập nhật trạng thái của Order thành hoàn thành
+                await _orderStatusRepo.ChangeStatus(production.OrderId, OrderStatus_Constants.Done_ID);
+            });
+            // Trả về thông tin của production đấy
+            return await _prdRepo.GetById(productionId) ?? throw new ValidationException("Không tìm thấy production sau khi cập nhật");
         }
 
 
