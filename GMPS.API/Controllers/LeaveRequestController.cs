@@ -560,18 +560,29 @@ namespace GMPS.API.Controllers
                         }
                     });
             }
-            catch (InvalidOperationException ex)
+            catch (ArgumentException ex)
             {
-                _logger.LogError(CustomLogEvents.LeaveRequestController_Post, ex,
-                    "System configuration error while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Post, ex,
+                    "Invalid date input while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-                var exceptionDetails = new ProblemDetails
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
                 {
                     Detail = ex.Message,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                };
-                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Post, ex,
+                    "Business rule violation while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                });
             }
             catch (Exception ex)
             {

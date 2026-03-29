@@ -27,6 +27,14 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate)
         {
+            var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
+
+            if (toDate.HasValue && toDate.Value.Date <= today)
+                throw new ArgumentException("ToDate must be at least 1 day after the created date.");
+
+            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
+                throw new ArgumentException("ToDate must be greater than or equal to FromDate.");
+
             var leaveRequest = new LeaveRequest
             {
                 UserId = userId,
