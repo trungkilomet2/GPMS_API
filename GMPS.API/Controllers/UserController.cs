@@ -231,7 +231,7 @@ namespace GMPS.API.Controllers
                     UserName = input.UserName,
                     PasswordHash = input.Password,
                     FullName = input.FullName,
-                    StatusId = 1
+                    StatusId = UserStatus_Constants.Active
                 };
 
                 var createdUser = await _userRepo.CreateNewUser(newUser, input.RoleIds);
