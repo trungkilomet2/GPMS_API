@@ -336,8 +336,10 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
                 }
+                // lấy thông tin production
+                var production = await _productionRepo.GetById(part.ProductionId);  
                 // lấy thông tin đơn hàng
-                var getOrder =  await _orderRepo.GetById(productionPart.ProductionId); 
+                var getOrder =  await _orderRepo.GetById(production.OrderId); 
                 // Nếu như số lượng ở trong đơn hàng vượt quá số lượng đơn hàng giao cho => Không thể cập nhật số lượng
                 if(quantity > getOrder.Quantity)
                 {
@@ -347,11 +349,11 @@ namespace GPMS.APPLICATION.Services
                 var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
 
                 int historyQuantitySubmits = 0;
-                int nowQuantitySubmit = historyQuantitySubmits + quantity;   
                 foreach (var logpart in allWorkLogsInAPart)
                 {
                     historyQuantitySubmits += logpart.Quantity;
                 }
+                int nowQuantitySubmit = historyQuantitySubmits + quantity;   
                 // Nếu như đơn hàng chưa hoàn thành thì cập nhật trạng thái thành đang sản xuất
                 if (nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity )
                 {
@@ -365,7 +367,7 @@ namespace GPMS.APPLICATION.Services
                 {
                     productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
                 }
-
+                // Update số lượng sản phẩm đã làm vào production part đó
                 await _partRepo.Update(productionPart);
                 
                 returnData = await _workLogRepo.Create(new ProductionPartWorkLog
