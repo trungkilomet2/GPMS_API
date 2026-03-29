@@ -29,11 +29,14 @@ namespace GPMS.APPLICATION.Services
         {
             var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
 
+            if (fromDate.HasValue && fromDate.Value.Date < today)
+                throw new ArgumentException("FromDate must not be in the past.");
+
             if (toDate.HasValue && toDate.Value.Date <= today)
                 throw new ArgumentException("ToDate must be at least 1 day after the created date.");
 
-            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
-                throw new ArgumentException("ToDate must be greater than or equal to FromDate.");
+            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date <= fromDate.Value.Date)
+                throw new ArgumentException("ToDate must be at least 1 day after FromDate.");
 
             var leaveRequest = new LeaveRequest
             {
