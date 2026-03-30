@@ -105,7 +105,7 @@ namespace GMPS.API.Controllers
                     });
                 }
 
-                _logger.LogInformation("Chatbox request từ khách vãng lai: {Message}", request.Message);
+                _logger.LogInformation("Chatbox request từ khách: {Message}", request.Message);
 
                 var result = await _chatRepo.SendMessageAsync(request, null);
 
@@ -113,7 +113,7 @@ namespace GMPS.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Lỗi cấu hình OpenAI (guest)");
+                _logger.LogError(ex, "Lỗi cấu hình OpenAI (customer)");
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -122,7 +122,7 @@ namespace GMPS.API.Controllers
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Lỗi kết nối OpenAI API (guest)");
+                _logger.LogError(ex, "Lỗi kết nối OpenAI API (customer)");
                 return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
                 {
                     Detail = ex.Message,
