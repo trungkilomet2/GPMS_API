@@ -177,8 +177,8 @@ builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
 builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventRepository>();
 builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
 
-//--------------------------- OpenAI ChatBox ---------------------------
-builder.Services.AddHttpClient("OpenAI");
+//--------------------------- Gemini ChatBox ---------------------------
+builder.Services.AddHttpClient("Gemini");
 builder.Services.AddScoped<IChatRepositories, ChatService>();
 
 //----------------------Identity-----------------------------
