@@ -30,13 +30,13 @@ namespace GPMS.APPLICATION.Services
             var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
 
             if (fromDate.HasValue && fromDate.Value.Date < today)
-                throw new InvalidOperationException("FromDate must not be in the past.");
+                throw new InvalidOperationException("Ngày bắt đầu không được để quá khứ.");
 
             if (toDate.HasValue && toDate.Value.Date < today)
-                throw new InvalidOperationException("ToDate must not be in the past.");
+                throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
 
             if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
-                throw new InvalidOperationException("ToDate must not before FromDate.");
+                throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
 
             var leaveRequest = new LeaveRequest
             {
