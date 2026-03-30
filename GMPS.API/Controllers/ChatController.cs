@@ -7,9 +7,6 @@ using System.Security.Claims;
 
 namespace GMPS.API.Controllers
 {
-    /// <summary>
-    /// Controller xử lý chatbox OpenAI với phân vai dựa trên JWT token.
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class ChatController : ControllerBase
@@ -23,10 +20,6 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Gửi tin nhắn tới chatbox (yêu cầu đăng nhập).
-        /// Role được tự động xác định từ JWT token — Staff/Admin nhận được phản hồi chi tiết hơn.
-        /// </summary>
         [HttpPost("send")]
         [Authorize]
         [ResponseCache(CacheProfileName = "NoCache")]
@@ -51,8 +44,6 @@ namespace GMPS.API.Controllers
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
-
-                // Đọc role từ JWT token (có thể có nhiều role, lấy role đầu tiên)
                 var userRole = User.Claims
                     .FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
@@ -68,7 +59,6 @@ namespace GMPS.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // API key chưa cấu hình
                 _logger.LogError(ex, "Lỗi cấu hình OpenAI");
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
                 {
@@ -99,10 +89,6 @@ namespace GMPS.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Gửi tin nhắn dành cho khách vãng lai (không cần đăng nhập).
-        /// Luôn dùng Customer context — chỉ trả lời thông tin chung.
-        /// </summary>
         [HttpPost("guest")]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = "NoCache")]
@@ -121,7 +107,6 @@ namespace GMPS.API.Controllers
 
                 _logger.LogInformation("Chatbox request từ khách vãng lai: {Message}", request.Message);
 
-                // Luôn dùng null role → ChatService sẽ dùng Customer prompt
                 var result = await _chatRepo.SendMessageAsync(request, null);
 
                 return Ok(result);

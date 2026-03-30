@@ -1,5 +1,6 @@
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
+using GPMS.DOMAIN.Constants;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
@@ -12,10 +13,6 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
 
-        private static readonly HashSet<string> _staffRoles = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Admin", "PM", "Owner", "Worker"
-        };
 
         public ChatService(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
@@ -26,20 +23,21 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request, string? userRole)
         {
             var apiKey = _config["Gemini:ApiKey"];
-            var model  = _config["Gemini:Model"] ?? "gemini-1.5-flash";
+            var model = _config["Gemini:Model"] ?? "gemini-2.0-flash";
 
-            if (string.IsNullOrWhiteSpace(apiKey) || apiKey == "AIzaSyCYIS8Vtbpb9WYItj4e578QiIY6ieGj0EQ")
+            if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException(
                     "Gemini API Key chưa được cấu hình. Vui lòng vào https://aistudio.google.com/ lấy key rồi điền vào appsettings.json.");
 
             // Xác định vai trò
-            bool isStaff = !string.IsNullOrEmpty(userRole) && _staffRoles.Contains(userRole);
-            string resolvedRole  = isStaff ? userRole! : "Customer";
+            bool isStaff = !string.IsNullOrEmpty(userRole) && 
+                           (userRole.Contains(Roles_Constants.PM)|| userRole.Contains(Roles_Constants.Worker) || userRole.Contains(Roles_Constants.Owner));
+            string resolvedRole  = isStaff ? userRole! : Roles_Constants.Customer;
             string systemPrompt  = isStaff ? BuildStaffSystemPrompt() : BuildCustomerSystemPrompt();
 
             // ── Gemini API endpoint ──
-            // POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            // POST https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}
+            var url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
 
             // ── Payload theo chuẩn Gemini REST API ──
             var payload = new
