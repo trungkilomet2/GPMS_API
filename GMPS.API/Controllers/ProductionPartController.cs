@@ -8,14 +8,12 @@ using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
-
 //- Lấy tất cả production part của Production đấy
 //- Xem thông tin chi tiết Assign Của Production Part Đấy
 //- Thêm danh sách Production Part vào một Production
 //- Cập nhật thông tin của một Production Part (ví dụ: thay đổi số lượng, trạng thái, v.v.)
 //- Phân công Production Part cho một nhóm Worker
 // Xóa một producion part trong một production (nếu có thể, tùy vào nghiệp vụ hệ thống có cho phép hay không)
-
 
 namespace GMPS.API.Controllers
 {
@@ -583,6 +581,78 @@ namespace GMPS.API.Controllers
         }
 
 
+        //30-3-2026
+
+        [HttpPost("parts/estimate-completion/{partId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartCompletionEstimateDTO>>> EstimatePartCompletion(
+            [Range(1, int.MaxValue)] int partId,
+            [FromBody] EstimatePartCompletionRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.EstimatePartCompletion(partId, dto.WorkerIds);
+                return Ok(new RestDTO<ProductionPartCompletionEstimateDTO>
+                {
+                    Data = _mapper.Map<ProductionPartCompletionEstimateDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Estimate completion failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        [HttpGet("production/progress-chart/{productionId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionWorkerProgressChartDTO>>>> GetProductionWorkerProgressChart([Range(1, int.MaxValue)] int productionId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.GetProductionWorkerProgressChart(productionId);
+                return Ok(new RestDTO<IEnumerable<ProductionWorkerProgressChartDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<ProductionWorkerProgressChartDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get production progress chart failed for production {ProductionId}", productionId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        [HttpGet("production/productivity-score/{productionId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<WorkerProductivityScoreDTO>>>> GetWorkerProductivityScores([Range(1, int.MaxValue)] int productionId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.GetWorkerProductivityScores(productionId);
+                return Ok(new RestDTO<IEnumerable<WorkerProductivityScoreDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<WorkerProductivityScoreDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get productivity score failed for production {ProductionId}", productionId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
 
 
     }

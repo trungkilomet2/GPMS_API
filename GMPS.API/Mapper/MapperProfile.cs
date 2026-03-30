@@ -102,6 +102,10 @@ namespace GMPS.API.Mapper
             // Payment 
             CreateMap<PartPaymentCompletionViewDTO, PartPaymentCompletionDTO>();
 
+            CreateMap<ProductionPartCompletionEstimateViewDTO, ProductionPartCompletionEstimateDTO>();
+            CreateMap<ProductionWorkerProgressChartViewDTO, ProductionWorkerProgressChartDTO>();
+            CreateMap<WorkerProductivityScoreViewDTO, WorkerProductivityScoreDTO>();
+
         }
 
     }
