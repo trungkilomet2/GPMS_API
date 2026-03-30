@@ -32,11 +32,11 @@ namespace GPMS.APPLICATION.Services
             if (fromDate.HasValue && fromDate.Value.Date < today)
                 throw new InvalidOperationException("FromDate must not be in the past.");
 
-            if (toDate.HasValue && toDate.Value.Date <= today)
-                throw new InvalidOperationException("ToDate must be at least 1 day after the created date.");
+            if (toDate.HasValue && toDate.Value.Date < today)
+                throw new InvalidOperationException("ToDate must not be in the past.");
 
-            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date <= fromDate.Value.Date)
-                throw new InvalidOperationException("ToDate must be at least 1 day after FromDate.");
+            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
+                throw new InvalidOperationException("ToDate must not before FromDate.");
 
             var leaveRequest = new LeaveRequest
             {
