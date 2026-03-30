@@ -20,7 +20,7 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
-        [HttpPost("chat-for-internal-employee-using-ai-gemini")]
+        [HttpPost("/ai/gemini/chat-for-internal-employee")]
         [Authorize]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult<ChatResponseDTO>> Send([FromBody] ChatRequestDTO request)
@@ -89,7 +89,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("chat-for-guest-using-ai-gemini")]
+        [HttpPost("/ai/gemini/chat-for-guest")]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult<ChatResponseDTO>> GuestSend([FromBody] ChatRequestDTO request)
