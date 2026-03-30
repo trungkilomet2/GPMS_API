@@ -44,10 +44,12 @@ namespace GMPS.API.Controllers
                 }
                 var comment = result.Select(c => new CommentDTO
                 {
-                    Id = c.Id,
-                    ToOrderId = c.toOrderId,
-                    Content = c.Content,
-                    SendDateTime = c.SendDateTime
+                    Id = c.Comment.Id,
+                    FromUserId = c.Comment.fromUserId,
+                    ToOrderId = c.Comment.toOrderId,
+                    Content = c.Comment.Content,
+                    SendDateTime = c.Comment.SendDateTime,
+                    FromUserName = c.FromUserName
                 });
 
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,

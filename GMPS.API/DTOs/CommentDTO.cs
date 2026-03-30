@@ -6,8 +6,10 @@ namespace GMPS.API.DTOs
     public class CommentDTO
     {
         public int Id { get; set; }
+        public int FromUserId { get; set; }
         public int ToOrderId { get; set; }
         public string Content { get; set; }
         public DateTime SendDateTime { get; set; }
+        public string FromUserName { get; set; }
     }
 }
