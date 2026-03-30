@@ -125,8 +125,8 @@ namespace GMPS.API.Controllers
                 _logger.LogError(ex, "Lỗi kết nối OpenAI API (guest)");
                 return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
                 {
-                    Detail = "Không thể kết nối tới dịch vụ AI. Vui lòng thử lại sau.",
-                    Status = StatusCodes.Status502BadGateway
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status502BadGateway                   
                 });
             }
             catch (Exception ex)

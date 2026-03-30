@@ -39,19 +39,22 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             // POST https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}
             var url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
 
-            // ── Payload theo chuẩn Gemini REST API ──
+            // ── Payload theo chuẩn Gemini v1 REST API ──
+            // v1 không hỗ trợ system_instruction → nhúng system prompt vào đầu user message
             var payload = new
             {
-                system_instruction = new
-                {
-                    parts = new[] { new { text = systemPrompt } }
-                },
                 contents = new[]
                 {
                     new
                     {
                         role  = "user",
-                        parts = new[] { new { text = request.Message } }
+                        parts = new[]
+                        {
+                            new
+                            {
+                                text = $"[HƯỚNG DẪN HỆ THỐNG - TUÂN THỦ NGHIÊM NGẶT]\n{systemPrompt}\n\n[CÂU HỎI CỦA NGƯỜI DÙNG]\n{request.Message}"
+                            }
+                        }
                     }
                 },
                 generationConfig = new
