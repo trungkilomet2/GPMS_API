@@ -23,35 +23,33 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request, string? userRole)
         {
             var apiKey = _config["Gemini:ApiKey"];
-            var model = _config["Gemini:Model"] ?? "gemini-1.5-flash";
+            var model = _config["Gemini:Model"] ?? "gemini-1.5-flash-8b";
 
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException(
                     "Gemini API Key chưa được cấu hình. Vui lòng vào https://aistudio.google.com/ lấy key rồi điền vào appsettings.json.");
-
-            // Xác định vai trò
             bool isStaff = !string.IsNullOrEmpty(userRole) && 
-                           (userRole.Contains(Roles_Constants.PM)|| userRole.Contains(Roles_Constants.Worker) || userRole.Contains(Roles_Constants.Owner));
+                           (userRole.Contains(Roles_Constants.PM)|| userRole.Contains(Roles_Constants.Worker) || 
+                            userRole.Contains(Roles_Constants.Owner)|| userRole.Contains(Roles_Constants.Admin));
             string resolvedRole  = isStaff ? userRole! : Roles_Constants.Customer;
             string systemPrompt  = isStaff ? BuildStaffSystemPrompt() : BuildCustomerSystemPrompt();
 
-            // ── Gemini API endpoint ──
-            // POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
 
-            // ── Payload theo chuẩn Gemini REST API ──
             var payload = new
             {
-                system_instruction = new
-                {
-                    parts = new[] { new { text = systemPrompt } }
-                },
                 contents = new[]
                 {
                     new
                     {
                         role  = "user",
-                        parts = new[] { new { text = request.Message } }
+                        parts = new[]
+                        {
+                            new
+                            {
+                                text = $"[SYSTEM INSTRUCTION]\n{systemPrompt}\n\n[USER QUESTION]\n{request.Message}"
+                            }
+                        }
                     }
                 },
                 generationConfig = new
@@ -76,8 +74,6 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             var responseJson = await response.Content.ReadAsStringAsync();
             using var doc    = JsonDocument.Parse(responseJson);
 
-            // ── Parse response của Gemini ──
-            // candidates[0].content.parts[0].text
             var reply = doc.RootElement
                 .GetProperty("candidates")[0]
                 .GetProperty("content")
