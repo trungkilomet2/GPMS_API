@@ -142,50 +142,50 @@ public class LeaveRequestServiceTest
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenFromDateIsInThePast()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenFromDateIsInThePast()
     {
         var yesterday = DateTime.Today.AddDays(-1);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: yesterday, toDate: null));
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsToday()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsToday()
     {
         var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
             TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).Date;
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: today));
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsInThePast()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsInThePast()
     {
         var yesterday = DateTime.Today.AddDays(-1);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: yesterday));
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateEqualsFromDate()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateEqualsFromDate()
     {
         var fromDate = DateTime.Today.AddDays(2);
         var toDate = DateTime.Today.AddDays(2);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: fromDate, toDate: toDate));
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_ThrowsArgumentException_WhenToDateIsBeforeFromDate()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsBeforeFromDate()
     {
         var fromDate = DateTime.Today.AddDays(3);
         var toDate = DateTime.Today.AddDays(2);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: fromDate, toDate: toDate));
     }
 
