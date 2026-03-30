@@ -520,5 +520,157 @@ namespace GPMS.APPLICATION.Services
             }
             return workers;
         }
+
+        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, IEnumerable<int> workLogIds)
+        {
+            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
+            var selectedLogIds = (workLogIds ?? Enumerable.Empty<int>()).Where(x => x > 0).Distinct().ToList();
+            if (selectedLogIds.Count == 0)
+            {
+                throw new ValidationException("Danh sách work log cần trả lương không hợp lệ");
+            }
+            var now = VietnamTime.Now();
+            var today = DateOnly.FromDateTime(now);
+            var updatedCount = 0;
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                foreach (var logId in selectedLogIds)
+                {
+                    var log = await _workLogRepo.GetById(logId) ?? throw new ValidationException($"Không tồn tại work log ID = {logId}");
+                    if (log.PartId != part.Id)
+                    {
+                        throw new ValidationException($"Work log ID = {logId} không thuộc công đoạn hiện tại");
+                    }
+                    if (DateOnly.FromDateTime(log.WorkDate) == today)
+                    {
+                        throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
+                    }
+                    if (log.IsPayment)
+                    {
+                        continue;
+                    }
+                    log.IsPayment = true;
+                    log.IsReadOnly = true;
+                    await _workLogRepo.Update(log);
+                    updatedCount++;
+                }
+            });
+
+            return new PartPaymentCompletionViewDTO
+            {
+                PartId = partId,
+                AffectedLogs = updatedCount,
+                PaidAt = now
+            };
+        }
+
+
+        public async Task<ProductionPartCompletionEstimateViewDTO> EstimatePartCompletion(int partId, IEnumerable<int> workerIds)
+        {
+            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
+            var production = await _productionRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+            var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại");
+
+            var selectedWorkers = (workerIds ?? Enumerable.Empty<int>()).Where(x => x > 0).Distinct().ToList();
+            if (selectedWorkers.Count == 0)
+            {
+                throw new ValidationException("Danh sách worker dự kiến không hợp lệ");
+            }
+
+            var totalDone = (await _workLogRepo.GetAll(part.Id)).Sum(x => x.Quantity);
+            var remaining = Math.Max(0, order.Quantity - totalDone);
+
+            var allLogs = (await _workLogRepo.GetAll(null))
+                .Where(x => selectedWorkers.Contains(x.UserId))
+                .ToList();
+
+            var dailyCapacity = allLogs.Count == 0
+                ? selectedWorkers.Count * 10
+                : Math.Max(1, (int)Math.Ceiling(allLogs
+                    .GroupBy(x => new { x.UserId, Day = DateOnly.FromDateTime(x.WorkDate) })
+                    .Select(g => g.Sum(x => x.Quantity))
+                    .Average()));
+
+            var estimatedDays = remaining == 0 ? 0 : (int)Math.Ceiling((decimal)remaining / dailyCapacity);
+
+            return new ProductionPartCompletionEstimateViewDTO
+            {
+                PartId = part.Id,
+                ProductionId = part.ProductionId,
+                RemainingQuantity = remaining,
+                EstimatedDailyCapacity = dailyCapacity,
+                EstimatedDaysToComplete = estimatedDays,
+                EstimatedFinishDate = DateOnly.FromDateTime(VietnamTime.Now().AddDays(estimatedDays))
+            };
+        }
+
+        public async Task<IEnumerable<ProductionWorkerProgressChartViewDTO>> GetProductionWorkerProgressChart(int productionId)
+        {
+            var production = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại");
+
+            var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
+
+            var result = new List<ProductionWorkerProgressChartViewDTO>();
+            foreach (var workerId in workerIds)
+            {
+                var worker = await _userRepo.GetById(workerId);
+                if (worker is null) continue;
+                var totalOutput = logs.Where(x => x.UserId == workerId).Sum(x => x.Quantity);
+                var percent = order.Quantity <= 0 ? 0 : Math.Round((decimal)totalOutput * 100 / order.Quantity, 2);
+                result.Add(new ProductionWorkerProgressChartViewDTO
+                {
+                    WorkerId = workerId,
+                    WorkerName = worker.FullName,
+                    ProductionId = productionId,
+                    TotalOutput = totalOutput,
+                    ProgressPercent = percent
+                });
+            }
+            return result.OrderByDescending(x => x.ProgressPercent);
+        }
+
+        public async Task<IEnumerable<WorkerProductivityScoreViewDTO>> GetWorkerProductivityScores(int productionId)
+        {
+            _ = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
+
+            var scores = new List<WorkerProductivityScoreViewDTO>();
+            foreach (var workerId in workerIds)
+            {
+                var worker = await _userRepo.GetById(workerId);
+                if (worker is null) continue;
+
+                var workerLogs = logs.Where(x => x.UserId == workerId).ToList();
+                var totalOutput = workerLogs.Sum(x => x.Quantity);
+                var activeDays = workerLogs.Select(x => DateOnly.FromDateTime(x.WorkDate)).Distinct().Count();
+                var avgPerDay = activeDays == 0 ? 0 : (decimal)totalOutput / activeDays;
+                var qualityPenalty = workerLogs.Count(x => x.IsReadOnly && !x.IsPayment) * 0.5m;
+                var score = Math.Round(Math.Max(0, avgPerDay - qualityPenalty), 2);
+
+                scores.Add(new WorkerProductivityScoreViewDTO
+                {
+                    WorkerId = workerId,
+                    WorkerName = worker.FullName,
+                    ProductionId = productionId,
+                    TotalOutput = totalOutput,
+                    IssueCount = workerLogs.Count(x => x.IsReadOnly && !x.IsPayment),
+                    ProductivityScore = score
+                });
+            }
+
+            return scores.OrderByDescending(x => x.ProductivityScore);
+        }
+
+
+
+
+
+
+
     }
 }
