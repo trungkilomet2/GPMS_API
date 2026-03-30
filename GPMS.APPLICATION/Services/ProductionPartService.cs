@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.WebSockets;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace GPMS.APPLICATION.Services
 {
@@ -158,6 +159,21 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new ValidationException($"Worker id '{workerId}' không tồn tại");
                 }
+            }
+
+            var part = await _partRepo.GetById(partId);
+            if (part is null)
+            {
+                throw new ValidationException("Production part không tồn tại trong hệ thống");
+            }
+            var production = await _productionRepo.GetById(part.ProductionId);
+            if (production is null)
+            {
+                throw new ValidationException("Production không tồn tại trong hệ thống");
+            }
+            if (production.StatusId != ProductionStatus_Constants.Producting_ID)
+            {
+                throw new ValidationException("Chỉ có thể phân công công đoạn khi production đang ở trạng thái Đang Sản Xuất");
             }
             //     var updated = new ProductionPartDetailViewDTO();
             var updated = await _partAssignRepo.AssignWorkers(partId, workers);
@@ -402,7 +418,7 @@ namespace GPMS.APPLICATION.Services
              */
             ProductionPartWorkLog returnData = null;
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
-            {   
+            {
                 // Lấy thông tin production part hiện tại
                 var part = await _partRepo.GetById(partId);
                 // lấy thông tin production
@@ -416,21 +432,21 @@ namespace GPMS.APPLICATION.Services
                 // Lấy thông tin ghi chép của công nhân hiện tại
                 var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
                 if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
-                
+
                 foreach (var worklog in historyWorkLogs)
                 {
-                    if(worklog.Id != workLogId)
+                    if (worklog.Id != workLogId)
                     {
                         quantityHistoryWorkLog += worklog.Quantity;
                     }
                 }
                 int nowQuantitySubmit = quantityHistoryWorkLog + quantity;
-                if(nowQuantitySubmit < getOrder.Quantity)
+                if (nowQuantitySubmit < getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.OnGoing_ID;
                     log.Quantity = quantity;
                 }
-                if(nowQuantitySubmit == getOrder.Quantity)
+                if (nowQuantitySubmit == getOrder.Quantity)
                 {
                     part.StatusId = ProductionPart_Constrants.Reviewing_ID;
                     log.Quantity = quantity;
@@ -452,8 +468,57 @@ namespace GPMS.APPLICATION.Services
             return returnData;
         }
 
+        public async Task<ProductionPartDetailViewDTO> DoneAPart(int partId)
+        {
 
+            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
+            // Kiểm tra part đấy đã về trạng thái chờ nghiệm thu chưa nếu như chưa thì không thể hoàn thành công đoạn đấy được
+            if (part.StatusId != ProductionPart_Constrants.Reviewing_ID)
+            {
+                throw new ValidationException("Chỉ có thể hoàn thành công đoạn đang ở trạng thái Chờ Nghiệm Thu");
+            }
+            // Kiểm tra toàn bộ số lượng part log work của một part đấy nếu như nó chưa bằng sản lượng của production 
+            // Thì không thể hoàn thành công đoạn đó được
 
+            // Lấy thông tin production thông qua part đấy
+            var production = await _productionRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại trong hệ thống");
+            // Lấy thông tin của Order trong hệ thống thông qua production đấy
+            var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại trong hệ thống");
 
+            int totalQuantityWorkLog = 0;
+            // Lấy tất cả các báo cáo thông qua part id đấy
+            var allQuantityInAPart = await _workLogRepo.GetAll(partId);
+            // Tổng hợp số lượng
+            foreach(var worklog in allQuantityInAPart)
+            {
+                totalQuantityWorkLog += worklog.Quantity;
+            }
+            if(totalQuantityWorkLog != order.Quantity)
+            {
+                throw new ValidationException("Số lượng hoàn thành không khớp với số lượng trong Order");
+            }
+            // Cập nhật trạng thái của một Production Part
+            part.StatusId = ProductionPart_Constrants.Done_ID;
+            await _partRepo.Update(part);
+            return (await BuildViews(new[] { part })).First();
+        }
+
+        public async Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partId)
+        {
+            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
+            var logs = await _workLogRepo.GetAll(part.Id);
+            var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
+
+            var workers = new List<User>();
+            foreach (var workerId in workerIds)
+            {
+                var worker = await _userRepo.GetById(workerId);
+                if (worker is not null)
+                {
+                    workers.Add(worker);
+                }
+            }
+            return workers;
+        }
     }
 }

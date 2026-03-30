@@ -33,7 +33,23 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return await GetById(dbTemplate.TEMPLATE_ID);
         }
 
-        public Task Delete(object id) => throw new NotImplementedException();
+        public async Task Delete(object id)
+        {
+            if (id is not int templateId)
+            {
+                throw new Exception("Template id không hợp lệ");
+            }
+
+            var dbTemplate = await _context.TEMPLATE.Include(x => x.TEMPLATE_STEP).FirstOrDefaultAsync(x => x.TEMPLATE_ID == templateId);
+            if (dbTemplate is null)
+            {
+                throw new Exception("Template không tồn tại");
+            }
+
+            _context.TEMPLATE_STEP.RemoveRange(dbTemplate.TEMPLATE_STEP);
+            _context.TEMPLATE.Remove(dbTemplate);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<IEnumerable<TemplateDefinition>> GetAll(object? obj)
         {

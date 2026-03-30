@@ -248,7 +248,6 @@ namespace GMPS.API.Controllers
             {
                 return BadRequest(new ValidationProblemDetails(ModelState));
             }
-
             try
             {
                 var data = await _productionPartService.AssignWorkers(partId, dto.WorkerIds);
@@ -499,8 +498,63 @@ namespace GMPS.API.Controllers
 
 
 
+        // PATCH : Cập nhật trạng thái cho một Production khi nó đã hoàn thành
+        [HttpPatch("parts/done-a-part/{partId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> DoneAPart(
+                    [Range(1, int.MaxValue)] int partId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ValidationProblemDetails(ModelState));
+            }
+            try
+            {
+                var data = await _productionPartService.DoneAPart(partId);
+                return Ok(new RestDTO<ProductionPartDetailDTO>
+                {
+                    Data = _mapper.Map<ProductionPartDetailDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to assign workers to part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        }
 
 
+        [HttpGet("parts/issues/workers/{partId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartUserDTO>>>> GetIssueWorkers([Range(1, int.MaxValue)] int partId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var workersByWorkLogs = await _productionPartService.GetIssueWorkersByWorkLogs(partId);
+                var workers = workersByWorkLogs.Select(x => _mapper.Map<ProductionPartUserDTO>(x));
+                return Ok(new RestDTO<IEnumerable<ProductionPartUserDTO>> { Data = workers });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get issue workers failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
 
     }
 }

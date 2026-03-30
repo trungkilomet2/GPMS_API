@@ -22,6 +22,13 @@ namespace GPMS.APPLICATION.Services
             return await _templateRepo.Create(entity);
         }
 
+        public async Task Delete(int templateId)
+        {
+            if (templateId <= 0) throw new ValidationException("Template id phải > 0");
+             var template = await _templateRepo.GetById(templateId) ?? throw new ValidationException("Template không tồn tại");
+            await _templateRepo.Delete(templateId);
+        }
+
         public Task<IEnumerable<TemplateDefinition>> GetAll() => _templateRepo.GetAll(null);
     }
 }
