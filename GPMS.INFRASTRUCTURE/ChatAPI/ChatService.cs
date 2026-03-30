@@ -23,7 +23,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request, string? userRole)
         {
             var apiKey = _config["Gemini:ApiKey"];
-            var model = _config["Gemini:Model"] ?? "gemini-1.5-flash-8b";
+            var model = _config["Gemini:Model"] ?? "gemini-2.5-flash";
 
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException(
