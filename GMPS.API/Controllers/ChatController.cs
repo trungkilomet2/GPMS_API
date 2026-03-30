@@ -89,10 +89,10 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("/ai/gemini/chat-for-guest")]
+        [HttpPost("/ai/gemini/chat-for-customer")]
         [AllowAnonymous]
         [ResponseCache(CacheProfileName = "NoCache")]
-        public async Task<ActionResult<ChatResponseDTO>> GuestSend([FromBody] ChatRequestDTO request)
+        public async Task<ActionResult<ChatResponseDTO>> CustomerSend([FromBody] ChatRequestDTO request)
         {
             try
             {
