@@ -1,6 +1,7 @@
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Text.Json;
 
