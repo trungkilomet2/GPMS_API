@@ -560,18 +560,6 @@ namespace GMPS.API.Controllers
                         }
                     });
             }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(CustomLogEvents.LeaveRequestController_Post, ex,
-                    "Invalid date input while creating leave request for UserId {UserId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-                });
-            }
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(CustomLogEvents.LeaveRequestController_Post, ex,
