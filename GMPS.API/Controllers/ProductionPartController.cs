@@ -556,5 +556,34 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // Hoàn thành thanh toán cho nhân viên
+        [HttpPatch("parts/complete-payment/{partId:int}")]
+        public async Task<ActionResult<RestDTO<PartPaymentCompletionDTO>>> CompletePartPayment(
+                    [Range(1, int.MaxValue)] int partId,
+                    [FromBody] CompletePartPaymentDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.CompletePartPayment(partId, dto.WorkLogIds);
+                return Ok(new RestDTO<PartPaymentCompletionDTO>
+                {
+                    Data = _mapper.Map<PartPaymentCompletionDTO>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Complete payment failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+
+
     }
 }

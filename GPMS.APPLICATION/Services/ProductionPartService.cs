@@ -520,5 +520,55 @@ namespace GPMS.APPLICATION.Services
             }
             return workers;
         }
+
+        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, IEnumerable<int> workLogIds)
+        {
+            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
+            var selectedLogIds = (workLogIds ?? Enumerable.Empty<int>()).Where(x => x > 0).Distinct().ToList();
+            if (selectedLogIds.Count == 0)
+            {
+                throw new ValidationException("Danh sách work log cần trả lương không hợp lệ");
+            }
+            var now = VietnamTime.Now();
+            var today = DateOnly.FromDateTime(now);
+            var updatedCount = 0;
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                foreach (var logId in selectedLogIds)
+                {
+                    var log = await _workLogRepo.GetById(logId) ?? throw new ValidationException($"Không tồn tại work log ID = {logId}");
+                    if (log.PartId != part.Id)
+                    {
+                        throw new ValidationException($"Work log ID = {logId} không thuộc công đoạn hiện tại");
+                    }
+                    if (DateOnly.FromDateTime(log.WorkDate) == today)
+                    {
+                        throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
+                    }
+                    if (log.IsPayment)
+                    {
+                        continue;
+                    }
+                    log.IsPayment = true;
+                    log.IsReadOnly = true;
+                    await _workLogRepo.Update(log);
+                    updatedCount++;
+                }
+            });
+
+            return new PartPaymentCompletionViewDTO
+            {
+                PartId = partId,
+                AffectedLogs = updatedCount,
+                PaidAt = now
+            };
+        }
+
+
+
+
+
+
+
     }
 }

@@ -24,5 +24,8 @@ namespace GPMS.APPLICATION.Repositories
         // TrungNT 29-03-2026
         Task<ProductionPartDetailViewDTO> DoneAPart(int partId);
         Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partId);
+
+        Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, IEnumerable<int> workLogIds);
+
     }
 }
