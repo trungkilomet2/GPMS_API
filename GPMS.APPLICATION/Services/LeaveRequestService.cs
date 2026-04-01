@@ -25,17 +25,17 @@ namespace GPMS.APPLICATION.Services
 
         private static readonly TimeZoneInfo _vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
-        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate)
+        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime fromDate, DateTime toDate)
         {
             var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
 
-            if (fromDate.HasValue && fromDate.Value.Date < today)
+            if (fromDate.Date < today)
                 throw new InvalidOperationException("Ngày bắt đầu không được để quá khứ.");
 
-            if (toDate.HasValue && toDate.Value.Date < today)
+            if (toDate.Date < today)
                 throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
 
-            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
+            if (toDate.Date < fromDate.Date)
                 throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
 
             var leaveRequest = new LeaveRequest
