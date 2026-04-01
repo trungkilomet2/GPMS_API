@@ -11,6 +11,7 @@ using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -597,7 +598,8 @@ namespace GMPS.API.Controllers
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = imageUrl,
                         Location = user.Location,
-                        Email = finalEmail
+                        Email = finalEmail,
+                        StatusId = existingUser.StatusId
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
                     _memoryCache.Remove($"{user.Email}_verified");
