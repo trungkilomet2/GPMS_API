@@ -438,7 +438,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("parts/issues/{partId:int}")]
+        [HttpPost("parts/issues/create/{partId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
             [Range(1, int.MaxValue)] int partId,
@@ -458,14 +458,16 @@ namespace GMPS.API.Controllers
                 
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
                 {
-                    ProductionId = part.Part.ProductionId,
+                    PartId = partId,
                     CreatedBy = dto.CreatedBy,
-                    TypeIssue = dto.TypeIssue,
+                    AssignedTo = dto.AssignedTo,
+                    Quantity = dto.Quantity,
                     Title = dto.Title,
                     Description = dto.Description,
                     Priority = dto.Priority,
                     StatusId = IssueStatus_Constrants.ToDo_ID,
-                    ImageUrl = imageUrl
+                    ImageUrl = imageUrl,
+                    CreatedAt = dto.OccurredAt
                 });
 
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<ProductionIssueListItemDTO>
@@ -473,11 +475,14 @@ namespace GMPS.API.Controllers
                     Data = new ProductionIssueListItemDTO
                     {
                         IssueId = issue.Id,
+                        PartId = issue.PartId,
+                        PartName = part.Part.PartName,
                         Title = issue.Title,
                         Description = issue.Description,
-                        TypeIssue = issue.TypeIssue,
                         Priority = issue.Priority,
-                        Quantity = 1,
+                        Quantity = issue.Quantity,
+                        CreatedBy = issue.CreatedBy,
+                        AssignedTo = issue.AssignedTo,
                         ImageUrl = issue.ImageUrl,
                         CreatedAt = issue.CreatedAt
                     }
@@ -490,6 +495,46 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Create issue failed for part {PartId}", partId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+        
+        // HTTP GET : lấy danh sách lỗi của production 04-01-26
+
+        [HttpGet("production/issues/{productionId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueListItemDTO>>>> GetProductionIssues([Range(1, int.MaxValue)] int productionId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var issues = (await _productionService.GetProductionIssues(productionId)).ToList();
+                var parts = (await _productionPartService.GetPartsByProductionId(productionId))
+                    .ToDictionary(x => x.Part.Id, x => x.Part.PartName);
+
+                var result = issues.Select(x => new ProductionIssueListItemDTO
+                {
+                    IssueId = x.Id,
+                    PartId = x.PartId,
+                    PartName = parts.TryGetValue(x.PartId, out var partName) ? partName : null,
+                    Title = x.Title,
+                    Description = x.Description,
+                    Priority = x.Priority,
+                    Quantity = x.Quantity,
+                    CreatedBy = x.CreatedBy,
+                    AssignedTo = x.AssignedTo,
+                    ImageUrl = x.ImageUrl,
+                    CreatedAt = x.CreatedAt
+                });
+
+                return Ok(new RestDTO<IEnumerable<ProductionIssueListItemDTO>> { Data = result });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get issue list failed for production {ProductionId}", productionId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }

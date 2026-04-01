@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("NAME", Name = "UQ__P_STATUS__D9C1FA00A3A3E8CA", IsUnique = true)]
+[Index("NAME", Name = "UQ__P_STATUS__D9C1FA005CF8E98B", IsUnique = true)]
 public partial class P_STATUS
 {
     [Key]

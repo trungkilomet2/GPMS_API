@@ -38,6 +38,9 @@ public partial class P_PART
     [InverseProperty("P_PART")]
     public virtual PRODUCTION PRODUCTION { get; set; } = null!;
 
+    [InverseProperty("PART")]
+    public virtual ICollection<PRODUCTION_ISSUE_LOG> PRODUCTION_ISSUE_LOG { get; set; } = new List<PRODUCTION_ISSUE_LOG>();
+
     [ForeignKey("PP_ID")]
     [InverseProperty("PP")]
     public virtual ICollection<USER> USER { get; set; } = new List<USER>();
