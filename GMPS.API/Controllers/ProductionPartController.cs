@@ -438,7 +438,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("parts/issues/{partId:int}")]
+        [HttpPost("parts/issues/create/{partId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
             [Range(1, int.MaxValue)] int partId,

@@ -440,28 +440,30 @@ namespace GMPS.API.Controllers
                 return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
             }
         }
+        #region TrungntClose for review at 04-01-26
+        //[HttpGet("production/issues/summary-by-type/{production_id:int}")]
+        //public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueSummaryDTO>>>> GetIssueSummaryByType([Range(1, int.MaxValue)] int production_id)
+        //{
+        //    if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+        //    try
+        //    {
+        //        var summary = await _productionService.GetProductionIssueSummaryByType(production_id);
+        //        var data = summary.Select(x => new ProductionIssueSummaryDTO
+        //        {
+        //            TypeIssue = "Chua fix",
+        //            TotalIssues = x.Id,
+        //            TotalQuantity = x.Quantity,
+        //            LastIssueAt = x.CreatedAt
+        //        });
+        //        return Ok(new RestDTO<IEnumerable<ProductionIssueSummaryDTO>> { Data = data });
+        //    }
+        //    catch (ValidationException ex)
+        //    {
+        //        return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+        //    }
+        //}
 
-        [HttpGet("production/issues/summary-by-type/{production_id:int}")]
-        public async Task<ActionResult<RestDTO<IEnumerable<ProductionIssueSummaryDTO>>>> GetIssueSummaryByType([Range(1, int.MaxValue)] int production_id)
-        {
-            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
-            try
-            {
-                var summary = await _productionService.GetProductionIssueSummaryByType(production_id);
-                var data = summary.Select(x => new ProductionIssueSummaryDTO
-                {
-                    TypeIssue = "Chua fix",
-                    TotalIssues = x.Id,
-                    TotalQuantity = x.Quantity,
-                    LastIssueAt = x.CreatedAt
-                });
-                return Ok(new RestDTO<IEnumerable<ProductionIssueSummaryDTO>> { Data = data });
-            }
-            catch (ValidationException ex)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
-            }
-        }
+        #endregion
 
 
 

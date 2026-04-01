@@ -285,14 +285,22 @@ namespace GPMS.APPLICATION.Services
             var part = await _productionPartRepo.GetById(issue.PartId) ?? throw new ValidationException("Công đoạn không tồn tại");
             _ = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
             _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
+            
             if (issue.AssignedTo.HasValue)
             {
                 _ = await _userRepositories.GetById(issue.AssignedTo.Value) ?? throw new ValidationException("Người xử lý lỗi không tồn tại");
             }
+            
             if (issue.Quantity <= 0)
             {
                 throw new ValidationException("Số lượng lỗi phải lớn hơn 0");
             }
+            
+            var production = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Không tồn tại Production");
+                
+            var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Không tồn tại Order");
+
+
             issue.AssignedTo ??= issue.CreatedBy;
             issue.CreatedAt ??= VietnamTime.Now();
             return await _productionIssueRepo.Create(issue);
