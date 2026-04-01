@@ -20,6 +20,14 @@ public partial class LEAVE_REQUEST
     public DateTime DATE_CREATE { get; set; }
 
     [Column(TypeName = "datetime")]
+    public DateTime FROM_DATE { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime TO_DATE { get; set; }
+
+    public int APPROVED_BY { get; set; }
+
+    [Column(TypeName = "datetime")]
     public DateTime? DATE_REPLY { get; set; }
 
     [StringLength(100)]
@@ -27,17 +35,9 @@ public partial class LEAVE_REQUEST
 
     public int LRS_ID { get; set; }
 
-    [Column(TypeName = "datetime")]
-    public DateTime? FROM_DATE { get; set; }
-
-    [Column(TypeName = "datetime")]
-    public DateTime? TO_DATE { get; set; }
-
-    public int? APPROVED_BY { get; set; }
-
     [ForeignKey("APPROVED_BY")]
     [InverseProperty("LEAVE_REQUESTAPPROVED_BYNavigation")]
-    public virtual USER? APPROVED_BYNavigation { get; set; }
+    public virtual USER APPROVED_BYNavigation { get; set; } = null!;
 
     [ForeignKey("LRS_ID")]
     [InverseProperty("LEAVE_REQUEST")]
