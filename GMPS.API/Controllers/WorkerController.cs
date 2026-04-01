@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GMPS.API.Controllers
 {
@@ -24,13 +25,13 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-all-employees")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
+        public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Getting all employees - PageIndex: {PageIndex}, PageSize: {PageSize}",
-                    input.PageIndex, input.PageSize);
+                    "Getting all employees - PageIndex: {PageIndex}, PageSize: {PageSize}, SortColumn: {SortColumn}, SortOrder: {SortOrder}, FilterQuery: {FilterQuery} ",
+                    input.PageIndex, input.PageSize, input.SortColumn,input.SortOrder, input.FilterQuery);
 
                 if (!ModelState.IsValid)
                 {
@@ -48,22 +49,14 @@ namespace GMPS.API.Controllers
                     result = result.Where(u =>
                         (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
                         (u.UserName != null && u.UserName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
-                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
+                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.Roles != null &&u.Roles.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.WorkerSkills != null &&u.WorkerSkills.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Status != null && u.Status.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
                     );
                 }
 
                 var recordCount = result.Count();
-                var totalPages = (int)Math.Ceiling((double)recordCount / input.PageSize);
-
-                if (recordCount > 0 && input.PageIndex >= totalPages)
-                {
-                    return NotFound(new
-                    {
-                        message = $"Page {input.PageIndex} not exist",
-                        totalPages
-                    });
-                }
-
                 var data = result
                     .Skip(input.PageIndex * input.PageSize)
                     .Take(input.PageSize)
@@ -74,16 +67,16 @@ namespace GMPS.API.Controllers
                         FullName = u.FullName,
                         PhoneNumber = u.PhoneNumber,
                         Email = u.Email,
+                        ManagerId = u.ManagerId,
                         Role = string.Join(", ", u.Roles.Select(r => r.Name)),
-                        WorkerRole = string.Join(", ", u.WorkerRoles.Select(w => w.Name)),
+                        WorkerRole = string.Join(", ", u.WorkerSkills.Select(w => w.Name)),
                         Status = u.Status?.Name ?? "Unknown"
                     })
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned {Count} employees", data.Count);
-
-                return Ok(new RestDTO<IEnumerable<EmployeeDTO>>
+                    "Trả về {Count} nhân viên", data.Count);
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<EmployeeDTO>>
                 {
                     Data = data,
                     PageIndex = input.PageIndex,
@@ -104,7 +97,97 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting employees");
+                    "Lỗi khi lấy về nhân viên");
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = 500
+                });
+            }
+        }
+
+        [HttpGet("get-all-employees-by-pm-id")]
+        [Authorize(Roles = "PM")]
+        public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployeesbyPMId([FromQuery] RequestDTO<EmployeeDTO> input)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
+                    "Getting all employees by PM id - PageIndex: {PageIndex}, PageSize: {PageSize}, SortColumn: {SortColumn}, SortOrder: {SortOrder}, FilterQuery: {FilterQuery} ",
+                    input.PageIndex, input.PageSize, input.SortColumn, input.SortOrder, input.FilterQuery);
+
+                if (!ModelState.IsValid)
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return BadRequest(errorDetails);
+                }
+
+                var result = await _workerRepo.GetAllEmployeesByPMId(userId);
+                if (result == null)
+                {
+                    _logger.LogInformation("Không tìm thấy nhân viên nào thuộc quyền quản lý của PM: {userId}", userId);
+                    return NotFound("Không tìm thấy nhân viên nào thuộc quyền quản lý của PM này");
+                }
+                    
+                if (!string.IsNullOrEmpty(input.FilterQuery?.Trim()))
+                {
+                    result = result.Where(u =>
+                        (u.FullName != null && u.FullName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.UserName != null && u.UserName.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Email != null && u.Email.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.Roles != null && u.Roles.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        u.WorkerSkills != null && u.WorkerSkills.Any(r => r.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase)) ||
+                        (u.Status != null && u.Status.Name.Contains(input.FilterQuery, StringComparison.OrdinalIgnoreCase))
+                    );
+                }
+
+                var recordCount = result.Count();
+                var data = result
+                    .Skip(input.PageIndex * input.PageSize)
+                    .Take(input.PageSize)
+                    .Select(u => new EmployeeDTO
+                    {
+                        Id = u.Id,
+                        UserName = u.UserName,
+                        FullName = u.FullName,
+                        PhoneNumber = u.PhoneNumber,
+                        Email = u.Email,
+                        ManagerId = u.ManagerId,
+                        Role = string.Join(", ", u.Roles.Select(r => r.Name)),
+                        WorkerRole = string.Join(", ", u.WorkerSkills.Select(w => w.Name)),
+                        Status = u.Status?.Name ?? "Unknown"
+                    })
+                    .ToList();
+
+                _logger.LogInformation(CustomLogEvents.WorkerController_Get,
+                    "trả về {Count} nhân viên", data.Count);
+                return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<EmployeeDTO>>
+                {
+                    Data = data,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = recordCount,
+                    Links = new List<LinkDTO>
+            {
+                new LinkDTO(
+                    Url.Action(null, "Worker",
+                        new { input.PageIndex, input.PageSize },
+                        Request.Scheme)!,
+                    "self",
+                    "GET"
+                )
+            }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Get, ex,
+                    "Lỗi khi lấy về nhân viên");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -116,28 +199,28 @@ namespace GMPS.API.Controllers
 
         [HttpGet("get-employee-by-id/{userId}")]
         [Authorize(Roles = "Owner")]
-        public async Task<IActionResult> GetEmployeeById(int userId)
+        public async Task<ActionResult<RestDTO<EmployeeDTO>>> GetEmployeeById(int userId)
         {
             if(userId <= 0)
                 {
                 _logger.LogWarning(CustomLogEvents.WorkerController_Get,
-                    "Invalid employee Id {EmployeeId}", userId);
-                return StatusCode(StatusCodes.Status400BadRequest,$"Invalid employee Id '{userId}'");
+                    "Id không hợp lệ {EmployeeId}", userId);
+                return StatusCode(StatusCodes.Status400BadRequest,$"Id không hợp lệ '{userId}'");
             }
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Getting employee with Id {EmployeeId}", userId);
+                    "Lấy về nhân viên với Id: {EmployeeId}", userId);
 
                 var result = await _workerRepo.GetEmployeeById(userId);
 
                 if (result == null)
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Get,
-                        "Employee with Id {EmployeeId} not found", userId);
+                        "Nhân viên với Id {EmployeeId} không tìm thấy", userId);
 
                     return StatusCode(StatusCodes.Status404NotFound,
-                        $"Employee with Id '{userId}' not found");
+                        $"Nhân viên với Id '{userId}' không tìm thấy");
                 }
 
                 var employee = new EmployeeDTO
@@ -148,13 +231,14 @@ namespace GMPS.API.Controllers
                     AvatarUrl = result.AvartarUrl,
                     PhoneNumber = result.PhoneNumber,
                     Email = result.Email,
+                    ManagerId = result.ManagerId,
                     Role = string.Join(", ", result.Roles.Select(r => r.Name)),
-                    WorkerRole = string.Join(", ", result.WorkerRoles.Select(w => w.Name)),
+                    WorkerRole = string.Join(", ", result.WorkerSkills.Select(w => w.Name)),
                     Status = result.Status?.Name ?? "Unknown"
                 };
 
                 _logger.LogInformation(CustomLogEvents.WorkerController_Get,
-                    "Returned employee with Id {EmployeeId}", userId);
+                    "Trả về nhân viên với Id: {EmployeeId}", userId);
 
                 var response = new RestDTO<EmployeeDTO>
                 {
@@ -182,7 +266,7 @@ namespace GMPS.API.Controllers
                 };
 
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting employee with Id {EmployeeId}", userId);
+                    "Lỗi khi lấy về nhân viên với Id: {EmployeeId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
@@ -196,35 +280,60 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                    "Creating new worker {UserName}", input?.UserName);
+                    "Tạo nhân viên với tên tài khoản: {UserName}", input?.UserName);
 
                 if (ModelState.IsValid)
                 {
+
+                    if (input.RoleIds == null || !input.RoleIds.Any())
+                    {
+                        return StatusCode(StatusCodes.Status400BadRequest, "Phải chọn ít nhất 1 role");
+                    }
+
+                    int? managerId = input.ManagerId;
+
+                    if (input.RoleIds.Contains(RoleId_Constants.PM))
+                    {
+                        managerId = 1;
+                    }
+
+                    if (input.RoleIds.Contains(RoleId_Constants.Worker))
+                    {
+                        if (input.ManagerId == null)
+                        {
+                            return StatusCode(StatusCodes.Status400BadRequest,
+                                "Worker bắt buộc phải chọn PM quản lý");
+                        }
+
+                        managerId = input.ManagerId;
+                    }
                     var passwordHasher = new PasswordHasher<User>();
                     var newUser = new User
                     {
                         UserName = input.UserName,
                         PasswordHash = passwordHasher.HashPassword(null, input.Password),
                         FullName = input.FullName,
-                        StatusId = 1,
+                        ManagerId = input.ManagerId,
+                        StatusId = UserStatus_Constants.Active,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r
                         }).ToList()
                     };
 
+
                     var result = await _workerRepo.CreateEmployee(newUser);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                        "Worker {UserId} created successfully", result.Id);
+                        "Nhân viên có Id: {UserId} được tạo thành công", result.Id);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Worker '{result.Id}' has been created");
+                        $"Nhân viên có Id: '{result.Id}' được tạo thành công");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Post,
-                        "Invalid model state while creating Worker {UserName}", input?.UserName);
+                        "Lỗi model state khi tạo nhân viên: {UserName}", input?.UserName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -249,7 +358,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Error occurred while creating employee {UserName}", input?.UserName);
+                    "Lỗi khi tạo nhân viên: {UserName}", input?.UserName);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -270,12 +379,12 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Put,
-                    "Updating employee {UserId}", userId);
+                    "Cập nhật nhân viên có Id: {UserId}", userId);
 
                 if (userId <= 0)
                 {
                     return StatusCode(StatusCodes.Status400BadRequest,
-                        $"Invalid employee Id '{userId}'");
+                        $"Id không hợp lệ '{userId}'");
                 }
 
                 if (ModelState.IsValid)
@@ -284,6 +393,7 @@ namespace GMPS.API.Controllers
                     {
                         Id = userId,
                         FullName = input.FullName,
+                        ManagerId = input.ManagerId,
                         StatusId = input.StatusId,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
@@ -294,9 +404,9 @@ namespace GMPS.API.Controllers
                     var result = await _workerRepo.UpdateEmployee(userId, updatedUser);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Put,
-                        "Employee {UserId} updated successfully", userId);
+                        "Nhân viên có Id: {UserId} cập nhật thành công", userId);
 
-                    return Ok($"Employee '{userId}' has been updated");
+                    return Ok($"Nhân viên có Id: '{userId}' cập nhật thành công");
                 }
                 else
                 {
@@ -315,7 +425,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Error occurred while updating employee {UserId}", userId);
+                    "Lỗi khi cập nhật nhân viên có Id: {UserId}", userId);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }

@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -38,9 +39,9 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<Order> CreateOrder(Order order)
         {
-            var existing = await _userBaseRepo.GetById(order.UserId);
             if (order == null)
                 throw new Exception("Failed to create order.");
+            var existing = await _userBaseRepo.GetById(order.UserId);
             if (existing == null)
                 throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
@@ -50,18 +51,62 @@ namespace GPMS.APPLICATION.Services
             return await _orderBaseRepo.Create(order);
         }
 
-        public async Task<Order> UpdateOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)
         {
-            if (updatedOrder == null)
-                throw new Exception("Failed to update order.");
-            if (updatedOrder.EndDate < updatedOrder.StartDate)
-                throw new Exception("End date must be greater than start date.");
+            if (input.EndDate < input.StartDate)
+                throw new ArgumentException("End date must be greater than start date.");
+            if (input.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new ArgumentException("Start date must be greater than current date.");
 
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
-                throw new Exception($"Order with id '{orderId}' not exist in system.");
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
             if (existing.StatusName != OrderStatus_Constants.Modification)
-                throw new Exception($"Only modify order with status '{OrderStatus_Constants.Modification}'.");
+                throw new InvalidOperationException($"Only modify order with status '{OrderStatus_Constants.Modification}'.");
+            if (existing.UserId != userId)
+                throw new UnauthorizedAccessException("You don't have permission to update this order.");
+
+            var resolvedImage = !string.IsNullOrEmpty(input.Image) ? input.Image : existing.Image;
+
+            var histories = new List<OHistoryUpdate>();
+            void TrackChange(string field, string? oldVal, string? newVal)
+            {
+                if (oldVal != newVal)
+                    histories.Add(new OHistoryUpdate
+                    {
+                        OrderId = orderId,
+                        FieldName = field,
+                        OldValue = oldVal ?? string.Empty,
+                        NewValue = newVal ?? string.Empty
+                    });
+            }
+
+            TrackChange("OrderName", existing.OrderName, input.OrderName);
+            TrackChange("Type", existing.Type, input.Type);
+            TrackChange("Size", existing.Size, input.Size);
+            TrackChange("Color", existing.Color, input.Color);
+            TrackChange("StartDate", existing.StartDate.ToString(), input.StartDate.ToString());
+            TrackChange("EndDate", existing.EndDate.ToString(), input.EndDate.ToString());
+            TrackChange("Quantity", existing.Quantity.ToString(), input.Quantity.ToString());
+            TrackChange("Image", existing.Image, resolvedImage);
+            TrackChange("Note", existing.Note, input.Note);
+
+            var updatedOrder = new Order
+            {
+                Id = orderId,
+                UserId = userId,
+                OrderName = input.OrderName,
+                Type = input.Type,
+                Size = input.Size,
+                Color = input.Color,
+                StartDate = input.StartDate,
+                EndDate = input.EndDate,
+                Quantity = input.Quantity,
+                Image = resolvedImage,
+                Note = input.Note,
+                Template = input.Templates,
+                Material = input.Materials
+            };
 
             return await _orderBaseRepo.UpdateOrder(orderId, updatedOrder, histories);
         }
@@ -70,13 +115,13 @@ namespace GPMS.APPLICATION.Services
         {
             var order = await _orderBaseRepo.GetById(orderId);
             if (order is null)
-                throw new Exception($"Order with id '{orderId}' not found.");
+                throw new KeyNotFoundException($"Order with id '{orderId}' not found.");
 
             if (order.StatusName == OrderStatus_Constants.Approved)
                 throw new InvalidOperationException("Cannot add material to an approved order.");
 
             if (material.Value <= 0)
-                throw new Exception("Quantity must be greater than zero.");
+                throw new InvalidOperationException("Quantity must be greater than zero.");
 
             material.OrderId = orderId;
             return await _materialBaseRepo.Create(material);
@@ -85,32 +130,47 @@ namespace GPMS.APPLICATION.Services
         public async Task<Order> RequestOrderModification(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
         {
             if (updatedOrder == null)
-                throw new Exception("Failed to update order.");
+                throw new ArgumentNullException(nameof(updatedOrder), "Failed to update order.");
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
-                throw new Exception($"Order with id '{orderId}' not exist in system.");
+                throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
             if (existing.StatusName != OrderStatus_Constants.Pending)
-                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+                throw new InvalidOperationException("Only modify order with status Chờ Xét Duyệt.");
 
             return await _orderStatusRepo.RequestOrderModification(orderId, updatedOrder, histories);
         }
 
-        public async Task<Order> DenyOrder(int userId,int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        public async Task<Order> DenyOrder(int userId, int orderId)
         {
-            if (updatedOrder == null)
-                throw new Exception("Failed to update order.");
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
                 throw new KeyNotFoundException($"Order with id '{orderId}' not exist in system.");
-            if(existing.UserId != userId)
-                throw new Exception("You don't have permission to deny this order.");
             if (existing.StatusName != OrderStatus_Constants.Pending)
-                throw new Exception("Only modify order with status Chờ Xét Duyệt.");
+                throw new InvalidOperationException("Only modify order with status Chờ Xét Duyệt.");
+            if (existing.UserId != userId)
+                throw new UnauthorizedAccessException("You don't have permission to deny this order.");
+
+            var histories = new List<OHistoryUpdate>
+            {
+                new OHistoryUpdate
+                {
+                    OrderId = orderId,
+                    FieldName = "Status",
+                    OldValue = existing.StatusName ?? string.Empty,
+                    NewValue = OrderStatus_Constants.Modification
+                }
+            };
+
+            var updatedOrder = new Order
+            {
+                Id = orderId,
+                Status = OrderStatus_Constants.Cancelled_ID
+            };
 
             return await _orderStatusRepo.DenyOrder(orderId, updatedOrder, histories);
         }
 
-        public async Task<Order> ApproveOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories)
+        public async Task<Order> ApproveOrder(int orderId)
         {
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
@@ -120,6 +180,23 @@ namespace GPMS.APPLICATION.Services
                 throw new InvalidOperationException("This order request has already been processed.");
             if (existing.StatusName != OrderStatus_Constants.Pending)
                 throw new InvalidOperationException("Only approve order with status Chờ Xét Duyệt.");
+
+            var histories = new List<OHistoryUpdate>
+            {
+                new OHistoryUpdate
+                {
+                    OrderId = orderId,
+                    FieldName = "Status",
+                    OldValue = existing.StatusName ?? string.Empty,
+                    NewValue = OrderStatus_Constants.Approved
+                }
+            };
+
+            var updatedOrder = new Order
+            {
+                Id = orderId,
+                Status = OrderStatus_Constants.Approved_ID
+            };
 
             return await _orderStatusRepo.ApproveOrder(orderId, updatedOrder, histories);
         }

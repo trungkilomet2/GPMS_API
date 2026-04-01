@@ -2,6 +2,7 @@
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,9 +39,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<OrderRejectReason> GetById(object id)
+        public async Task<OrderRejectReason> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.ORDER_REJECT_REASON.Where(o => o.ORDER_ID == (int)id).FirstOrDefaultAsync();
+            return _mapper.Map<OrderRejectReason>(data);
         }
 
         public Task<OrderRejectReason> Update(OrderRejectReason entity)

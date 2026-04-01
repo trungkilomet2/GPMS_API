@@ -17,7 +17,8 @@ public partial class PART_WORK_LOG
 
     public int QUANTITY { get; set; }
 
-    public DateOnly WORK_DATE { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime CREATE_DATE { get; set; }
 
     public bool? IS_READ_ONLY { get; set; }
 

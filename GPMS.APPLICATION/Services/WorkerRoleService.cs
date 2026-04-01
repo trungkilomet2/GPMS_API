@@ -11,16 +11,16 @@ namespace GPMS.APPLICATION.Services
 {
     public class WorkerRoleService : IWorkerRoleRepositories
     {
-        private readonly IBaseRepositories<WorkerRole> _workerRoleRepo;
+        private readonly IBaseRepositories<WorkerSkill> _workerRoleRepo;
         private readonly IBaseWorkerRoleRepositories _baseWorkerRepo;
 
-        public WorkerRoleService(IBaseRepositories<WorkerRole> workerRoleRepo, IBaseWorkerRoleRepositories baseWorkerRepo)
+        public WorkerRoleService(IBaseRepositories<WorkerSkill> workerRoleRepo, IBaseWorkerRoleRepositories baseWorkerRepo)
         {
             _workerRoleRepo = workerRoleRepo ?? throw new ArgumentNullException(nameof(workerRoleRepo));
             _baseWorkerRepo = baseWorkerRepo ?? throw new ArgumentNullException(nameof(baseWorkerRepo));
         }
 
-        public async Task<WorkerRole> CreateWorkerRole(WorkerRole workerRole)
+        public async Task<WorkerSkill> CreateWorkerRole(WorkerSkill workerRole)
         {
             var result = await _baseWorkerRepo.FindRoleByName(workerRole.Name);
             if (result != null)
@@ -31,7 +31,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task<IEnumerable<WorkerRole>> GetAllWorkerRoles()
+        public async Task<IEnumerable<WorkerSkill>> GetAllWorkerRoles()
         {
             var data = await _workerRoleRepo.GetAll(null);
             return data;

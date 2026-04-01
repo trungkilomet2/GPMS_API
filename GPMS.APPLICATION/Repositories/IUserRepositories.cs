@@ -10,8 +10,9 @@ namespace GPMS.APPLICATION.Repositories
     public interface IUserRepositories
     {   
        Task<IEnumerable<User>> GetAllUser();
-        Task<IEnumerable<User>> GetOwner();
+        Task<User> GetOwner();
         Task<User> GetUserById(int id);
+        Task<bool> IsEmailExists(string email);
         Task<User> CreateNewUser(User user, List<int> roleIds);
        Task DisableAnUser(int userId);
        Task AssignRoles(int userId, List<int> roleIds);

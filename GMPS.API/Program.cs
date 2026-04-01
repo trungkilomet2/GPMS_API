@@ -4,6 +4,7 @@ using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
+using GPMS.DOMAIN.Entities.GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.EmailAPI;
@@ -15,13 +16,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Filters;
+using Serilog.Sinks.MSSqlServer;
 using System.Text;
-
 Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.ClearProviders().AddSimpleConsole().AddDebug();
+builder.Logging.ClearProviders();
 //--------------------------- Controller Config ---------------------------
 builder.Services.AddControllers(
     options =>
@@ -65,6 +68,41 @@ builder.Services.AddSwaggerGen(
               }
          });
    });
+
+var columnOptions = new ColumnOptions();
+columnOptions.Id.ColumnName = "ID";
+columnOptions.Message.ColumnName = "MESSAGE";
+columnOptions.MessageTemplate.ColumnName = "MESSAGE_TEMPLATE";
+columnOptions.Level.ColumnName = "LEVEL";
+columnOptions.Exception.ColumnName = "EXCEPTION";
+columnOptions.Properties.ColumnName = "PROPERTIES";
+columnOptions.TimeStamp.ColumnName = "TIMPESTAMP";
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.Logger(lc => lc
+    .MinimumLevel.Warning()
+        .Filter.ByExcluding(logEvent =>
+            logEvent.Properties.ContainsKey("SourceContext") &&
+            (
+                logEvent.Properties["SourceContext"].ToString().Contains("Microsoft.") ||
+                logEvent.Properties["SourceContext"].ToString().Contains("EntityFrameworkCore") ||
+                logEvent.Properties["SourceContext"].ToString().Contains("System.")
+            )
+        )
+    .WriteTo.MSSqlServer(
+        connectionString: builder.Configuration.GetConnectionString("GPMSDB"),
+        sinkOptions: new MSSqlServerSinkOptions
+        {
+            TableName = "LOG_EVENTS"
+        },
+        columnOptions: columnOptions
+    )
+)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 // add cache
 builder.Services.AddMemoryCache();
 
@@ -83,10 +121,13 @@ builder.Services.AddScoped<IEmailRepositories, EmailService>();
 builder.Services.AddScoped<IWorkerRepositories, WorkerService>();
 builder.Services.AddScoped<IBaseWorkerRepository, SqlServerWorkerRepository>();
 
+builder.Services.AddScoped<IBaseCustomerRepositories, SqlServerCustomerRepository>();
+builder.Services.AddScoped<ICustomerRepositories, CustomerService>();
+
 builder.Services.AddScoped<IBaseRepositories<UserStatus>, SqlServerUserStatusRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Role>, SqlServerRoleRepository>();
-builder.Services.AddScoped<IBaseRepositories<WorkerRole>, SqlServerWorkerRoleRepository>();
+builder.Services.AddScoped<IBaseRepositories<WorkerSkill>, SqlServerWorkerRoleRepository>();
 builder.Services.AddScoped<IBaseWorkerRoleRepositories, SqlServerWorkerRoleRepository>();
 builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 
@@ -108,8 +149,7 @@ builder.Services.AddScoped<ILeaveRequestRepositories, LeaveRequestService>();
 builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-//onworking
-builder.Services.AddScoped<IPermissionRepositories, PermissionService>();
+builder.Services.AddScoped<IPermissionRepositories, SqlServerPermissionRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<Production>, SqlServerProductionRepository>();
 
@@ -122,6 +162,19 @@ builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductio
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
 builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
+
+builder.Services.AddScoped<IBaseRepositories<ProductionRejectReason>, SqlServerProductionRejectRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionIssueLog>, SqlServerProductionIssueRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionPartWorkLog>, SqlServerProductionPartWorkLogRepository>();
+builder.Services.AddScoped<IBaseRepositories<TemplateDefinition>, SqlServerTemplateRepository>();
+builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingNotebookRepository>();
+builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
+
+builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
+builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
+
+builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventRepository>();
+builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();

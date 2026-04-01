@@ -10,7 +10,7 @@
         public string? AvatarUrl { get; set; }
         public string? Location { get; set; }
         public string Status { get; set; } = null!;
-        public string Role { get; set; } = null!;
+        public List<string> Roles { get; set; } = new();
         public string WorkerRole { get; set; } = null!;
     }
 }

@@ -15,6 +15,7 @@ namespace GMPS.API.DTOs
         public string Type { get; set; } = null!;
 
         [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
+        [RegularExpression("^(XS|S|M|L|XL|XXL|XXXL)$", ErrorMessage = "Size must be XS, S, M, L, XL, XXL, or XXXL")]
         public string? Size { get; set; }
 
         [Required(ErrorMessage = "Color is required")]
@@ -32,10 +33,10 @@ namespace GMPS.API.DTOs
         public int Quantity { get; set; }
 
         [Url(ErrorMessage = "Image must be a valid URL")]
-        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        [StringLength(255, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
 
-        [StringLength(255, ErrorMessage = "Note cannot exceed 255 characters")]
+        [StringLength(200, ErrorMessage = "Note cannot exceed 200 characters")]
         public string? Note { get; set; }
 
         public List<UpdateTemplateDTO>? Templates { get; set; }

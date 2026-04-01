@@ -22,8 +22,6 @@ public partial class O_TEMPLATE
     [StringLength(255)]
     public string? FILE { get; set; }
 
-    public int? QUANTITY { get; set; }
-
     [StringLength(100)]
     public string? NOTE { get; set; }
 

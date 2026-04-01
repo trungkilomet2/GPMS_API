@@ -35,7 +35,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new Exception("Không tìm role");
             }
 
-            USER sqlUser = await _context.USER.Where(u => u.USER_ID == user.Id).FirstOrDefaultAsync();
+            USER sqlUser = await _context.USER
+                .Include(u => u.ROLE)
+                .Where(u => u.USER_ID == user.Id)
+                .FirstOrDefaultAsync();
+            if (sqlUser is null)
+                throw new Exception($"Không tìm thấy tài khoản với ID {user.Id}");
             sqlUser.ROLE.Add(role);
             await _context.SaveChangesAsync();  
         }

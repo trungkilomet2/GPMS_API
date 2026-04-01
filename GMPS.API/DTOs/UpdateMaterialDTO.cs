@@ -5,10 +5,15 @@ namespace GMPS.API.DTOs
     public class UpdateMaterialDTO
     {
         [Required(ErrorMessage = "MaterialName is required")]
-        [StringLength(100, ErrorMessage = "MaterialName cannot exceed 100 characters")]
+        [StringLength(150, ErrorMessage = "MaterialName cannot exceed 150 characters")]
         public string MaterialName { get; set; }
 
-        [StringLength(2048, ErrorMessage = "Image URL is too long")]
+        [Required(ErrorMessage = "Color is required")]
+        [StringLength(30, ErrorMessage = "Color cannot exceed 30 characters")]
+        public string Color { get; set; } = null!;
+
+        [Url(ErrorMessage = "Image must be a valid URL")]
+        [StringLength(255, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
 
         [Required(ErrorMessage = "Value is required")]
@@ -19,7 +24,7 @@ namespace GMPS.API.DTOs
         public string? Note { get; set; }
 
         [Required(ErrorMessage = "Uom is required")]
-        [StringLength(20, ErrorMessage = "Uom cannot exceed 20 characters")]
+        [StringLength(50, ErrorMessage = "Uom cannot exceed 50 characters")]
         public string Uom { get; set; }
     }
 }

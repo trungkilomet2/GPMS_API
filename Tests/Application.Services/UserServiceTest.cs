@@ -13,10 +13,10 @@ namespace GPMS.TEST.Application.Services
         private readonly Mock<IBaseRepositories<Role>> _roleRepo = new();
         private readonly Mock<IBaseUserRoleRepo> _userRoleRepo = new();
         private readonly Mock<IUnitOfWork> _unitOfWork = new();
-
+        private readonly Mock<IBaseAccountRepositories> _baseAccount = new();
         private UserService BuildService()
         {
-            return new UserService(_userRepo.Object, _roleRepo.Object, _userRoleRepo.Object, _unitOfWork.Object);
+            return new UserService(_userRepo.Object, _roleRepo.Object, _userRoleRepo.Object, _unitOfWork.Object, _baseAccount.Object);
         }
 
         [Fact]
@@ -259,6 +259,18 @@ namespace GPMS.TEST.Application.Services
         }
 
         [Fact]
+        public async Task AssignRoles_Throws_WhenUserIsInactive()
+        {
+            var user = new User { Id = 1, UserName = "testuser", StatusId = UserStatus_Constants.Inactive };
+            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(user);
+
+            var service = BuildService();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.AssignRoles(1, new List<int> { 1 }));
+        }
+
+        [Fact]
         public async Task AssignRoles_Throws_WhenRoleNotFound()
         {
             var user = new User { Id = 1, UserName = "testuser" };
@@ -297,8 +309,20 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            await Assert.ThrowsAsync<Exception>(() =>
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.UpdateUserForAdmin(99, new User { Id = 99 }));
+        }
+
+        [Fact]
+        public async Task UpdateUserForAdmin_Throws_WhenUserIsInactive()
+        {
+            var existing = new User { Id = 1, UserName = "old", StatusId = UserStatus_Constants.Inactive };
+            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+            var service = BuildService();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.UpdateUserForAdmin(1, new User { Id = 1 }));
         }
     }
 }

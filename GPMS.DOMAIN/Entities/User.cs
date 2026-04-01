@@ -17,10 +17,11 @@ namespace GPMS.DOMAIN.Entities
        public string Location { get; set; }
        public string Email { get; set; }
        public int StatusId { get; set; }
+       public int ManagerId { get; set; }
 
         public List<Role> Roles { get; set; } = new();
 
-        public List<WorkerRole> WorkerRoles { get; set; } = new();
+        public List<WorkerSkill> WorkerSkills { get; set; } = new();
 
         public UserStatus? Status { get; set; }
 

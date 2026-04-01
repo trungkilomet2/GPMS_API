@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -74,9 +75,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new ValidationException("Không tồn tại Production Part trong hệ thống");
             }
             dbEntity.PART_NAME = entity.PartName;
-            dbEntity.TEAM_LEADER_ID = entity.TeamLeaderId;
-            dbEntity.START_DATE = entity.StartDate;
-            dbEntity.END_DATE = entity.EndDate;
+            dbEntity.START_DATE = entity.StartDate ?? DateTime.Now; // FIX Tạm
+            dbEntity.END_DATE = entity.EndDate ?? DateTime.Now; // FIX Tạm
             dbEntity.CPU = entity.Cpu;
             dbEntity.PPS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
@@ -152,6 +152,32 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new ValidationException("Không tồn tại User trong Production Part");
             }
             return await GetById(partId);
+        }
+
+        public async Task<IEnumerable<User>> ListWorkerWithPM(int pm_id)
+        {
+            USER check_id = await _context.USER.Include(u => u.ROLE).Where(x => x.USER_ID == pm_id).FirstOrDefaultAsync(); 
+
+            if(check_id is null)
+            {
+                throw new ValidationException("Không tồn tại PM trong hệ thống");
+            }
+            if(check_id.ROLE.Where(r=>r.NAME.Equals(Roles_Constants.PM)).FirstOrDefault() is null)
+            {
+                throw new ValidationException("User đang không phải là PM trong hệ thống");
+            }
+            
+            List<USER> workers = await _context.USER
+                .Include(u => u.ROLE)
+                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
+                .ToListAsync();
+
+            var pm = _context.USER.Include(u => u.WS)
+                              .Include(u => u.US).Where(u => u.USER_ID == pm_id).FirstOrDefault();
+
+            workers.Add(pm);
+
+            return _mapper.Map<IEnumerable<User>>(workers);
         }
     }
 }

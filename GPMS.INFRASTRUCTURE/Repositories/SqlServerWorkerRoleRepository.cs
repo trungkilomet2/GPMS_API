@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    public class SqlServerWorkerRoleRepository : IBaseRepositories<WorkerRole>, IBaseWorkerRoleRepositories
+    public class SqlServerWorkerRoleRepository : IBaseRepositories<WorkerSkill>, IBaseWorkerRoleRepositories
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -22,13 +22,13 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        public async Task<WorkerRole> Create(WorkerRole entity)
+        public async Task<WorkerSkill> Create(WorkerSkill entity)
         {
-            var roleEntity = _mapper.Map<WORKER_ROLE>(entity);
+            var roleEntity = _mapper.Map<WORKER_SKILL>(entity);
 
-            await _context.WORKER_ROLE.AddAsync(roleEntity);
+            await _context.WORKER_SKILL.AddAsync(roleEntity);
             await _context.SaveChangesAsync();
-            return _mapper.Map<WorkerRole>(roleEntity);
+            return _mapper.Map<WorkerSkill>(roleEntity);
         }
 
         public Task Delete(object id)
@@ -36,25 +36,25 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public async Task<WorkerRole> FindRoleByName(string roleName)
+        public async Task<WorkerSkill> FindRoleByName(string roleName)
         {
-            var data = await _context.WORKER_ROLE.FirstOrDefaultAsync(r => r.NAME.ToLower() == roleName.ToLower());
-            return _mapper.Map<WorkerRole>(data);
+            var data = await _context.WORKER_SKILL.FirstOrDefaultAsync(r => r.NAME.ToLower() == roleName.ToLower());
+            return _mapper.Map<WorkerSkill>(data);
         }
 
-        public async Task<IEnumerable<WorkerRole>> GetAll(object? obj)
+        public async Task<IEnumerable<WorkerSkill>> GetAll(object? obj)
         {
-            var data = await _context.WORKER_ROLE.ToListAsync();
-            return _mapper.Map<List<WorkerRole>>(data);
+            var data = await _context.WORKER_SKILL.ToListAsync();
+            return _mapper.Map<List<WorkerSkill>>(data);
         }
 
-        public async Task<WorkerRole> GetById(object id)
+        public async Task<WorkerSkill> GetById(object id)
         {
-            var data = await _context.WORKER_ROLE.FindAsync(id);
-            return _mapper.Map<WorkerRole>(data);
+            var data = await _context.WORKER_SKILL.FindAsync(id);
+            return _mapper.Map<WorkerSkill>(data);
         }
 
-        public Task<WorkerRole> Update(WorkerRole entity)
+        public Task<WorkerSkill> Update(WorkerSkill entity)
         {
             throw new NotImplementedException();
         }

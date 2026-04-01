@@ -19,46 +19,41 @@ namespace GMPS.API.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepositories _commentRepo;
-        private readonly IUserRepositories _userRepo;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<CommentController> _logger;
 
-        public CommentController(ICommentRepositories commentInterface, IConfiguration configuration, ILogger<CommentController> logger, IUserRepositories userRepo)
+        public CommentController(ICommentRepositories commentInterface, ILogger<CommentController> logger)
         {
             _commentRepo = commentInterface ?? throw new ArgumentNullException(nameof(commentInterface));
-            _configuration = configuration;
             _logger = logger;
-            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
-        public async Task<IActionResult> GetCommentByOrderId(int orderId)
+        public async Task<ActionResult<RestDTO<IEnumerable<CommentDTO>>>> GetCommentByOrderId(int orderId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var user = await _userRepo.GetUserById(userId);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);           
             try
             {
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
-                    "Getting comments for OrderId {OrderId}", orderId);
-
+                    "Đang lấy comment cho OrderId {OrderId}", orderId);
                 var result = await _commentRepo.GetCommentByOrderId(orderId);
                 if (!result.Any())
                     {
                     _logger.LogInformation(CustomLogEvents.CommentController_Get,
-                        "No comments found for OrderId {OrderId}", orderId);
-                    return StatusCode(StatusCodes.Status404NotFound, $"No comments found for OrderId '{orderId}'");
+                        "Không tìm thấy comment cho OrderId {OrderId}", orderId);
+                    return StatusCode(StatusCodes.Status404NotFound, $"Không tìm thấy Comment cho OrderId '{orderId}'");
                 }
                 var comment = result.Select(c => new CommentDTO
                 {
-                    Id = c.Id,
-                    UserName = user.UserName,
-                    ToOrderId = c.toOrderId,
-                    Content = c.Content,
-                    SendDateTime = c.SendDateTime
+                    Id = c.Comment.Id,
+                    FromUserId = c.Comment.fromUserId,
+                    ToOrderId = c.Comment.toOrderId,
+                    Content = c.Comment.Content,
+                    SendDateTime = c.Comment.SendDateTime,
+                    FromUserName = c.FromUserName
                 });
 
                 _logger.LogInformation(CustomLogEvents.CommentController_Get,
-                    "Returned {Count} comments for OrderId {OrderId}", result.Count(), orderId);
+                    "Trả về {Count} comments cho OrderId {OrderId}", result.Count(), orderId);
 
                 var response = new RestDTO<IEnumerable<CommentDTO>>
                 {
@@ -80,7 +75,7 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Error while getting comments for OrderId {OrderId}", orderId);
+                    "Lỗi khi lấy comments cho OrderId {OrderId}", orderId);
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
             }
         }
@@ -94,7 +89,7 @@ namespace GMPS.API.Controllers
                 if (ModelState.IsValid)
                 {
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
-                        "Creating comment for OrderId {OrderId} by UserId {UserId}",
+                        "Tạo comment cho OrderId {OrderId} by UserId {UserId}",
                         comment.ToOrderId, comment.FromUserId);
                     var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     var newComment = new Comment
@@ -108,16 +103,16 @@ namespace GMPS.API.Controllers
                     var result = await _commentRepo.CreateComment(userId,newComment);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
-                        "Comment {CommentId} created successfully for OrderId {OrderId}",
+                        "Comment {CommentId} được tạo thành công cho OrderId {OrderId}",
                         result.Id, comment.ToOrderId);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Comment '{result.Id}' has been created");
+                        $"Comment '{result.Id}' đã được tạo thành công");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.CommentController_Post,
-                        "Invalid model state while creating comment");
+                        "Lỗi model state khi tạo comment");
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -131,7 +126,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.CommentController_Post, ex,
-                    "Error while creating comment");
+                    "Lỗi khi tạo comment");
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -207,7 +202,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpDelete("delete-comment/{CommentId}")]
-        public async Task<IActionResult> DeleteComment(int CommentId)
+        public async Task<ActionResult> DeleteComment(int CommentId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("USERNAME", Name = "UQ__USER__B15BE12E7DEEB8A4", IsUnique = true)]
+[Index("USERNAME", Name = "UQ__USER__B15BE12E42F4D952", IsUnique = true)]
 public partial class USER
 {
     [Key]
@@ -35,11 +35,23 @@ public partial class USER
 
     public int US_ID { get; set; }
 
+    public int? MANAGER_ID { get; set; }
+
     [InverseProperty("USER")]
     public virtual ICollection<CUTTING_NOTEBOOK_LOG> CUTTING_NOTEBOOK_LOG { get; set; } = new List<CUTTING_NOTEBOOK_LOG>();
 
+    [InverseProperty("MANAGER")]
+    public virtual ICollection<USER> InverseMANAGER { get; set; } = new List<USER>();
+
+    [InverseProperty("APPROVED_BYNavigation")]
+    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUESTAPPROVED_BYNavigation { get; set; } = new List<LEAVE_REQUEST>();
+
     [InverseProperty("USER")]
-    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUEST { get; set; } = new List<LEAVE_REQUEST>();
+    public virtual ICollection<LEAVE_REQUEST> LEAVE_REQUESTUSER { get; set; } = new List<LEAVE_REQUEST>();
+
+    [ForeignKey("MANAGER_ID")]
+    [InverseProperty("InverseMANAGER")]
+    public virtual USER? MANAGER { get; set; }
 
     [InverseProperty("USER")]
     public virtual ICollection<ORDER> ORDER { get; set; } = new List<ORDER>();
@@ -53,11 +65,14 @@ public partial class USER
     [InverseProperty("PM")]
     public virtual ICollection<PRODUCTION> PRODUCTION { get; set; } = new List<PRODUCTION>();
 
+    [InverseProperty("ASSIGNED_TONavigation")]
+    public virtual ICollection<PRODUCTION_ISSUE_LOG> PRODUCTION_ISSUE_LOGASSIGNED_TONavigation { get; set; } = new List<PRODUCTION_ISSUE_LOG>();
+
+    [InverseProperty("CREATED_BYNavigation")]
+    public virtual ICollection<PRODUCTION_ISSUE_LOG> PRODUCTION_ISSUE_LOGCREATED_BYNavigation { get; set; } = new List<PRODUCTION_ISSUE_LOG>();
+
     [InverseProperty("USER")]
     public virtual ICollection<PRODUCTION_REJECT_REASON> PRODUCTION_REJECT_REASON { get; set; } = new List<PRODUCTION_REJECT_REASON>();
-
-    [InverseProperty("TEAM_LEADER")]
-    public virtual ICollection<P_PART> P_PART { get; set; } = new List<P_PART>();
 
     [InverseProperty("FROM_USERNavigation")]
     public virtual ICollection<UO_COMMENT> UO_COMMENT { get; set; } = new List<UO_COMMENT>();
@@ -79,5 +94,5 @@ public partial class USER
 
     [ForeignKey("USER_ID")]
     [InverseProperty("USER")]
-    public virtual ICollection<WORKER_ROLE> WR { get; set; } = new List<WORKER_ROLE>();
+    public virtual ICollection<WORKER_SKILL> WS { get; set; } = new List<WORKER_SKILL>();
 }

@@ -14,6 +14,22 @@ namespace GPMS.APPLICATION.Repositories
         // P_Part =============> Assignment    
         Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds);
         Task<ProductionPartDetailViewDTO> RemoveWorker(int partId, int workerId);
+        // Lấy danh sách của worker có thể assign vào part đó gồm tên user + kĩ năng + lịch nghỉ phép
+        Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id, DateTime fromDate, DateTime toDate);
+
+        // Worker Log Work ========> Worker Log Work
+        Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId);
+        Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity);
+        Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity);
+        // TrungNT 29-03-2026
+        Task<ProductionPartDetailViewDTO> DoneAPart(int partId);
+        Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partId);
+
+        Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, IEnumerable<int> workLogIds);
+
+        Task<ProductionPartCompletionEstimateViewDTO> EstimatePartCompletion(int partId, IEnumerable<int> workerIds);
+        Task<IEnumerable<ProductionWorkerProgressChartViewDTO>> GetProductionWorkerProgressChart(int productionId);
+        Task<IEnumerable<WorkerProductivityScoreViewDTO>> GetWorkerProductivityScores(int productionId);
 
     }
 }

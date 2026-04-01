@@ -8,10 +8,8 @@ namespace GMPS.API.DTOs
         [StringLength(150)]
         public string PartName { get; set; } = string.Empty;
 
-        [Range(1, int.MaxValue)]
-        public int TeamLeaderId { get; set; }
-        public DateOnly? StartDate { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
 
         [Range(100, double.MaxValue)]
         public decimal Cpu { get; set; }

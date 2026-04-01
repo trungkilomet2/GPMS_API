@@ -6,6 +6,7 @@ using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
@@ -28,6 +29,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 var data = _context.PRODUCTION.Include(p => p.ORDER).Include(p=> p.PM);
                 return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
             }
+            if(obj is Order order)
+            {
+                var data =  _context.PRODUCTION.Where(p => p.ORDER_ID == order.Id && p.PS_ID != ProductionStatus_Constants.Reject_ID).ToList(); 
+                return Task.FromResult(_mapper.Map<IEnumerable<Production>>(data));
+            }
+
             throw new Exception("Đã có lỗi xảy ra trong hệ thống");
         }
 
@@ -49,6 +56,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new Exception($"User with id '{entity.PmId}' not found.");
             }
 
+            bool haveManagerWorker = _context.USER.Any(u => u.MANAGER_ID == pm_id.USER_ID);
+            if(!haveManagerWorker)
+            {
+                throw new Exception($"PM '{entity.PmId}' đang không quản lý công nhân nào");
+            }
+
             var isOrderExist = await _context.ORDER.AnyAsync(o => o.ORDER_ID == entity.OrderId);
             if (!isOrderExist)
             {
@@ -62,15 +75,20 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<Production> Update(Production entity)
         {
-            PRODUCTION production_databse = _context.PRODUCTION.FirstOrDefault(p=> p.PRODUCTION_ID == entity.Id);
-            if(production_databse is null ) throw new DBConcurrencyException($"Production with id '{entity.Id}' not found.");
+            bool haveManagerWorker = _context.USER.Any(u => u.MANAGER_ID == entity.PmId);
+            if (!haveManagerWorker)
+            {
+                throw new DBConcurrencyException($"PM ID = '{entity.PmId}' đang không quản lý công nhân nào");
+            }
+            PRODUCTION production_databse = await _context.PRODUCTION.FirstOrDefaultAsync(p=> p.PRODUCTION_ID == entity.Id);
+            if(production_databse is null ) throw new DBConcurrencyException($"Không tìm thấy Production ID = '{entity.Id}'.");
             production_databse.PM_ID = entity.PmId;
             production_databse.ORDER_ID = entity.OrderId;
             production_databse.P_START_DATE = entity.StartDate;
             production_databse.P_END_DATE = entity.EndDate;
             production_databse.PS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
-            return await GetById(entity.Id) ?? throw new DBConcurrencyException("Failed to update production.");
+            return await GetById(entity.Id) ?? throw new DBConcurrencyException("Cập Nhật Production Thất Bại.");
         }
 
         public Task Delete(object id)

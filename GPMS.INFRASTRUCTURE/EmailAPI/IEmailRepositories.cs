@@ -6,8 +6,15 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.EmailAPI
 {
+    public enum EmailType
+    {
+        Verification = 1,
+        PasswordReset = 2,
+        OrderNotification = 3,
+        ResendOTP = 4
+    }
     public interface IEmailRepositories
     {
-        Task SendEmailAsync(string toEmail, string subject, string body);
+        Task SendEmailAsync(string toEmail, string subject, string body, EmailType emailType);
     }
 }

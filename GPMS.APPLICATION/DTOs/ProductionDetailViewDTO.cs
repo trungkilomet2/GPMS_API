@@ -12,5 +12,6 @@ namespace GPMS.APPLICATION.DTOs
         public Production Production { get; set; } = new();
         public User? ProjectManager { get; set; }
         public Order? Order { get; set; }
+        public string ProductionStatusName { get; set; }
     }
 }

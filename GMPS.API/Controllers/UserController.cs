@@ -11,6 +11,7 @@ using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -64,8 +65,8 @@ namespace GMPS.API.Controllers
         }
 
 
-        [HttpGet("get-user-detail-for-admin/{userId}")]
-        [Authorize(Roles = "Admin")]
+        [HttpGet("user-detail/{userId}")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<RestDTO<UserDetailDTO>>> GetUserDetail(int userId)
         {
             try
@@ -100,8 +101,8 @@ namespace GMPS.API.Controllers
                         AvatarUrl = user.AvartarUrl,
                         Location = user.Location,
                         Status = user.Status?.Name ?? "Unknown",
-                        Role = string.Join(", ", user.Roles.Select(r => r.Name)),
-                        WorkerRole = string.Join(", ", user.WorkerRoles.Select(w => w.Name))
+                        Roles = user.Roles.Select(r => r.Name).ToList(),
+                        WorkerRole = string.Join(", ", user.WorkerSkills.Select(w => w.Name))
                     };
 
                     _logger.LogInformation(CustomLogEvents.UserController_Get,
@@ -133,6 +134,16 @@ namespace GMPS.API.Controllers
 
                     return BadRequest(details);
                 }
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Get, ex.Message);
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Detail = ex.Message
+                });
             }
             catch (Exception ex)
             {
@@ -167,7 +178,9 @@ namespace GMPS.API.Controllers
                     AvartarUrl = u.AvartarUrl,
                     Location = u.Location,
                     Email = u.Email,
-                    StatusId = u.StatusId
+                    StatusId = u.StatusId,
+                    StatusName = u.Status?.Name ?? "Unknown",
+                    Roles = u.Roles.Select(r => r.Name).ToList()
                 }).ToList();
 
                 _logger.LogInformation(CustomLogEvents.UserController_Get, "Retrieved {Count} users successfully", data.Count);
@@ -219,7 +232,7 @@ namespace GMPS.API.Controllers
                     UserName = input.UserName,
                     PasswordHash = input.Password,
                     FullName = input.FullName,
-                    StatusId = 1
+                    StatusId = UserStatus_Constants.Active
                 };
 
                 var createdUser = await _userRepo.CreateNewUser(newUser, input.RoleIds);
@@ -235,7 +248,9 @@ namespace GMPS.API.Controllers
                     AvartarUrl = createdUser.AvartarUrl,
                     Location = createdUser.Location,
                     Email = createdUser.Email,
-                    StatusId = createdUser.StatusId
+                    StatusId = createdUser.StatusId,
+                    StatusName = "Active",
+                    Roles = new List<string>()
                 };
 
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<UserListDTO>
@@ -335,6 +350,16 @@ namespace GMPS.API.Controllers
                     Detail = ex.Message
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while assigning roles to UserId {UserId}", id);
@@ -355,12 +380,12 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.UserController_Put,
-                    "Admin updating user for UserId {UserId}", userId);
+                    "Admin đang cập nhật người dùng với Id là: {UserId}", userId);
 
                 if (!ModelState.IsValid)
                 {
                     _logger.LogWarning(CustomLogEvents.UserController_Put,
-                        "Invalid model state when updating user for UserId {UserId}", userId);
+                        "Lỗi model state khi cập nhật người dùng với Id là: {UserId}", userId);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -396,7 +421,7 @@ namespace GMPS.API.Controllers
                 var updatedUser = await _userRepo.UpdateUserForAdmin(userId, updateUser);
 
                 _logger.LogInformation(CustomLogEvents.UserController_Put,
-                    "User updated successfully for UserId {UserId}", userId);
+                    "cập nhật người dùng thành công với Id là: {UserId}", userId);
 
                 return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                 {
@@ -422,10 +447,20 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Put, ex,
-                    "Error occurred while updating user for UserId {UserId}", userId);
+                    "Có lỗi xảy ra khi cập nhật người dùng với Id là: {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -440,22 +475,22 @@ namespace GMPS.API.Controllers
 
         [HttpGet("view-profile")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
-        [Authorize(Roles = "Admin,Customer,Owner,PM,Team Leader,Worker,KCS")]
+        [Authorize(Roles = "Admin,Customer,Owner,PM,Worker")]
         public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Get, "Viewing profile for UserId {UserId}", userId);
+                _logger.LogInformation(CustomLogEvents.UserController_Get, "đang xem thông tin của người dùng với Id là: {UserId}", userId);
                 if (ModelState.IsValid)
                 {
                     var user = await _userRepo.ViewProfile(userId);
                     if (user == null)
                     {
-                        _logger.LogWarning(CustomLogEvents.UserController_Get, "User profile not found for UserId {UserId}", userId);
+                        _logger.LogWarning(CustomLogEvents.UserController_Get, "Không tìm thấy người dùng với Id là: {UserId}", userId);
                         return NotFound(new ProblemDetails
                         {
-                            Detail = $"User with ID {userId} not found.",
+                            Detail = $"Người dùng với ID {userId} không thấy.",
                             Status = StatusCodes.Status404NotFound,
                             Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                         });
@@ -469,7 +504,7 @@ namespace GMPS.API.Controllers
                         Email = user.Email
                     };
 
-                    _logger.LogInformation(CustomLogEvents.UserController_Get, "Profile retrieved successfully for UserId {UserId}", userId);
+                    _logger.LogInformation(CustomLogEvents.UserController_Get, "Thành công lấy về thông tin người dùng với Id là: {UserId}", userId);
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<ViewProfileDTO>
                     {
                         Data = profile,
@@ -485,7 +520,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Get, "Invalid model state when viewing profile for UserId {UserId}", userId);
+                    _logger.LogWarning(CustomLogEvents.UserController_Get, "Lỗi model state khi xem thông tin của người dùng với Id là: {UserId}", userId);
 
                     var details = new ValidationProblemDetails(ModelState);
                     details.Type =
@@ -497,7 +532,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Get, ex,
-                    "Error occurred while viewing profile for UserId {UserId}", userId);
+                    "Lỗi xảy ra khi xem thông tin của người dùng với Id là: {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -509,38 +544,46 @@ namespace GMPS.API.Controllers
             }
         }
 
-        private string GenerateOtp()
-        {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
-        }
-
         [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Team Leader,KCS,Worker,PM,Customer")]
+        [Authorize(Roles = "Admin,Owner,Worker,PM,Customer")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser([FromForm] UpdatedUserDTO? user)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             try
             {
-                _logger.LogInformation(CustomLogEvents.UserController_Put, "Updating profile for UserId {UserId}", userId);
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Cập nhật người dùng với Id là: {UserId}", userId);
                 if (ModelState.IsValid)
                 {
-
+                    var existingUser = await _userRepo.GetUserById(userId);
+                    string finalEmail = existingUser.Email;
+                    bool isEmailChanged = false;
                     if (!string.IsNullOrEmpty(user.Email))
                     {
-                        var otp = GenerateOtp();
-                        _memoryCache.Set(userId + "_email_otp", otp, TimeSpan.FromMinutes(5));
-                        await _emailRepo.SendEmailAsync(
-                            user.Email,
-                            "Xác nhận email",
-                            $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực trong 5 phút."
-                        );
+                        var newEmail = user.Email.Trim().ToLower();
+                        var currentEmail = existingUser.Email?.Trim().ToLower();
 
-                        return Ok(new
+
+                        if (string.IsNullOrEmpty(currentEmail) || newEmail != currentEmail)
                         {
-                            message = "OTP đã được gửi về email, vui lòng kiểm tra"
-                        });
+                            isEmailChanged = true;
+
+                            var isVerified = _memoryCache.Get<bool?>($"{user.Email}_verified");
+
+                            if (isVerified != true)
+                            {
+                                _logger.LogWarning(CustomLogEvents.UserController_Put, "Email chưa được xác thực với Id người dùng là: {UserId}", userId);
+                                var errorDetails = new ValidationProblemDetails(ModelState)
+                                {
+                                    Status = StatusCodes.Status400BadRequest,
+                                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                                    Detail = "Email chưa được xác thực. Vui lòng xác thực email trước khi cập nhật.",
+                                };
+                                return StatusCode(StatusCodes.Status400BadRequest, errorDetails.Detail);
+                            }
+                            finalEmail = newEmail;
+                        }
+                        
                     }
                     string? imageUrl = null;
                     if (user.AvartarUrl != null)
@@ -555,11 +598,13 @@ namespace GMPS.API.Controllers
                         PhoneNumber = user.PhoneNumber,
                         AvartarUrl = imageUrl,
                         Location = user.Location,
-                        Email = user.Email
+                        Email = finalEmail,
+                        StatusId = existingUser.StatusId
                     };
                     var updatedUser = await _userRepo.UpdateProfile(userId, result);
-
-                    _logger.LogInformation(CustomLogEvents.UserController_Put, "Profile updated successfully for UserId {UserId}", userId);
+                    _memoryCache.Remove($"{user.Email}_verified");
+                    _memoryCache.Remove($"{user.Email}_email_otp");
+                    _logger.LogInformation(CustomLogEvents.UserController_Put, "Cập nhật thành công người dùng với Id là: {UserId}", userId);
 
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                     {
@@ -572,7 +617,7 @@ namespace GMPS.API.Controllers
                 }
                 else
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid model state when updating profile for UserId {UserId}", userId);
+                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Lỗi model state khi cập nhật người dùng với Id là: {UserId}", userId);
                     var errorDetails = new ValidationProblemDetails(ModelState);
                     errorDetails.Status = StatusCodes.Status400BadRequest;
                     errorDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
@@ -591,7 +636,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while updating profile for UserId {UserId}", userId);
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Lỗi xảy ra khi cập nhật người dùng với Id là: {UserId}", userId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,

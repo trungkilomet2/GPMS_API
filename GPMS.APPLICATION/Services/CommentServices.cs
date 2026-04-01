@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using System;
@@ -68,20 +69,30 @@ namespace GPMS.APPLICATION.Services
                 throw new ArgumentException("Invalid order id");
 
             var data = await _commentRepo.GetById(CommentId);
+            if(data == null)
+                throw new Exception($"Comment does not exist");
             return data;
         }
 
-        public async Task<IEnumerable<Comment>> GetCommentByOrderId(int orderId)
+        public async Task<IEnumerable<ViewCommentDTO>> GetCommentByOrderId(int orderId)
         {
             if (orderId <= 0)
                 throw new ArgumentException("Invalid order id");
 
             var order = await _orderRepo.GetById(orderId);
-
-            if (order == null)
-                throw new Exception($"Order does not exist");
-            var data = await _commentRepo.GetAll(orderId);   
-            return data;
+            var comments = await _commentRepo.GetAll(orderId);
+            var result = new List<ViewCommentDTO>();
+            foreach (var comment in comments)
+            {
+                var user = await _userRepo.GetById(comment.fromUserId);
+                var data = new ViewCommentDTO()
+                {
+                    Comment = comment,
+                    FromUserName =  user?.FullName ?? "Unknown User"
+                };
+                result.Add(data);
+            } 
+            return result;
         }
 
         public async Task<Comment> UpdateComment(Comment entity, int userId)

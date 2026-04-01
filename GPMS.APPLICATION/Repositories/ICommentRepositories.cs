@@ -1,4 +1,5 @@
-﻿using GPMS.DOMAIN.Entities;
+﻿using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace GPMS.APPLICATION.Repositories
 {
     public interface ICommentRepositories
     {
-        Task<IEnumerable<Comment>> GetCommentByOrderId(int orderId);  
+        Task<IEnumerable<ViewCommentDTO>> GetCommentByOrderId(int orderId);  
         Task<Comment> GetCommentById(int CommentId);
         Task<Comment> CreateComment(int userId,Comment entity);
         Task<Comment> UpdateComment(Comment entity, int userId);

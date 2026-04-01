@@ -10,7 +10,7 @@ namespace GMPS.API.DTOs
         public int OrderId { get; set; }
 
         [Required(ErrorMessage = "Reason is required")]
-        [StringLength(500, MinimumLength = 5, ErrorMessage = "Reason must be between 5 and 500 characters")]
+        [StringLength(150, MinimumLength = 5, ErrorMessage = "Reason must be between 5 and 150 characters")]
         public string? Reason { get; set; }
 
     }

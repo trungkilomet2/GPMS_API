@@ -39,6 +39,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             USER userSQL = _mapper.Map<USER>(entity);
             await _context.AddAsync(userSQL);
+            await _context.SaveChangesAsync();
             return _mapper.Map<User>(userSQL);
 
         }
@@ -60,8 +61,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
-
-            var data = await _context.USER.ToListAsync();
+            var data = await _context.USER
+                .Include(u => u.ROLE)
+                .Include(u => u.US)
+                .ToListAsync();
 
             return _mapper.Map<IEnumerable<GPMS.DOMAIN.Entities.User>>(data);
         }
@@ -69,15 +72,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> GetById(object id)
         {
             var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
-                              .Include(u => u.WR).Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
+                              .Include(u => u.WS).Where(u => u.USER_ID == (int)id).FirstOrDefaultAsync();
             return _mapper.Map<User>(data);
         }
 
-        public async Task<IEnumerable<User>> GetOwner()
+        public async Task<User> GetOwner()
         {
             var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
-                              .Include(u => u.WR).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).ToListAsync();
-            return _mapper.Map<IEnumerable<User>>(data);
+                              .Include(u => u.WS).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).FirstOrDefaultAsync();
+            return _mapper.Map<User>(data);
+        }
+
+        public async Task<User> GetUserByMail(string mail)
+        {
+            var data = await _context.USER.Where(u => u.EMAIL.Equals(mail.ToLower())).FirstOrDefaultAsync();
+            return _mapper.Map<User>(data);
         }
 
         public async Task<User> Login(string UserName, string password)
@@ -93,13 +102,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             User existUser = await FindUserByUserName(user.UserName);
             if (existUser is not null)
             {
-                throw new DbUpdateException("Tên tài khoản đã tồn tại");
+                throw new DbUpdateException("Tên tài khoản đã tồn tại.");
+            }
+            var existEmail = await GetUserByMail(user.Email);
+            if(existEmail is not null)
+            {
+                throw new DbUpdateException("Tên email đã tồn tại trong hệ thống.");
             }
             try
             {   
                 USER userSQL = _mapper.Map<USER>(user);
-                userSQL.US_ID = 1; // 1 equal Active status in User
-                await _context.AddAsync(userSQL);
+                userSQL.US_ID = UserStatus_Constants.Active;
+                userSQL.MANAGER_ID = null;
+                await _context.USER.AddAsync(userSQL);
                 return _mapper.Map<User>(userSQL);
             }
             catch (Exception ex)
@@ -121,9 +136,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.AVATAR = entity.AvartarUrl;
                 existingUser.EMAIL = entity.Email;
                 existingUser.US_ID = entity.StatusId;
-            
                 _context.USER.Update(existingUser);
-                return _mapper.Map<User>(existingUser);       
+                await _context.SaveChangesAsync();
+            return _mapper.Map<User>(existingUser);       
         }
     }
 }

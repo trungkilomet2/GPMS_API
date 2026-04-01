@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -47,9 +48,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                         userEntity.ROLE.Add(roleEntity);
                 }
             }
-
             await _context.SaveChangesAsync();
-
             return _mapper.Map<User>(userEntity);
         }
 
@@ -60,12 +59,40 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<User>> GetAll(object? obj)
         {
+            if(obj is int id)
+            {
+                var workers = await _context.USER
+                      .Include(u => u.ROLE)
+                      .Include(u => u.WS)
+                      .Include(u => u.US)
+                      .Where(u => u.MANAGER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                      r.NAME == Roles_Constants.Worker)).ToListAsync();
+                return _mapper.Map<IEnumerable<User>>(workers);
+            }
             var users = await _context.USER
                               .Include(u => u.ROLE)
-                              .Include(u => u.WR)
+                              .Include(u => u.WS)
                               .Include(u => u.US)
-                              .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).ToListAsync();
+                              .Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                              r.NAME == Roles_Constants.Worker)).ToListAsync();
+            
+            // Insert by TrungNT 26-03-2026
+            // Lấy danh sách người phụ trách production đấy
+            if(obj is WorkerByManagerDTO worker)
+            {   
+                var workerByManager = await _context.USER.Include(u => u.ROLE)
+                              .Include(u => u.WS)
+                              .Include(u => u.US)
+                              .Where(u=> u.ROLE.Any(r => r.NAME == Roles_Constants.Worker) && u.MANAGER_ID == worker.ManagerId).ToListAsync();
+                
+                var pm = _context.USER.Include(u => u.WS)
+                              .Include(u => u.US).Where(u => u.USER_ID == worker.ManagerId).FirstOrDefault();
+
+                workerByManager.Add(pm);
+
+                return _mapper.Map<List<User>>(workerByManager);
+            }
+
             return _mapper.Map<List<User>>(users);
         }
 
@@ -73,12 +100,24 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var users = await _context.USER
                               .Include(u => u.ROLE)
-                              .Include(u => u.WR)
+                              .Include(u => u.WS)
                               .Include(u => u.US)
-                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM || r.NAME == Roles_Constants.Team_Leader ||
-                              r.NAME == Roles_Constants.Worker || r.NAME == Roles_Constants.KCS)).FirstOrDefaultAsync();
+                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM ||
+                              r.NAME == Roles_Constants.Worker)).FirstOrDefaultAsync();
             return _mapper.Map<User>(users);
         }
+
+        #region Insert by TrungNT | 22-03-2026
+        // Insert by TrungNT
+        public async Task<IEnumerable<WorkerSkill>> GetWorkerSkillByUserId(int userId)
+        {   
+            var workerSkill = await _context.USER
+                .Include(ws => ws.WS).Where(u => u.USER_ID == userId).SelectMany(u => u.WS).ToListAsync();
+
+            return _mapper.Map<IEnumerable<WorkerSkill>>(workerSkill);
+        }
+
+        #endregion
 
         public async Task<User> Update(User entity)
         {

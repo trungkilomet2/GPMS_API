@@ -1,4 +1,5 @@
 ﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Constants;
@@ -183,54 +184,65 @@ public class OrderServiceTest
     }
 
 
+    private static UpdateOrderInput BuildFakeInput(
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string orderName = "Updated Order",
+        int userId = 1)
+    {
+        var start = startDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(2));
+        var end = endDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(7));
+        return new UpdateOrderInput
+        {
+            OrderName = orderName,
+            Type = "Shirt",
+            Color = "Blue",
+            Quantity = 5,
+            StartDate = start,
+            EndDate = end
+        };
+    }
+
     [Fact]
     public async Task UpdateOrder_ReturnsUpdatedOrder()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
-        var updated = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
-        updated.OrderName = "Updated";
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        var returned = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        returned.OrderName = "Updated Order";
 
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync(existing);
-
-        _orderBaseRepo.Setup(x => x.UpdateOrder(1, updated, It.IsAny<List<OHistoryUpdate>>()))
-            .ReturnsAsync(updated);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _orderBaseRepo.Setup(x => x.UpdateOrder(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(returned);
 
         var service = BuildService();
-        var result = await service.UpdateOrder(1, updated, new List<OHistoryUpdate>());
+        var result = await service.UpdateOrder(1, 1, BuildFakeInput());
 
-        Assert.Equal("Updated", result.OrderName);
+        Assert.Equal("Updated Order", result.OrderName);
     }
 
     [Fact]
     public async Task UpdateOrder_Throws_WhenOrderNotExist()
     {
-        var updated = BuildFakeOrder();
-
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync((Order)null);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync((Order)null);
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.UpdateOrder(1, updated, new()));
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.UpdateOrder(1, 1, BuildFakeInput()));
 
         Assert.Equal("Order with id '1' not exist in system.", ex.Message);
     }
 
-
     [Fact]
     public async Task UpdateOrder_Throws_WhenEndDateInvalid()
     {
-        var updated = BuildFakeOrder(statusName: OrderStatus_Constants.Modification);
-        updated.EndDate = updated.StartDate.AddDays(-1);
-
-        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(updated);
+        var start = DateOnly.FromDateTime(DateTime.Now.AddDays(2));
+        var input = BuildFakeInput(startDate: start, endDate: start.AddDays(-1));
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.UpdateOrder(1, updated, new()));
+            service.UpdateOrder(1, 1, input));
 
         Assert.Equal("End date must be greater than start date.", ex.Message);
     }
@@ -238,17 +250,46 @@ public class OrderServiceTest
     [Fact]
     public async Task UpdateOrder_Throws_WhenStatusNotModification()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
-        var updated = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
-
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Pending);
         _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.UpdateOrder(1, updated, new()));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UpdateOrder(1, 1, BuildFakeInput()));
 
         Assert.Contains(OrderStatus_Constants.Modification, ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenUserNotOwner()
+    {
+        var existing = BuildFakeOrder(userId: 99, statusName: OrderStatus_Constants.Modification);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+
+        var service = BuildService();
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.UpdateOrder(1, 1, BuildFakeInput()));
+    }
+
+    [Fact]
+    public async Task UpdateOrder_UsesOldImage_WhenInputImageIsNull()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        existing.Image = "http://old-image.com/img.png";
+
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _orderBaseRepo.Setup(x => x.UpdateOrder(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync((int id, Order o, List<OHistoryUpdate> _) => o);
+
+        var input = BuildFakeInput();
+        input.Image = null;
+
+        var service = BuildService();
+        var result = await service.UpdateOrder(1, 1, input);
+
+        Assert.Equal("http://old-image.com/img.png", result.Image);
     }
 
     [Fact]
@@ -363,46 +404,29 @@ public class OrderServiceTest
     public async Task DenyOrder_ReturnsOrder_WhenSuccessful()
     {
         var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Pending);
-        var updated = BuildFakeOrder();
 
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync(existing);
-
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
         _orderStatusRepo.Setup(x => x.DenyOrder(
             1,
-            updated,
+            It.IsAny<Order>(),
             It.IsAny<List<OHistoryUpdate>>()))
-            .ReturnsAsync(updated);
+            .ReturnsAsync(existing);
 
         var service = BuildService();
-
-        var result = await service.DenyOrder(1, 1, updated, new());
+        var result = await service.DenyOrder(1, 1);
 
         Assert.NotNull(result);
-        Assert.Equal(updated.Id, result.Id);
-    }
-
-    [Fact]
-    public async Task DenyOrder_Throws_WhenUpdatedOrderNull()
-    {
-        var service = BuildService();
-
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.DenyOrder(1, 1, null, new()));
-
-        Assert.Equal("Failed to update order.", ex.Message);
     }
 
     [Fact]
     public async Task DenyOrder_Throws_WhenOrderNotFound()
     {
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync((Order)null);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync((Order)null);
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+            service.DenyOrder(1, 1));
 
         Assert.Equal("Order with id '1' not exist in system.", ex.Message);
     }
@@ -410,15 +434,13 @@ public class OrderServiceTest
     [Fact]
     public async Task DenyOrder_Throws_WhenUserNotOwner()
     {
-        var existing = BuildFakeOrder(userId: 99); 
-
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync(existing);
+        var existing = BuildFakeOrder(userId: 99, statusName: OrderStatus_Constants.Pending);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.DenyOrder(1, 1));
 
         Assert.Equal("You don't have permission to deny this order.", ex.Message);
     }
@@ -426,15 +448,13 @@ public class OrderServiceTest
     [Fact]
     public async Task DenyOrder_Throws_WhenStatusNotPending()
     {
-        var existing = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
-
-        _orderBaseRepo.Setup(x => x.GetById(1))
-            .ReturnsAsync(existing);
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Approved);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
-            service.DenyOrder(1, 1, BuildFakeOrder(), new()));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.DenyOrder(1, 1));
 
         Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);
     }
@@ -455,7 +475,7 @@ public class OrderServiceTest
         )).ReturnsAsync(approved);
 
         var service = BuildService();
-        var result = await service.ApproveOrder(1, BuildFakeOrder(), new());
+        var result = await service.ApproveOrder(1);
 
         Assert.NotNull(result);
         Assert.Equal(OrderStatus_Constants.Approved, result.StatusName);
@@ -469,7 +489,7 @@ public class OrderServiceTest
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.ApproveOrder(1, BuildFakeOrder(), new()));
+            service.ApproveOrder(1));
 
         Assert.Equal("Order with id '1' not exist in system.", ex.Message);
     }
@@ -483,7 +503,7 @@ public class OrderServiceTest
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ApproveOrder(1, BuildFakeOrder(), new()));
+            service.ApproveOrder(1));
 
         Assert.Equal("This order request has already been processed.", ex.Message);
     }
@@ -497,7 +517,7 @@ public class OrderServiceTest
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ApproveOrder(1, BuildFakeOrder(), new()));
+            service.ApproveOrder(1));
 
         Assert.Equal("This order request has already been processed.", ex.Message);
     }
@@ -511,7 +531,7 @@ public class OrderServiceTest
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ApproveOrder(1, BuildFakeOrder(), new()));
+            service.ApproveOrder(1));
 
         Assert.Equal("Only approve order with status Chờ Xét Duyệt.", ex.Message);
     }
@@ -528,7 +548,7 @@ public class OrderServiceTest
         )).ReturnsAsync(existing);
 
         var service = BuildService();
-        await service.ApproveOrder(1, BuildFakeOrder(), new());
+        await service.ApproveOrder(1);
 
         _orderStatusRepo.Verify(x => x.ApproveOrder(
             It.IsAny<int>(),

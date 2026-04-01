@@ -23,13 +23,28 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<LeaveRequest>> GetLeaveRequestsByUserId(int userId)
             => await _leaveRequestBaseRepo.GetAll(userId);
 
-        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content)
+        private static readonly TimeZoneInfo _vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate)
         {
+            var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
+
+            if (fromDate.HasValue && fromDate.Value.Date < today)
+                throw new InvalidOperationException("Ngày bắt đầu không được để quá khứ.");
+
+            if (toDate.HasValue && toDate.Value.Date < today)
+                throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
+
+            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
+                throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
+
             var leaveRequest = new LeaveRequest
             {
                 UserId = userId,
                 Content = content,
-                DateCreate = DateTime.UtcNow
+                DateCreate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone),
+                FromDate = fromDate,
+                ToDate = toDate,
             };
 
             return await _leaveRequestBaseRepo.Create(leaveRequest);
@@ -38,7 +53,7 @@ namespace GPMS.APPLICATION.Services
         public async Task<LeaveRequest> GetLeaveRequestById(int id)
             => await _leaveRequestBaseRepo.GetById(id);
 
-        public async Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent)
+        public async Task<LeaveRequest> DenyLeaveRequest(int id, string denyContent, int approverId)
         {
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
@@ -49,13 +64,14 @@ namespace GPMS.APPLICATION.Services
                 throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be denied.");
 
             leaveRequest.DenyContent = denyContent;
-            leaveRequest.StatusId = 3;
-            leaveRequest.DateReply = DateTime.UtcNow;
+            leaveRequest.StatusId = LeaveRequestStatus_Constants.Denied_ID;
+            leaveRequest.ApprovedBy = approverId;
+            leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
         }
 
-        public async Task<LeaveRequest> ApproveLeaveRequest(int id)
+        public async Task<LeaveRequest> ApproveLeaveRequest(int id, int approverId)
         {
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
@@ -65,8 +81,28 @@ namespace GPMS.APPLICATION.Services
             if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
                 throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be approved.");
 
-            leaveRequest.StatusId = 2; 
-            leaveRequest.DateReply = DateTime.UtcNow;
+            leaveRequest.StatusId = LeaveRequestStatus_Constants.Approved_ID;
+            leaveRequest.ApprovedBy = approverId;
+            leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
+
+            return await _leaveRequestBaseRepo.Update(leaveRequest);
+        }
+
+        public async Task<LeaveRequest> CancelLeaveRequest(int id, int userId)
+        {
+            var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
+
+            if (leaveRequest is null)
+                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+
+            if (leaveRequest.UserId != userId)
+                throw new UnauthorizedAccessException("You don't have permission to cancel this leave request.");
+
+            if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
+                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be cancelled.");
+
+            leaveRequest.StatusId = LeaveRequestStatus_Constants.Cancelled_ID;
+            leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);
 
             return await _leaveRequestBaseRepo.Update(leaveRequest);
         }

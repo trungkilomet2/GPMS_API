@@ -49,18 +49,18 @@ namespace GPMS.TEST.Api.Controllers
         [Fact]
         public async Task GetAllWorkerRoles_ReturnsOk_WhenRolesExist()
         {
-            var roles = new List<WorkerRole>
+            var roles = new List<WorkerSkill>
             {
-                new WorkerRole{ Id = 1, Name = "Tailor"},
-                new WorkerRole{ Id = 2, Name = "Quality Control"}
+                new WorkerSkill { Id = 1, Name = "Tailor" },
+                new WorkerSkill { Id = 2, Name = "QC" }
             };
 
             _mockRepo.Setup(x => x.GetAllWorkerRoles())
                      .ReturnsAsync(roles);
 
-            var request = new RequestDTO<WorkerRole>
+            var request = new RequestDTO<WorkerSkill>
             {
-                PageIndex = 1,
+                PageIndex = 0,
                 PageSize = 10
             };
 
@@ -70,20 +70,23 @@ namespace GPMS.TEST.Api.Controllers
 
             Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
         }
-
         [Fact]
         public async Task GetAllWorkerRoles_ReturnsNotFound_WhenNoRoles()
         {
             _mockRepo.Setup(x => x.GetAllWorkerRoles())
-                     .ReturnsAsync(new List<WorkerRole>());
+                     .ReturnsAsync(new List<WorkerSkill>());
 
-            var request = new RequestDTO<WorkerRole>();
+            var request = new RequestDTO<WorkerSkill>
+            {
+                PageIndex = 0,
+                PageSize = 10
+            };
 
             var result = await _controller.GetAllWorkerRoles(request);
 
-            var objectResult = Assert.IsType<ObjectResult>(result);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
 
-            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+            Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
         }
 
         [Fact]
@@ -92,7 +95,7 @@ namespace GPMS.TEST.Api.Controllers
             _mockRepo.Setup(x => x.GetAllWorkerRoles())
                      .ThrowsAsync(new Exception("Database error"));
 
-            var request = new RequestDTO<WorkerRole>();
+            var request = new RequestDTO<WorkerSkill>();
 
             var result = await _controller.GetAllWorkerRoles(request);
 
@@ -109,13 +112,13 @@ namespace GPMS.TEST.Api.Controllers
                 Name = "Sewer"
             };
 
-            var createdRole = new WorkerRole
+            var createdRole = new WorkerSkill
             {
                 Id = 5,
                 Name = dto.Name
             };
 
-            _mockRepo.Setup(x => x.CreateWorkerRole(It.IsAny<WorkerRole>()))
+            _mockRepo.Setup(x => x.CreateWorkerRole(It.IsAny<WorkerSkill>()))
                      .ReturnsAsync(createdRole);
 
             var result = await _controller.CreateWorkerRole(dto);
@@ -138,7 +141,7 @@ namespace GPMS.TEST.Api.Controllers
 
             Assert.Equal(StatusCodes.Status400BadRequest, objectResult.StatusCode);
         }
-        
+
 
         [Fact]
         public async Task CreateWorkerRole_ReturnsInternalServerError_WhenExceptionOccurs()
@@ -148,7 +151,7 @@ namespace GPMS.TEST.Api.Controllers
                 Name = "Sewer"
             };
 
-            _mockRepo.Setup(x => x.CreateWorkerRole(It.IsAny<WorkerRole>()))
+            _mockRepo.Setup(x => x.CreateWorkerRole(It.IsAny<WorkerSkill>()))
                      .ThrowsAsync(new Exception("Database error"));
 
             var result = await _controller.CreateWorkerRole(dto);

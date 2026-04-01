@@ -71,6 +71,8 @@ namespace GPMS.APPLICATION.Services
             var user = await _userBaseRepo.GetById(userId);
             if (user == null)
                 throw new KeyNotFoundException($"User with ID {userId} not found.");
+            if (user.StatusId == UserStatus_Constants.Inactive)
+                throw new InvalidOperationException("Cannot assign roles to a disabled user.");
 
             var roleNames = new List<string>();
             foreach (var roleId in roleIds)
@@ -93,6 +95,10 @@ namespace GPMS.APPLICATION.Services
         public async Task<User> ViewProfile(int id)
         {
             var data = await _userBaseRepo.GetById(id);
+            if(data == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
+            }
             return data;
         }
 
@@ -101,23 +107,22 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
             {
-                throw new Exception("User not found");
+                throw new Exception("Không tìm thấy người dùng");
             }
             if (userId != result.Id)
             {
-                throw new Exception("you can only update your own profile");
+                throw new Exception("Chỉ có thể cập nhật chính bản thân");
             }
-            user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;
         }
 
-        public Task<User> GetUserById(int id)
+        public async Task<User> GetUserById(int id)
         {
-            var data = _userBaseRepo.GetById(id);
+            var data = await _userBaseRepo.GetById(id);
             if(data == null)
                 {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
             return data;
         }
@@ -126,22 +131,27 @@ namespace GPMS.APPLICATION.Services
         {
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
-            {
-                throw new KeyNotFoundException("User not found");
-            }
-            user.StatusId = result.StatusId;
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
+            if (result.StatusId == UserStatus_Constants.Inactive)
+                throw new InvalidOperationException("Cannot update a disabled user.");
             var data = await _userBaseRepo.Update(user);
             return data;
         }
 
-        public Task<IEnumerable<User>> GetOwner()
+        public Task<User> GetOwner()
         {
             var data = _accRepo.GetOwner();
             if (data == null)
             {
-                throw new KeyNotFoundException("Owner not found");
+                throw new KeyNotFoundException("Không tìm thấy chủ xưởng");
             }
             return data;
+        }
+
+        public async Task<bool> IsEmailExists(string email)
+        {
+            var data = await _accRepo.GetUserByMail(email.ToLower());
+            return data != null;
         }
     }
 }

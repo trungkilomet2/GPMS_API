@@ -25,7 +25,7 @@ public class LeaveRequestServiceTest
             DateCreate = DateTime.UtcNow,
             DateReply = null,
             DenyContent = null,
-            StatusId = 1,
+            StatusId = LeaveRequestStatus_Constants.Pending_ID,
             StatusName = statusName
         };
 
@@ -107,7 +107,7 @@ public class LeaveRequestServiceTest
         var expected = BuildFakeLeaveRequest(id: 10, userId: 3);
         _baseRepo.Setup(x => x.Create(It.IsAny<LeaveRequest>())).ReturnsAsync(expected);
 
-        var result = await BuildService().CreateLeaveRequest(userId: 3, content: "Need a day off.");
+        var result = await BuildService().CreateLeaveRequest(userId: 3, content: "Need a day off.", fromDate: null, toDate: null);
 
         Assert.NotNull(result);
         Assert.Equal(10, result.Id);
@@ -122,7 +122,7 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().CreateLeaveRequest(userId: 7, content: "Sick day.");
+        await BuildService().CreateLeaveRequest(userId: 7, content: "Sick day.", fromDate: null, toDate: null);
 
         Assert.NotNull(captured);
         Assert.Equal(7, captured!.UserId);
@@ -136,22 +136,71 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().CreateLeaveRequest(userId: 1, content: "Family emergency.");
+        await BuildService().CreateLeaveRequest(userId: 1, content: "Family emergency.", fromDate: null, toDate: null);
 
         Assert.Equal("Family emergency.", captured!.Content);
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_SetsDateCreateToUtcNow()
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenFromDateIsInThePast()
+    {
+        var yesterday = DateTime.Today.AddDays(-1);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: yesterday, toDate: null));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsToday()
+    {
+        var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).Date;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: today));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsInThePast()
+    {
+        var yesterday = DateTime.Today.AddDays(-1);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: yesterday));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateEqualsFromDate()
+    {
+        var fromDate = DateTime.Today.AddDays(2);
+        var toDate = DateTime.Today.AddDays(2);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: fromDate, toDate: toDate));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_ThrowsInvalidOperationException_WhenToDateIsBeforeFromDate()
+    {
+        var fromDate = DateTime.Today.AddDays(3);
+        var toDate = DateTime.Today.AddDays(2);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: fromDate, toDate: toDate));
+    }
+
+    [Fact]
+    public async Task CreateLeaveRequest_SetsDateCreateToVietnamTime()
     {
         LeaveRequest? captured = null;
         _baseRepo.Setup(x => x.Create(It.IsAny<LeaveRequest>()))
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        var before = DateTime.UtcNow;
-        await BuildService().CreateLeaveRequest(userId: 1, content: "Day off.");
-        var after = DateTime.UtcNow;
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        await BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: null);
+        var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
         Assert.InRange(captured!.DateCreate, before, after);
     }
@@ -166,7 +215,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
         _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(denied);
 
-        var result = await BuildService().DenyLeaveRequest(1, "Not approved.");
+        var result = await BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10);
 
         Assert.NotNull(result);
         Assert.Equal(LeaveRequestStatus_Constants.Denied, result.StatusName);
@@ -178,7 +227,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => BuildService().DenyLeaveRequest(99, "Not approved."));
+            () => BuildService().DenyLeaveRequest(99, "Not approved.", approverId: 10));
 
         Assert.Contains("99", ex.Message);
     }
@@ -190,7 +239,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BuildService().DenyLeaveRequest(1, "Not approved."));
+            () => BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10));
 
         Assert.Contains(LeaveRequestStatus_Constants.Pending, ex.Message);
     }
@@ -202,11 +251,11 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(denied);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BuildService().DenyLeaveRequest(1, "Not approved."));
+            () => BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10));
     }
 
     [Fact]
-    public async Task DenyLeaveRequest_SetsStatusIdTo3_BeforeUpdate()
+    public async Task DenyLeaveRequest_SetsStatusIdToDeniedId_BeforeUpdate()
     {
         var pending = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Pending);
         LeaveRequest? captured = null;
@@ -215,9 +264,10 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().DenyLeaveRequest(1, "Not approved.");
+        await BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10);
 
-        Assert.Equal(3, captured!.StatusId);
+        Assert.Equal(LeaveRequestStatus_Constants.Denied_ID, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
     }
 
     [Fact]
@@ -230,7 +280,7 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().DenyLeaveRequest(1, "Budget constraints.");
+        await BuildService().DenyLeaveRequest(1, "Budget constraints.", approverId: 10);
 
         Assert.Equal("Budget constraints.", captured!.DenyContent);
     }
@@ -245,9 +295,10 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        var before = DateTime.UtcNow;
-        await BuildService().DenyLeaveRequest(1, "Not approved.");
-        var after = DateTime.UtcNow;
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        await BuildService().DenyLeaveRequest(1, "Not approved.", approverId: 10);
+        var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
         Assert.NotNull(captured!.DateReply);
         Assert.InRange(captured.DateReply!.Value, before, after);
@@ -263,7 +314,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
         _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(approved);
 
-        var result = await BuildService().ApproveLeaveRequest(1);
+        var result = await BuildService().ApproveLeaveRequest(1, approverId: 10);
 
         Assert.NotNull(result);
         Assert.Equal(LeaveRequestStatus_Constants.Approved, result.StatusName);
@@ -275,7 +326,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
 
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => BuildService().ApproveLeaveRequest(99));
+            () => BuildService().ApproveLeaveRequest(99, approverId: 10));
 
         Assert.Contains("99", ex.Message);
     }
@@ -287,7 +338,7 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BuildService().ApproveLeaveRequest(1));
+            () => BuildService().ApproveLeaveRequest(1, approverId: 10));
 
         Assert.Contains(LeaveRequestStatus_Constants.Pending, ex.Message);
     }
@@ -299,11 +350,11 @@ public class LeaveRequestServiceTest
         _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(denied);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => BuildService().ApproveLeaveRequest(1));
+            () => BuildService().ApproveLeaveRequest(1, approverId: 10));
     }
 
     [Fact]
-    public async Task ApproveLeaveRequest_SetsStatusIdTo2_BeforeUpdate()
+    public async Task ApproveLeaveRequest_SetsStatusIdToApprovedId_BeforeUpdate()
     {
         var pending = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Pending);
         LeaveRequest? captured = null;
@@ -312,9 +363,10 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().ApproveLeaveRequest(1);
+        await BuildService().ApproveLeaveRequest(1, approverId: 10);
 
-        Assert.Equal(2, captured!.StatusId);
+        Assert.Equal(LeaveRequestStatus_Constants.Approved_ID, captured!.StatusId);
+        Assert.Equal(10, captured!.ApprovedBy);
     }
 
     [Fact]
@@ -327,9 +379,93 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        var before = DateTime.UtcNow;
-        await BuildService().ApproveLeaveRequest(1);
-        var after = DateTime.UtcNow;
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        await BuildService().ApproveLeaveRequest(1, approverId: 10);
+        var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+        Assert.NotNull(captured!.DateReply);
+        Assert.InRange(captured.DateReply!.Value, before, after);
+    }
+
+    // ─── CancelLeaveRequest ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CancelLeaveRequest_ReturnsCancelledLeaveRequest_WhenSuccessful()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        var cancelled = BuildFakeLeaveRequest(statusName: LeaveRequestStatus_Constants.Cancelled);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>())).ReturnsAsync(cancelled);
+
+        var result = await BuildService().CancelLeaveRequest(1, userId: 1);
+
+        Assert.NotNull(result);
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled, result.StatusName);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsKeyNotFoundException_WhenNotFound()
+    {
+        _baseRepo.Setup(x => x.GetById(99)).ReturnsAsync((LeaveRequest)null);
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => BuildService().CancelLeaveRequest(99, userId: 1));
+
+        Assert.Contains("99", ex.Message);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsUnauthorizedAccessException_WhenUserIsNotOwner()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 5, statusName: LeaveRequestStatus_Constants.Pending);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => BuildService().CancelLeaveRequest(1, userId: 99));
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_ThrowsInvalidOperationException_WhenStatusIsApproved()
+    {
+        var approved = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Approved);
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(approved);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildService().CancelLeaveRequest(1, userId: 1));
+
+        Assert.Contains(LeaveRequestStatus_Constants.Pending, ex.Message);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_SetsStatusIdToCancelledId_BeforeUpdate()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        await BuildService().CancelLeaveRequest(1, userId: 1);
+
+        Assert.Equal(LeaveRequestStatus_Constants.Cancelled_ID, captured!.StatusId);
+    }
+
+    [Fact]
+    public async Task CancelLeaveRequest_SetsDateReply_BeforeUpdate()
+    {
+        var pending = BuildFakeLeaveRequest(userId: 1, statusName: LeaveRequestStatus_Constants.Pending);
+        LeaveRequest? captured = null;
+        _baseRepo.Setup(x => x.GetById(1)).ReturnsAsync(pending);
+        _baseRepo.Setup(x => x.Update(It.IsAny<LeaveRequest>()))
+            .Callback<LeaveRequest>(lr => captured = lr)
+            .ReturnsAsync(BuildFakeLeaveRequest());
+
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        await BuildService().CancelLeaveRequest(1, userId: 1);
+        var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
         Assert.NotNull(captured!.DateReply);
         Assert.InRange(captured.DateReply!.Value, before, after);

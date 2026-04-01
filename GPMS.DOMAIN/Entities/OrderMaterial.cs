@@ -10,6 +10,7 @@ namespace GPMS.DOMAIN.Entities
     {
         public string MaterialName { get; set; }
         public string? Image { get; set; }
+        public string Color { get; set; }
         public decimal Value { get; set; }
         public string? Note { get; set; }
         public string Uom { get; set; }

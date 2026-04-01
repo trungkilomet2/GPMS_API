@@ -41,6 +41,9 @@ public partial class ORDER
     [StringLength(255)]
     public string? NOTE { get; set; }
 
+    [Column(TypeName = "datetime")]
+    public DateTime? CREATE_TIME { get; set; }
+
     public int OS_ID { get; set; }
 
     [InverseProperty("ORDER")]

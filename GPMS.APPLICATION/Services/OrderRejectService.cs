@@ -38,12 +38,27 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new Exception($"Order with ID {entity.OrderId} is not in a pending state and cannot be rejected.");
                 }
-                await _baseOrderRepo.ChangeStatus(entity.OrderId, 4);
+                await _baseOrderRepo.ChangeStatus(entity.OrderId, OrderStatus_Constants.Rejected_ID);
                 await _unitOfWork.SaveChangesAsync();
                 await _orderRejectRepo.Create(entity);
                 await _unitOfWork.SaveChangesAsync();
             });
             return entity;
-        }       
+        }
+
+        public async Task<OrderRejectReason> GetReasonById(int id)
+        {
+            if(id <= 0)
+            {
+                throw new Exception("Invalid ID. ID must be greater than zero.");
+            }
+            var existingOrder = await _orderRepo.GetById(id);
+            if (existingOrder == null)
+            {
+                throw new KeyNotFoundException($"Order with ID {id} does not exist.");
+            }
+            var reason = await _orderRejectRepo.GetById(id);
+            return reason;
+        }
     }
 }

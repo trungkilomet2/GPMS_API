@@ -10,6 +10,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,21 +20,23 @@ namespace GPMS.TEST.Api.Controllers
     {
         private readonly Mock<ICommentRepositories> _mockRepo;
         private readonly Mock<ILogger<CommentController>> _mockLogger;
-        private readonly Mock<IUserRepositories> _mockUser;
         private readonly CommentController _controller;
 
         public CommentControllerTest()
         {
             _mockRepo = new Mock<ICommentRepositories>();
             _mockLogger = new Mock<ILogger<CommentController>>();
-            _mockUser = new Mock<IUserRepositories>();
             _controller = new CommentController(
                 _mockRepo.Object,
-                null,
-                _mockLogger.Object, _mockUser.Object
-            );
-
-            var httpContext = new DefaultHttpContext();
+                _mockLogger.Object);
+            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+                      {
+                       new Claim(ClaimTypes.NameIdentifier, "1")
+                      }, "mock"));
+            var httpContext = new DefaultHttpContext
+            {
+                User = user
+            };
             httpContext.Request.Scheme = "http";
 
             _controller.ControllerContext = new ControllerContext()

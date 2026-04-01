@@ -3,8 +3,11 @@ using GMPS.API.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
+using GPMS.INFRASTRUCTURE.EmailAPI;
 using GPMS.TEST.TestCommon;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,10 +20,12 @@ public class UserControllerTest
     private readonly Mock<IConfiguration> _config = new();
     private readonly Mock<ILogger<UserController>> _logger = new();
     private readonly Mock<ICloudinaryService> _cloudinary = new();
+    private readonly Mock<IMemoryCache> _cache = new();
+    private readonly Mock<IEmailRepositories> _email = new();
 
     private UserController BuildController(int userId = 1)
     {
-        var controller = new UserController(_userRepo.Object, _config.Object, _logger.Object, _cloudinary.Object);
+        var controller = new UserController(_userRepo.Object, _config.Object, _logger.Object, _cloudinary.Object, _cache.Object, _email.Object);
         ControllerTestHelper.AttachHttpContext(controller, ControllerTestHelper.BuildUserWithId(userId));
         return controller;
     }
@@ -352,45 +357,79 @@ public class UserControllerTest
         Assert.Equal(500, obj.StatusCode);
     }
 
-    // ─── UpdateUser ───────────────────────────────────────────────────────
-
     [Fact]
     public async Task UpdateUser_Returns200_WhenSuccessful()
     {
         var fakeUser = BuildFakeUser(1);
-
+        _userRepo.Setup(x => x.GetUserById(1))
+            .ReturnsAsync(new User
+            {
+                Id = 1,
+                Email = "old@gmail.com"
+            });
         _userRepo.Setup(x => x.UpdateProfile(1, It.IsAny<User>()))
             .ReturnsAsync(fakeUser);
-
         var input = new UpdatedUserDTO
         {
             FullName = "Updated User",
             PhoneNumber = "088888888",
             Location = "HN",
-            Email = "updated@mail.com"
+            Email = null
         };
-
-        var result = await BuildController(userId: 1).UpdateUser(input);
-
+        var controller = BuildController(userId: 1);
+        var result = await controller.UpdateUser(input);
         var obj = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(200, obj.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, obj.StatusCode);
     }
 
     [Fact]
     public async Task UpdateUser_Returns404_WhenUserNotFound()
     {
+        _userRepo.Setup(x => x.GetUserById(1))
+            .ReturnsAsync(new User
+            {
+                Id = 1,
+                Email = "old@gmail.com"
+            });
         _userRepo.Setup(x => x.UpdateProfile(1, It.IsAny<User>()))
             .ThrowsAsync(new KeyNotFoundException("User not found"));
 
         var input = new UpdatedUserDTO
         {
-            FullName = "Updated User"
+            FullName = "Updated User",
+            Email = null
         };
-
-        var result = await BuildController(userId: 1).UpdateUser(input);
-
+        var controller = BuildController(userId: 1);
+        var result = await controller.UpdateUser(input);
         var obj = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal(404, obj.StatusCode);
+        Assert.Equal(StatusCodes.Status404NotFound, obj.StatusCode);
+        var problem = Assert.IsType<ProblemDetails>(obj.Value);
+        Assert.Equal("User not found", problem.Detail);
+    }
+
+    [Fact]
+    public async Task UpdateUser_Returns400_WhenEmailChangedButNotVerified()
+    {
+        var controller = BuildController(userId: 1);
+        var email = "test@gmail.com";
+
+        _userRepo.Setup(x => x.GetUserById(1))
+            .ReturnsAsync(new User
+            {
+                Id = 1,
+                Email = "old@gmail.com"
+            });
+        object verifiedValue = null;
+        _cache.Setup(x => x.TryGetValue($"{email}_verified", out verifiedValue))
+              .Returns(true);
+        var input = new UpdatedUserDTO
+        {
+            Email = email
+        };
+        var result = await controller.UpdateUser(input);
+        var obj = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(StatusCodes.Status400BadRequest, obj.StatusCode);
+        _userRepo.Verify(x => x.UpdateProfile(It.IsAny<int>(), It.IsAny<User>()), Times.Never);
     }
 
     [Fact]
@@ -401,7 +440,8 @@ public class UserControllerTest
 
         var input = new UpdatedUserDTO
         {
-            FullName = "Updated User"
+            FullName = "Updated User",
+            Email = null
         };
 
         var result = await BuildController(userId: 1).UpdateUser(input);
