@@ -12,7 +12,8 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
     {
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
-
+        private static string? _cachedContext;
+        private static DateTime _lastRead = DateTime.MinValue;
 
         public ChatService(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
@@ -20,19 +21,17 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             _httpClient = httpClientFactory.CreateClient("Gemini");
         }
 
-        public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request, string? userRole)
+        public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request)
         {
             var apiKey = _config["Gemini:ApiKey"];
-            var model = _config["Gemini:Model"] ?? "gemini-2.5-flash";
+            var model = _config["Gemini:Model"] ?? "gemini-1.5-flash";
 
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException(
                     "Gemini API Key chưa được cấu hình. Vui lòng vào https://aistudio.google.com/ lấy key rồi điền vào appsettings.json.");
-            bool isStaff = !string.IsNullOrEmpty(userRole) && 
-                           (userRole.Contains(Roles_Constants.PM)|| userRole.Contains(Roles_Constants.Worker) || 
-                            userRole.Contains(Roles_Constants.Owner)|| userRole.Contains(Roles_Constants.Admin));
-            string resolvedRole  = isStaff ? userRole! : Roles_Constants.Customer;
-            string systemPrompt  = isStaff ? BuildStaffSystemPrompt() : BuildCustomerSystemPrompt();
+
+            string docxContext = GetDocxContext();
+            string systemPrompt = BuildUnifiedSystemPrompt(docxContext);
 
             var url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
 
@@ -42,7 +41,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
                 {
                     new
                     {
-                        role  = "user",
+                        role = "user",
                         parts = new[]
                         {
                             new
@@ -54,12 +53,12 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
                 },
                 generationConfig = new
                 {
-                    temperature     = 0.7,
-                    maxOutputTokens = 1000
+                    temperature = 0.7,
+                    maxOutputTokens = 2000
                 }
             };
 
-            var json    = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(url, content);
@@ -72,7 +71,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            using var doc    = JsonDocument.Parse(responseJson);
+            using var doc = JsonDocument.Parse(responseJson);
 
             var reply = doc.RootElement
                 .GetProperty("candidates")[0]
@@ -83,59 +82,50 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
 
             return new ChatResponseDTO
             {
-                Reply = reply.Trim(),
-                Role  = resolvedRole
+                Reply = reply.Trim()
             };
         }
 
-        // ── System Prompts ──────────────────────────────────────────────────
+        private string GetDocxContext()
+        {            
+            if (_cachedContext != null && (DateTime.Now - _lastRead).TotalMinutes < 5)
+            {
+                return _cachedContext;
+            }
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "ChatContext.docx");
+                
+                if (!File.Exists(filePath))
+                {
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "ChatContext.docx");
+                }
 
-        private static string BuildCustomerSystemPrompt() => """
-            Bạn là trợ lý ảo của hệ thống GPMS (Garment Production Management System) — hệ thống quản lý xưởng may.
+                if (File.Exists(filePath))
+                {
+                    _cachedContext = DocxReader.ReadTextFromDocx(filePath);
+                    _lastRead = DateTime.Now;
+                    return _cachedContext;
+                }
 
-            VAI TRÒ CỦA BẠN:
-            Bạn đang hỗ trợ KHÁCH HÀNG của xưởng may. Khách hàng chỉ được phép hỏi về:
-            - Thông tin chung về xưởng may và dịch vụ
-            - Cách đặt đơn hàng, quy trình xử lý đơn hàng
-            - Trạng thái đơn hàng (Chờ xét duyệt, Đã duyệt, Đang sản xuất, Hoàn thành, v.v.)
-            - Chính sách giao hàng, thanh toán
-            - Liên hệ hỗ trợ
+            return string.Empty;
+        }
 
-            GIỚI HẠN NGHIÊM NGẶT:
-            - KHÔNG tiết lộ thông tin nội bộ như: kế hoạch sản xuất chi tiết, dữ liệu nhân sự,
-              số liệu tài chính, thông tin kỹ thuật sản xuất, lương thưởng công nhân, hay bất kỳ
-              dữ liệu quản lý nội bộ nào.
-            - Nếu khách hỏi ngoài phạm vi cho phép, hãy lịch sự từ chối và hướng dẫn họ liên hệ
-              trực tiếp với xưởng.
+        private static string BuildUnifiedSystemPrompt(string additionalContext) => $"""
+            Bạn là trợ lý ảo chuyên nghiệp của hệ thống GPMS (Garment Production Management System).
+            
+            NHIỆM VỤ:
+            Hỗ trợ khách hàng giải đáp các thắc mắc về dịch vụ, đơn hàng và quy trình của xưởng may.
 
-            PHONG CÁCH:
-            - Thân thiện, chuyên nghiệp, ngắn gọn.
-            - Trả lời bằng tiếng Việt trừ khi khách hỏi bằng tiếng Anh.
-            """;
+            KIẾN THỨC BỔ SUNG (Dựa trên tài liệu hệ thống):
+            ---
+            {additionalContext}
+            ---
 
-        private static string BuildStaffSystemPrompt() => """
-            Bạn là trợ lý ảo chuyên sâu của hệ thống GPMS (Garment Production Management System).
-
-            VAI TRÒ CỦA BẠN:
-            Bạn đang hỗ trợ NHÂN VIÊN NỘI BỘ của xưởng may. Bạn có thể tư vấn và giải thích về:
-            - Quản lý đơn hàng: tạo, cập nhật, duyệt, từ chối đơn hàng
-            - Kế hoạch sản xuất: tiến độ, phân công công đoạn (ProductionPart), phân chia ca
-            - Quản lý nguyên vật liệu: vật liệu đơn hàng (OMaterial), số lượng, tồn kho
-            - Quản lý nhân sự: công nhân (Worker), kỹ năng (WorkerSkill/WorkerRole), phân ca
-            - Đơn xin nghỉ phép (LeaveRequest): xử lý, phê duyệt
-            - Nhật ký sản xuất: WorkLog, IssueLog, CuttingNotebook
-            - Báo cáo và thống kê nội bộ
-            - Tính lương, thưởng (nếu được hỏi)
-            - Hướng dẫn sử dụng các tính năng trong hệ thống GPMS
-
-            NGUYÊN TẮC:
-            - Cung cấp thông tin chính xác, chi tiết, có ích cho công việc.
-            - Nếu không chắc chắn, hãy nói rõ và đề xuất người dùng xác nhận với quản lý.
-            - Bảo mật: không chia sẻ thông tin ra bên ngoài hệ thống.
-
-            PHONG CÁCH:
-            - Chuyên nghiệp, súc tích, hướng dẫn từng bước nếu cần.
-            - Trả lời bằng tiếng Việt trừ khi được hỏi bằng tiếng Anh.
+            QUY TẮC PHẢN HỒI:
+            1. Sử dụng kiến thức bổ sung ở trên để trả lời chính xác nhất.
+            2. Nếu không tìm thấy thông tin trong tài liệu, hãy trả lời dựa trên kiến thức chung về hệ thống GPMS nhưng phải giữ tính chuyên nghiệp.
+            3. KHÔNG tiết lộ các thông tin nhạy cảm về nhân sự hoặc tài chính nội bộ trừ khi nó có trong tài liệu công khai.
+            4. Luôn thân thiện, lịch sự và sử dụng tiếng Việt.
+            5. Nếu câu hỏi hoàn toàn không liên quan đến xưởng may hoặc GPMS, hãy khéo léo từ chối.
             """;
     }
 }

@@ -20,82 +20,13 @@ namespace GMPS.API.Controllers
             _logger = logger;
         }
 
-        [HttpPost("/ai/gemini/chat-for-internal-employee")]
-        [Authorize]
+        [HttpPost("/ai/gemini/chat")]
+        [AllowAnonymous]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult<ChatResponseDTO>> Send([FromBody] ChatRequestDTO request)
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new ValidationProblemDetails(ModelState)
-                    {
-                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Message))
-                {
-                    return BadRequest(new ProblemDetails
-                    {
-                        Detail = "Tin nhắn không được để trống.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                var userRole = User.Claims
-                    .FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-
-                var userName = User.Claims
-                    .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "Unknown";
-
-                _logger.LogInformation("Chatbox request từ user [{UserName}] với role [{Role}]: {Message}",
-                    userName, userRole ?? "none", request.Message);
-
-                var result = await _chatRepo.SendMessageAsync(request, userRole);
-
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogError(ex, "Lỗi cấu hình OpenAI");
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.4"
-                });
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "Lỗi kết nối OpenAI API");
-                return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
-                {
-                    Detail = "Không thể kết nối tới dịch vụ AI. Vui lòng thử lại sau.",
-                    Status = StatusCodes.Status502BadGateway,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.3"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi không xác định trong ChatController");
-                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
-                {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-                });
-            }
-        }
-
-        [HttpPost("/ai/gemini/chat-for-customer")]
-        [AllowAnonymous]
-        [ResponseCache(CacheProfileName = "NoCache")]
-        public async Task<ActionResult<ChatResponseDTO>> CustomerSend([FromBody] ChatRequestDTO request)
-        {
-            try
-            {
                 if (string.IsNullOrWhiteSpace(request.Message))
                 {
                     return BadRequest(new ProblemDetails
@@ -105,15 +36,15 @@ namespace GMPS.API.Controllers
                     });
                 }
 
-                _logger.LogInformation("Chatbox request từ khách: {Message}", request.Message);
+                _logger.LogInformation("Chatbox request: {Message}", request.Message);
 
-                var result = await _chatRepo.SendMessageAsync(request, null);
+                var result = await _chatRepo.SendMessageAsync(request);
 
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Lỗi cấu hình OpenAI (customer)");
+                _logger.LogError(ex, "Lỗi cấu hình Gemini");
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -122,16 +53,16 @@ namespace GMPS.API.Controllers
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Lỗi kết nối OpenAI API (customer)");
+                _logger.LogError(ex, "Lỗi kết nối Gemini API");
                 return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
                 {
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status502BadGateway                   
+                    Detail = "Không thể kết nối tới dịch vụ AI. Vui lòng thử lại sau.",
+                    Status = StatusCodes.Status502BadGateway
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi không xác định trong ChatController (guest)");
+                _logger.LogError(ex, "Lỗi không xác định trong ChatController");
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Detail = ex.Message,
