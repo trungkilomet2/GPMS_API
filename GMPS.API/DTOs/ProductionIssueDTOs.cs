@@ -7,11 +7,14 @@ namespace GMPS.API.DTOs
     {   
 
         public int IssueId { get; set; }
-        public string TypeIssue { get; set; }
+        public int PartId { get; set; }
+        public string? PartName { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Priority { get; set; }
         public int Quantity { get; set; }
+        public int CreatedBy { get; set; }
+        public int? AssignedTo { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
@@ -29,6 +32,9 @@ namespace GMPS.API.DTOs
         [Range(1, int.MaxValue)]
         public int CreatedBy { get; set; }
 
+        [Range(1, int.MaxValue)]
+        public int? AssignedTo { get; set; }
+
         [Range(1, 4)]
         public int Priority { get; set; } = 2;
 
@@ -36,15 +42,15 @@ namespace GMPS.API.DTOs
         [StringLength(150)]
         public string Title { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(150)]
-        public string TypeIssue { get; set; } = string.Empty;
-
+        
         [StringLength(500)]
         public string? Description { get; set; }
 
         [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
+
+        public DateTime? OccurredAt { get; set; }
+
 
         [FromForm]
         public IFormFile? Image { get; set; }

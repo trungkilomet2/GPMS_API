@@ -425,11 +425,11 @@ namespace GMPS.API.Controllers
                 var data = issues.Select(x => new ProductionIssueListItemDTO
                 {
                     IssueId = x.Id,
-                    TypeIssue = x.TypeIssue,
+                    PartId = x.PartId,
                     Title = x.Title,
                     Description = x.Description,
                     Priority = x.Priority,
-                    Quantity = 1,
+                    Quantity = x.Quantity,
                     ImageUrl = x.ImageUrl,
                     CreatedAt = x.CreatedAt
                 });
@@ -450,9 +450,9 @@ namespace GMPS.API.Controllers
                 var summary = await _productionService.GetProductionIssueSummaryByType(production_id);
                 var data = summary.Select(x => new ProductionIssueSummaryDTO
                 {
-                    TypeIssue = x.TypeIssue,
+                    TypeIssue = "Chua fix",
                     TotalIssues = x.Id,
-                    TotalQuantity = x.Id,
+                    TotalQuantity = x.Quantity,
                     LastIssueAt = x.CreatedAt
                 });
                 return Ok(new RestDTO<IEnumerable<ProductionIssueSummaryDTO>> { Data = data });

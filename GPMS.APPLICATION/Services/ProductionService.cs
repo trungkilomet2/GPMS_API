@@ -268,20 +268,33 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<ProductionIssueLog>> GetProductionIssueSummaryByType(int productionId)
         {
             var issues = (await GetProductionIssues(productionId)).ToList();
-            return issues.GroupBy(x => x.TypeIssue)
-                .Select(g => new ProductionIssueLog
-                {
-                    TypeIssue = g.Key,
-                    CreatedAt = g.Max(x => x.CreatedAt),
-                    Id = g.Count()
-                }).ToList();
+            var partDictionary = (await _productionPartRepo.GetAll(productionId))
+                .ToDictionary(x => x.Id, x => x.PartName);
+
+            return issues.GroupBy(x => partDictionary.TryGetValue(x.PartId, out var partName) ? partName : "Unknown").Select(g => new ProductionIssueLog
+            {
+                Title = g.Key,
+                CreatedAt = g.Max(x => x.CreatedAt),
+                Id = g.Count(),
+                Quantity = g.Sum(x => x.Quantity)
+            }).ToList();
         }
 
         public async Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue)
         {
-            _ = await _prdRepo.GetById(issue.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+            var part = await _productionPartRepo.GetById(issue.PartId) ?? throw new ValidationException("Công đoạn không tồn tại");
+            _ = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
             _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
-            issue.CreatedAt = VietnamTime.Now();
+            if (issue.AssignedTo.HasValue)
+            {
+                _ = await _userRepositories.GetById(issue.AssignedTo.Value) ?? throw new ValidationException("Người xử lý lỗi không tồn tại");
+            }
+            if (issue.Quantity <= 0)
+            {
+                throw new ValidationException("Số lượng lỗi phải lớn hơn 0");
+            }
+            issue.AssignedTo ??= issue.CreatedBy;
+            issue.CreatedAt ??= VietnamTime.Now();
             return await _productionIssueRepo.Create(issue);
         }
 
