@@ -193,17 +193,31 @@ namespace GPMS.TEST.Application.Services
         // ─── DisableAnUser ────────────────────────────────────────────────────────
 
         [Fact]
-        public async Task DisableAnUser_CompletesSuccessfully_WhenUserActive()
+        public async Task DisableAnUser_TogglesFromActiveToInactive_WhenUserActive()
         {
             var user = new User { Id = 1, StatusId = UserStatus_Constants.Active };
             _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(user);
             _userRepo.Setup(x => x.Update(It.IsAny<User>())).ReturnsAsync(user);
 
             var service = BuildService();
-
-            await service.DisableAnUser(1);
+            var isActive = await service.DisableAnUser(1);
 
             Assert.Equal(UserStatus_Constants.Inactive, user.StatusId);
+            Assert.False(isActive);
+        }
+
+        [Fact]
+        public async Task DisableAnUser_TogglesFromInactiveToActive_WhenUserInactive()
+        {
+            var user = new User { Id = 1, StatusId = UserStatus_Constants.Inactive };
+            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(user);
+            _userRepo.Setup(x => x.Update(It.IsAny<User>())).ReturnsAsync(user);
+
+            var service = BuildService();
+            var isActive = await service.DisableAnUser(1);
+
+            Assert.Equal(UserStatus_Constants.Active, user.StatusId);
+            Assert.True(isActive);
         }
 
         [Fact]
@@ -214,17 +228,6 @@ namespace GPMS.TEST.Application.Services
             var service = BuildService();
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DisableAnUser(99));
-        }
-
-        [Fact]
-        public async Task DisableAnUser_Throws_WhenAlreadyInactive()
-        {
-            var user = new User { Id = 1, StatusId = UserStatus_Constants.Inactive };
-            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(user);
-
-            var service = BuildService();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.DisableAnUser(1));
         }
 
         // ─── AssignRoles ──────────────────────────────────────────────────────────
@@ -288,18 +291,22 @@ namespace GPMS.TEST.Application.Services
         // ─── UpdateUserForAdmin ───────────────────────────────────────────────────
 
         [Fact]
-        public async Task UpdateUserForAdmin_ReturnsUpdatedUser()
+        public async Task UpdateUserForAdmin_ReturnsUpdatedUser_AndPreservesStatusId()
         {
             var existing = new User { Id = 1, UserName = "old", StatusId = UserStatus_Constants.Active };
-            var updated = new User { Id = 1, UserName = "new" };
+            var incoming = new User { Id = 1, UserName = "new" };
 
+            User capturedUser = null;
             _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
-            _userRepo.Setup(x => x.Update(It.IsAny<User>())).ReturnsAsync(updated);
+            _userRepo.Setup(x => x.Update(It.IsAny<User>()))
+                .Callback<User>(u => capturedUser = u)
+                .ReturnsAsync(incoming);
 
             var service = BuildService();
-            var result = await service.UpdateUserForAdmin(1, updated);
+            var result = await service.UpdateUserForAdmin(1, incoming);
 
             Assert.Equal("new", result.UserName);
+            Assert.Equal(UserStatus_Constants.Active, capturedUser.StatusId);
         }
 
         [Fact]

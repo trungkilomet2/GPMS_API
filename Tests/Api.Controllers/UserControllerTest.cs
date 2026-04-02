@@ -236,38 +236,39 @@ public class UserControllerTest
     // ─── DisableUser ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task DisableUser_Returns200_WhenSuccessful()
+    public async Task DisableUser_Returns200WithDisabledMessage_WhenUserWasActive()
     {
-        _userRepo.Setup(x => x.DisableAnUser(1)).Returns(Task.CompletedTask);
+        _userRepo.Setup(x => x.DisableAnUser(1)).ReturnsAsync(false);
 
         var result = await BuildController().DisableUser(1);
 
         var obj = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(200, obj.StatusCode);
+        Assert.Contains("vô hiệu hóa", obj.Value?.ToString());
+    }
+
+    [Fact]
+    public async Task DisableUser_Returns200WithEnabledMessage_WhenUserWasInactive()
+    {
+        _userRepo.Setup(x => x.DisableAnUser(1)).ReturnsAsync(true);
+
+        var result = await BuildController().DisableUser(1);
+
+        var obj = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+        Assert.Contains("kích hoạt lại", obj.Value?.ToString());
     }
 
     [Fact]
     public async Task DisableUser_Returns404_WhenUserNotFound()
     {
         _userRepo.Setup(x => x.DisableAnUser(99))
-            .ThrowsAsync(new KeyNotFoundException("User not found."));
+            .ThrowsAsync(new KeyNotFoundException("Không tìm thấy người dùng."));
 
         var result = await BuildController().DisableUser(99);
 
         var obj = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Equal(404, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task DisableUser_Returns400_WhenAlreadyInactive()
-    {
-        _userRepo.Setup(x => x.DisableAnUser(1))
-            .ThrowsAsync(new InvalidOperationException("User is already inactive."));
-
-        var result = await BuildController().DisableUser(1);
-
-        var obj = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal(400, obj.StatusCode);
     }
 
     [Fact]
