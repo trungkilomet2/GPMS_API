@@ -13,18 +13,20 @@ namespace GPMS.APPLICATION.Services
     public class WorkerService : IWorkerRepositories
     {
         private readonly IBaseRepositories<Role> _roleRepo;
+        private readonly IBaseRepositories<WorkerSkill> _workerSkillRepo;
         private readonly IBaseRepositories<UserStatus> _userStatusRepo;
         private readonly IBaseAccountRepositories _accRepo;
         private readonly IBaseWorkerRepository _workerRepo;
         private readonly IUnitOfWork _unitOfWork;
 
-        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork, IBaseAccountRepositories accRepo)
+        public WorkerService( IBaseRepositories<Role> roleRepo, IBaseRepositories<UserStatus> userStatusRepo, IBaseWorkerRepository workerRepo, IUnitOfWork unitOfWork, IBaseAccountRepositories accRepo, IBaseRepositories<WorkerSkill> workerSkillRepo)
         {
             _roleRepo = roleRepo ?? throw new ArgumentNullException(nameof(roleRepo));
             _userStatusRepo = userStatusRepo ?? throw new ArgumentNullException(nameof(userStatusRepo));
             _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
             _unitOfWork = unitOfWork;
             _accRepo = accRepo ?? throw new ArgumentNullException(nameof(accRepo));
+            _workerSkillRepo = workerSkillRepo ?? throw new ArgumentNullException(nameof(workerSkillRepo));
         }
 
         public async Task<IEnumerable<User>> GetAllEmployees()
@@ -77,9 +79,6 @@ namespace GPMS.APPLICATION.Services
         {
             if (user == null)
                 throw new Exception("Lỗi khi cập nhật nhân viên.");
-            var status = await _userStatusRepo.GetById(user.StatusId);
-            if (status == null)
-                throw new KeyNotFoundException($"Trạng thái với Id: '{user.StatusId}' không tồn tại.");
             var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
             if (existManager == null)
                 throw new KeyNotFoundException($"Người dùng với Id: '{user.ManagerId}' không tồn tại.");
@@ -104,6 +103,29 @@ namespace GPMS.APPLICATION.Services
         {
             var data = await _workerRepo.GetAll(id);
             return data;
+        }
+
+        public async Task<User> AssignWorkerSkill(int userId, User user)
+        {
+            if(userId <= 0)
+                throw new Exception("Id phải lớn hơn 0.");
+            if (user == null)
+                throw new Exception("Lỗi khi cập nhật nhân viên.");
+            var existing = await _workerRepo.GetWorkerById(userId);
+            if (existing == null)
+                throw new KeyNotFoundException($"nhân viên với Id: '{userId}' không tồn tại.");
+
+            if (user.WorkerSkills != null && user.WorkerSkills.Any())
+            {
+                foreach (var role in user.WorkerSkills)
+                {
+                    var existingRole = await _workerSkillRepo.GetById(role.Id);
+
+                    if (existingRole == null)
+                        throw new KeyNotFoundException($"Skill với Id '{role.Id}' không tồn tại.");
+                }
+            }
+            return await _workerRepo.AssignWorkerRole(user);
         }
     }
 }

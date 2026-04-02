@@ -14,17 +14,16 @@ public partial class PRODUCTION_ISSUE_LOG
     [StringLength(150)]
     public string TITLE { get; set; } = null!;
 
-    [StringLength(500)]
+    [StringLength(255)]
     public string? DESCRIPTION { get; set; }
 
-    [StringLength(50)]
-    public string TYPE_ISSUE { get; set; } = null!;
+    public int QUANTITY { get; set; }
 
     public int CREATED_BY { get; set; }
 
-    public int? ASSIGNED_TO { get; set; }
+    public int ASSIGNED_TO { get; set; }
 
-    public int PRODUCTION_ID { get; set; }
+    public int PART_ID { get; set; }
 
     public int? PRIORITY { get; set; }
 
@@ -38,7 +37,7 @@ public partial class PRODUCTION_ISSUE_LOG
 
     [ForeignKey("ASSIGNED_TO")]
     [InverseProperty("PRODUCTION_ISSUE_LOGASSIGNED_TONavigation")]
-    public virtual USER? ASSIGNED_TONavigation { get; set; }
+    public virtual USER ASSIGNED_TONavigation { get; set; } = null!;
 
     [ForeignKey("CREATED_BY")]
     [InverseProperty("PRODUCTION_ISSUE_LOGCREATED_BYNavigation")]
@@ -48,7 +47,7 @@ public partial class PRODUCTION_ISSUE_LOG
     [InverseProperty("PRODUCTION_ISSUE_LOG")]
     public virtual ISSUE_STATUS IS { get; set; } = null!;
 
-    [ForeignKey("PRODUCTION_ID")]
+    [ForeignKey("PART_ID")]
     [InverseProperty("PRODUCTION_ISSUE_LOG")]
-    public virtual PRODUCTION PRODUCTION { get; set; } = null!;
+    public virtual P_PART PART { get; set; } = null!;
 }

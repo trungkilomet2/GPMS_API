@@ -394,7 +394,6 @@ namespace GMPS.API.Controllers
                         Id = userId,
                         FullName = input.FullName,
                         ManagerId = input.ManagerId,
-                        StatusId = input.StatusId,
                         Roles = input.RoleIds?.Select(r => new Role
                         {
                             Id = r
@@ -413,6 +412,62 @@ namespace GMPS.API.Controllers
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest
+                    };
+
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.Error_Post, ex,
+                    "Lỗi khi cập nhật nhân viên có Id: {UserId}", userId);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpPut("assign-worker-skill/{userId}")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> AssignWorkerSkill(int userId, [FromBody] AssignWorkerRoleDTO input)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.WorkerController_Put,
+                    "Thêm kỹ năng cho nhân viên có Id: {UserId}", userId);
+
+                if (userId <= 0)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest,
+                        $"Id không hợp lệ '{userId}'");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var updatedUser = new User
+                    {
+                        Id = userId,
+                        WorkerSkills = input.SkillIds?.Select(r => new WorkerSkill
+                        {
+                            Id = r
+                        }).ToList()
+                    };
+
+                    var result = await _workerRepo.AssignWorkerSkill(userId, updatedUser);
+
+                    _logger.LogInformation(CustomLogEvents.WorkerController_Put,
+                        "Nhân viên có Id: {UserId} được thêm kỹ năng thành công", userId);
+
+                    return Ok($"Nhân viên có Id: '{userId}' được thêm kỹ năng thành công");
+                }
+                else
+                {
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
                     };
 
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);

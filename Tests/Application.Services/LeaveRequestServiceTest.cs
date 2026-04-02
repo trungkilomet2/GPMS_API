@@ -107,7 +107,7 @@ public class LeaveRequestServiceTest
         var expected = BuildFakeLeaveRequest(id: 10, userId: 3);
         _baseRepo.Setup(x => x.Create(It.IsAny<LeaveRequest>())).ReturnsAsync(expected);
 
-        var result = await BuildService().CreateLeaveRequest(userId: 3, content: "Need a day off.", fromDate: null, toDate: null);
+        var result = await BuildService().CreateLeaveRequest(userId: 3, content: "Need a day off.", fromDate: DateTime.Today.AddDays(1), toDate: DateTime.Today.AddDays(2));
 
         Assert.NotNull(result);
         Assert.Equal(10, result.Id);
@@ -122,7 +122,7 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().CreateLeaveRequest(userId: 7, content: "Sick day.", fromDate: null, toDate: null);
+        await BuildService().CreateLeaveRequest(userId: 7, content: "Sick day.", fromDate: DateTime.Today.AddDays(1), toDate: DateTime.Today.AddDays(2));
 
         Assert.NotNull(captured);
         Assert.Equal(7, captured!.UserId);
@@ -136,7 +136,7 @@ public class LeaveRequestServiceTest
             .Callback<LeaveRequest>(lr => captured = lr)
             .ReturnsAsync(BuildFakeLeaveRequest());
 
-        await BuildService().CreateLeaveRequest(userId: 1, content: "Family emergency.", fromDate: null, toDate: null);
+        await BuildService().CreateLeaveRequest(userId: 1, content: "Family emergency.", fromDate: DateTime.Today.AddDays(1), toDate: DateTime.Today.AddDays(2));
 
         Assert.Equal("Family emergency.", captured!.Content);
     }
@@ -147,7 +147,7 @@ public class LeaveRequestServiceTest
         var yesterday = DateTime.Today.AddDays(-1);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: yesterday, toDate: null));
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: yesterday, toDate: DateTime.Today.AddDays(2)));
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class LeaveRequestServiceTest
             TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).Date;
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: today));
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: DateTime.Today.AddDays(1), toDate: today));
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public class LeaveRequestServiceTest
         var yesterday = DateTime.Today.AddDays(-1);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: yesterday));
+            BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: DateTime.Today.AddDays(1), toDate: yesterday));
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class LeaveRequestServiceTest
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
         var before = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-        await BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: null, toDate: null);
+        await BuildService().CreateLeaveRequest(userId: 1, content: "Day off.", fromDate: DateTime.Today.AddDays(1), toDate: DateTime.Today.AddDays(2));
         var after = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
 
         Assert.InRange(captured!.DateCreate, before, after);

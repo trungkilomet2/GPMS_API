@@ -72,7 +72,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.UserController_Get,
-                    "Getting user detail for UserId {UserId}", userId);
+                    "Đang lấy thông tin người dùng với ID {UserId}", userId);
 
                 if (ModelState.IsValid)
                 {
@@ -81,11 +81,11 @@ namespace GMPS.API.Controllers
                     if (user == null)
                     {
                         _logger.LogWarning(CustomLogEvents.UserController_Get,
-                            "User not found for UserId {UserId}", userId);
+                            "Không tìm thấy người dùng với ID {UserId}", userId);
 
                         return NotFound(new ProblemDetails
                         {
-                            Detail = $"User with ID {userId} not found.",
+                            Detail = $"Không tìm thấy người dùng với ID {userId}.",
                             Status = StatusCodes.Status404NotFound,
                             Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                         });
@@ -100,13 +100,13 @@ namespace GMPS.API.Controllers
                         Email = user.Email,
                         AvatarUrl = user.AvartarUrl,
                         Location = user.Location,
-                        Status = user.Status?.Name ?? "Unknown",
+                        Status = user.Status?.Name ?? "Không xác định",
                         Roles = user.Roles.Select(r => r.Name).ToList(),
                         WorkerRole = string.Join(", ", user.WorkerSkills.Select(w => w.Name))
                     };
 
                     _logger.LogInformation(CustomLogEvents.UserController_Get,
-                        "User detail retrieved successfully for UserId {UserId}", userId);
+                        "Lấy thông tin người dùng thành công với ID {UserId}", userId);
 
                     return StatusCode(StatusCodes.Status200OK, new RestDTO<UserDetailDTO>
                     {
@@ -124,7 +124,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.UserController_Get,
-                        "Invalid model state when getting user detail for UserId {UserId}", userId);
+                        "Lỗi dữ liệu đầu vào khi lấy thông tin người dùng với ID {UserId}", userId);
 
                     var details = new ValidationProblemDetails(ModelState)
                     {
@@ -148,7 +148,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Get, ex,
-                    "Error occurred while retrieving user details for UserId {UserId}", userId);
+                    "Lỗi xảy ra khi lấy thông tin người dùng với ID {UserId}", userId);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -165,7 +165,7 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<RestDTO<IEnumerable<UserListDTO>>>> GetUserListForAdmin([FromQuery] RequestDTO<UserListDTO> input)
         {
-            _logger.LogInformation(CustomLogEvents.UserController_Get, "Admin requesting user list");
+            _logger.LogInformation(CustomLogEvents.UserController_Get, "Admin đang yêu cầu danh sách người dùng");
             try
             {
                 var users = await _userRepo.GetAllUser();
@@ -179,11 +179,11 @@ namespace GMPS.API.Controllers
                     Location = u.Location,
                     Email = u.Email,
                     StatusId = u.StatusId,
-                    StatusName = u.Status?.Name ?? "Unknown",
+                    StatusName = u.Status?.Name ?? "Không xác định",
                     Roles = u.Roles.Select(r => r.Name).ToList()
                 }).ToList();
 
-                _logger.LogInformation(CustomLogEvents.UserController_Get, "Retrieved {Count} users successfully", data.Count);
+                _logger.LogInformation(CustomLogEvents.UserController_Get, "Lấy danh sách {Count} người dùng thành công", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<UserListDTO>>
                 {
@@ -199,12 +199,12 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Get, ex, "Error occurred while retrieving user list");
+                _logger.LogError(CustomLogEvents.UserController_Get, ex, "Lỗi xảy ra khi lấy danh sách người dùng");
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    Detail = "An error occurred while loading the user list."
+                    Detail = "Có lỗi xảy ra khi tải danh sách người dùng."
                 });
             }
         }
@@ -213,12 +213,12 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<RestDTO<UserListDTO>>> CreateUser([FromBody] CreateUserDTO input)
         {
-            _logger.LogInformation(CustomLogEvents.UserController_Post, "Admin creating new user with UserName: {UserName}", input.UserName);
+            _logger.LogInformation(CustomLogEvents.UserController_Post, "Admin đang tạo người dùng mới với tên tài khoản: {UserName}", input.UserName);
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Invalid model state when creating user");
+                    _logger.LogWarning(CustomLogEvents.UserController_Post, "Lỗi dữ liệu đầu vào khi tạo người dùng");
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -237,7 +237,7 @@ namespace GMPS.API.Controllers
 
                 var createdUser = await _userRepo.CreateNewUser(newUser, input.RoleIds);
 
-                _logger.LogInformation(CustomLogEvents.UserController_Post, "User created successfully with UserName: {UserName}", createdUser.UserName);
+                _logger.LogInformation(CustomLogEvents.UserController_Post, "Tạo người dùng thành công với tên tài khoản: {UserName}", createdUser.UserName);
 
                 var result = new UserListDTO
                 {
@@ -264,12 +264,12 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Post, ex, "Error occurred while creating user with UserName: {UserName}", input.UserName);
+                _logger.LogError(CustomLogEvents.UserController_Post, ex, "Lỗi xảy ra khi tạo người dùng với tên tài khoản: {UserName}", input.UserName);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    Detail = "An error occurred while creating the user."
+                    Detail = "Có lỗi xảy ra khi tạo người dùng."
                 });
             }
         }
@@ -278,12 +278,15 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DisableUser(int id)
         {
-            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin disabling UserId {UserId}", id);
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin đang thay đổi trạng thái người dùng với ID {UserId}", id);
             try
             {
-                await _userRepo.DisableAnUser(id);
-                _logger.LogInformation(CustomLogEvents.UserController_Put, "UserId {UserId} disabled successfully", id);
-                return Ok($"User with ID {id} has been disabled.");
+                var isActive = await _userRepo.DisableAnUser(id);
+                var action = isActive ? "kích hoạt lại" : "vô hiệu hóa";
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Người dùng với ID {UserId} đã được {Action} thành công", id, action);
+                return Ok(isActive
+                    ? $"Người dùng với ID {id} đã được kích hoạt lại."
+                    : $"Người dùng với ID {id} đã bị vô hiệu hóa.");
             }
             catch (KeyNotFoundException ex)
             {
@@ -295,24 +298,14 @@ namespace GMPS.API.Controllers
                     Detail = ex.Message
                 });
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(CustomLogEvents.UserController_Put, ex.Message);
-                return BadRequest(new ProblemDetails
-                {
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                    Detail = ex.Message
-                });
-            }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while disabling UserId {UserId}", id);
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Lỗi xảy ra khi thay đổi trạng thái người dùng với ID {UserId}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    Detail = "An error occurred while disabling the user."
+                    Detail = "Có lỗi xảy ra khi thay đổi trạng thái người dùng."
                 });
             }
         }
@@ -321,12 +314,12 @@ namespace GMPS.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> AssignRoles(int id, [FromBody] AssignRoleDTO input)
         {
-            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin assigning roles to UserId {UserId}", id);
+            _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin đang phân quyền cho người dùng với ID {UserId}", id);
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Invalid model state when assigning roles to UserId {UserId}", id);
+                    _logger.LogWarning(CustomLogEvents.UserController_Put, "Lỗi dữ liệu đầu vào khi phân quyền cho người dùng với ID {UserId}", id);
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -337,8 +330,8 @@ namespace GMPS.API.Controllers
 
                 await _userRepo.AssignRoles(id, input.RoleIds);
 
-                _logger.LogInformation(CustomLogEvents.UserController_Put, "Roles assigned successfully to UserId {UserId}", id);
-                return Ok($"Roles assigned successfully to user with ID {id}.");
+                _logger.LogInformation(CustomLogEvents.UserController_Put, "Phân quyền thành công cho người dùng với ID {UserId}", id);
+                return Ok($"Phân quyền thành công cho người dùng với ID {id}.");
             }
             catch (KeyNotFoundException ex)
             {
@@ -362,12 +355,12 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Error occurred while assigning roles to UserId {UserId}", id);
+                _logger.LogError(CustomLogEvents.UserController_Put, ex, "Lỗi xảy ra khi phân quyền cho người dùng với ID {UserId}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
                     Status = StatusCodes.Status500InternalServerError,
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
-                    Detail = "An error occurred while assigning roles."
+                    Detail = "Có lỗi xảy ra khi phân quyền."
                 });
             }
         }
@@ -421,7 +414,7 @@ namespace GMPS.API.Controllers
                 var updatedUser = await _userRepo.UpdateUserForAdmin(userId, updateUser);
 
                 _logger.LogInformation(CustomLogEvents.UserController_Put,
-                    "cập nhật người dùng thành công với Id là: {UserId}", userId);
+                    "Cập nhật người dùng thành công với ID {UserId}", userId);
 
                 return StatusCode(StatusCodes.Status200OK, new RestDTO<User>
                 {

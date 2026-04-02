@@ -14,5 +14,6 @@ namespace GPMS.APPLICATION.Repositories
         Task<User> GetEmployeeById(int id);
         Task<User> CreateEmployee(User user);
         Task<User> UpdateEmployee(int userId, User user);
+        Task<User> AssignWorkerSkill(int userId, User user);
     }
 }
