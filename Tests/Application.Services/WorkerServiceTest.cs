@@ -13,8 +13,10 @@ namespace GPMS.TEST.Application.Services
     public class WorkerServiceTest
     {
         private readonly Mock<IBaseRepositories<Role>> _mockRoleRepo;
+        private readonly Mock<IBaseRepositories<WorkerSkill>> _mockWorkerSkillRepo;
         private readonly Mock<IBaseRepositories<UserStatus>> _mockStatusRepo;
         private readonly Mock<IBaseWorkerRepository> _mockWorkerRepo;
+        private readonly Mock<IBaseAccountRepositories> _mockAccRepo;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
 
         private readonly WorkerService _service;
@@ -22,7 +24,9 @@ namespace GPMS.TEST.Application.Services
         public WorkerServiceTest()
         {
             _mockRoleRepo = new Mock<IBaseRepositories<Role>>();
+            _mockWorkerSkillRepo = new Mock<IBaseRepositories<WorkerSkill>>();
             _mockStatusRepo = new Mock<IBaseRepositories<UserStatus>>();
+            _mockAccRepo = new Mock<IBaseAccountRepositories>();
             _mockWorkerRepo = new Mock<IBaseWorkerRepository>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
 
@@ -30,7 +34,9 @@ namespace GPMS.TEST.Application.Services
                 _mockRoleRepo.Object,
                 _mockStatusRepo.Object,
                 _mockWorkerRepo.Object,
-                _mockUnitOfWork.Object
+                _mockUnitOfWork.Object,
+                _mockAccRepo.Object,
+                _mockWorkerSkillRepo.Object
             );
         }
 

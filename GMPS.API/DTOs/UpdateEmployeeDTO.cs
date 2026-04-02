@@ -5,16 +5,15 @@ namespace GMPS.API.DTOs
 {
     public class UpdateEmployeeDTO
     {
-        [Required(ErrorMessage = "FullName is required")]
-        [StringLength(50, ErrorMessage = "FullName cannot exceed 50 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập đầy đủ tên")]
+        [StringLength(50, ErrorMessage = "Tên không được vượt quá 50 ký tự")]
         public string FullName { get; set; } = null!;
 
-        [Required(ErrorMessage = "StatusId is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "StatusId must be greater than 0")]
+        [Required(ErrorMessage = "Yêu cầu nhập người quản lý")]
+        [Range(1, int.MaxValue, ErrorMessage = "Id phải lớn hơn 0")]
         public int ManagerId { get; set; }
-        public int StatusId { get; set; }
 
-        [Required(ErrorMessage = "At least one role must be assigned")]
+        [Required(ErrorMessage = "Có ít nhất 1 role phải được chọn")]
         [MinLength(1, ErrorMessage = "At least one role must be provided")]
         public List<int>? RoleIds { get; set; }
     }
