@@ -28,7 +28,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
 
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException(
-                    "Gemini API Key chưa được cấu hình. Vui lòng vào https://aistudio.google.com/ lấy key rồi điền vào appsettings.json.");
+                    "Gemini API Key chưa được cấu hình.");
 
             string docxContext = GetDocxContext();
             string systemPrompt = BuildUnifiedSystemPrompt(docxContext);
