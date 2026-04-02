@@ -14,7 +14,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<User> GetUserById(int id);
         Task<bool> IsEmailExists(string email);
         Task<User> CreateNewUser(User user, List<int> roleIds);
-       Task DisableAnUser(int userId);
+       Task<bool> DisableAnUser(int userId);
        Task AssignRoles(int userId, List<int> roleIds);
        Task<User> ViewProfile(int id);
        Task<User> UpdateProfile(int userId, User user);

@@ -1,4 +1,4 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
