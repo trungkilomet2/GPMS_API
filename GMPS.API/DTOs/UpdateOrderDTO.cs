@@ -29,7 +29,7 @@ namespace GMPS.API.DTOs
         public DateOnly EndDate { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]
-        [Range(1, 1000, ErrorMessage = "Quantity must be between 1 and 1000")]
+        [Range(1, 9999, ErrorMessage = "Quantity must be between 1 and 9999")]
         public int Quantity { get; set; }
 
         [Url(ErrorMessage = "Image must be a valid URL")]

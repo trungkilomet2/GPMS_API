@@ -102,6 +102,7 @@ namespace GPMS.APPLICATION.Services
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,
+                Cpu = existing.Cpu,
                 Image = resolvedImage,
                 Note = input.Note,
                 Template = input.Templates,
@@ -157,7 +158,7 @@ namespace GPMS.APPLICATION.Services
                     OrderId = orderId,
                     FieldName = "Status",
                     OldValue = existing.StatusName ?? string.Empty,
-                    NewValue = OrderStatus_Constants.Modification
+                    NewValue = OrderStatus_Constants.Cancelled
                 }
             };
 
