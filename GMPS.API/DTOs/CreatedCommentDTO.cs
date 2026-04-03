@@ -12,8 +12,8 @@ namespace GMPS.API.DTOs
         [Range(1, int.MaxValue, ErrorMessage = "ToOrderId must be greater than 0")]
         public int ToOrderId { get; set; }
 
-        [Required(ErrorMessage = "Content is required")]
-        [StringLength(500, ErrorMessage = "Content cannot exceed 500 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập nội dung")]
+        [StringLength(500, ErrorMessage = "Nội dung không quá 500 ký tự")]
         public string Content { get; set; }
 
     }

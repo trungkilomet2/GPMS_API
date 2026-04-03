@@ -32,8 +32,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .FirstOrDefaultAsync(u => u.USER_ID == entity.Id);
             if (existing == null)
                 throw new KeyNotFoundException($"Nhân viên '{entity.Id}' không tìm thấy");
-            if (entity.Roles != null)
+            if (entity.WorkerSkills != null)
             {
+                existing.WS.Clear();
                 foreach (var role in entity.WorkerSkills)
                 {
                     var roleEntity = await _context.WORKER_SKILL

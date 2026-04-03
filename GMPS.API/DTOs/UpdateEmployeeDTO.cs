@@ -13,8 +13,8 @@ namespace GMPS.API.DTOs
         [Range(1, int.MaxValue, ErrorMessage = "Id phải lớn hơn 0")]
         public int ManagerId { get; set; }
 
-        [Required(ErrorMessage = "Có ít nhất 1 role phải được chọn")]
-        [MinLength(1, ErrorMessage = "At least one role must be provided")]
+        [Required(ErrorMessage = "Yêu cầu chọn vai trò")]
+        [MinLength(1, ErrorMessage = "Chọn ít nhất 1 vai trò")]
         public List<int>? RoleIds { get; set; }
     }
 }
