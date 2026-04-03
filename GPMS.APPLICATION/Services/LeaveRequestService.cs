@@ -35,7 +35,7 @@ namespace GPMS.APPLICATION.Services
             if (toDate.Date < today)
                 throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
 
-            if (toDate.Date < fromDate.Date)
+            if (toDate.Date <= fromDate.Date)
                 throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
 
             var leaveRequest = new LeaveRequest

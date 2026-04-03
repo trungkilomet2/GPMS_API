@@ -14,7 +14,7 @@ namespace GMPS.API.DTOs
         [StringLength(15,
             ErrorMessage = "Phone number cannot exceed 15 digits")]
         public string PhoneNumber { get; set; }
-        public IFormFile AvartarUrl { get; set; }
+        public IFormFile? AvartarUrl { get; set; }
 
         [Required(ErrorMessage = "Location is required")]
         [StringLength(2048,

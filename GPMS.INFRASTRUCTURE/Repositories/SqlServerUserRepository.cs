@@ -138,7 +138,17 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 existingUser.US_ID = entity.StatusId;
                 _context.USER.Update(existingUser);
                 await _context.SaveChangesAsync();
-            return _mapper.Map<User>(existingUser);       
+            return _mapper.Map<User>(existingUser);
+        }
+
+        public async Task UpdatePassword(string email, string newPasswordHash)
+        {
+            var user = await _context.USER.Where(u => u.EMAIL == email.Trim().ToLower()).FirstOrDefaultAsync();
+            if (user == null)
+                throw new KeyNotFoundException($"User with email '{email}' not found.");
+            user.PASSWORDHASH = newPasswordHash;
+            _context.USER.Update(user);
+            await _context.SaveChangesAsync();
         }
     }
 }

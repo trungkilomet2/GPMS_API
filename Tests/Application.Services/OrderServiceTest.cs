@@ -241,10 +241,24 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
             service.UpdateOrder(1, 1, input));
 
         Assert.Equal("End date must be greater than start date.", ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenStartDateInPast()
+    {
+        var pastDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+        var input = BuildFakeInput(startDate: pastDate, endDate: pastDate.AddDays(5));
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.UpdateOrder(1, 1, input));
+
+        Assert.Equal("Start date must be greater than current date.", ex.Message);
     }
 
     [Fact]
@@ -318,7 +332,7 @@ public class OrderServiceTest
         var material = new OMaterial { Name = "Cotton", Value = 5, Uom = "m" };
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(99, material));
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => service.AddMaterial(99, material));
 
         Assert.Equal("Order with id '99' not found.", ex.Message);
     }
@@ -344,7 +358,7 @@ public class OrderServiceTest
         var material = new OMaterial { Name = "Cotton", Value = 0, Uom = "m" };
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(1, material));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddMaterial(1, material));
 
         Assert.Equal("Quantity must be greater than zero.", ex.Message);
     }
@@ -358,7 +372,7 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.RequestOrderModification(99, updated, new()));
 
         Assert.Equal("Order with id '99' not exist in system.", ex.Message);
@@ -394,7 +408,7 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.RequestOrderModification(1, updated, new()));
 
         Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);

@@ -55,7 +55,10 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                     body = $"Mã OTP mới của bạn là: <b>{newOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.PasswordReset:
-                    subject = "Password Reset Request";
+                    var resetOtp = GenerateOtp();
+                    _memoryCache.Set(toEmail.Trim().ToLower() + "_reset_otp", resetOtp, TimeSpan.FromMinutes(5));
+                    subject = "Yêu cầu đặt lại mật khẩu";
+                    body = $"Mã OTP đặt lại mật khẩu của bạn là: <b>{resetOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.OrderNotification:
                     subject = "Order Notification";

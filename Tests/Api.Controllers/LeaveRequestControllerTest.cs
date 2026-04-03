@@ -459,7 +459,7 @@ public class LeaveRequestControllerTest
     }
 
     [Fact]
-    public async Task CreateLeaveRequest_Returns500_WhenPendingStatusNotFoundInSystem()
+    public async Task CreateLeaveRequest_Returns400_WhenPendingStatusNotFoundInSystem()
     {
         _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ThrowsAsync(new InvalidOperationException("Status 'Pending' not found in system."));
@@ -469,7 +469,7 @@ public class LeaveRequestControllerTest
         var result = await BuildController(userId: 1).CreateLeaveRequest(input);
 
         var obj = Assert.IsType<ObjectResult>(result.Result);
-        Assert.Equal(500, obj.StatusCode);
+        Assert.Equal(400, obj.StatusCode);
     }
 
     [Fact]
