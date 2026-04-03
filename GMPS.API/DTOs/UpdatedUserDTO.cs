@@ -12,9 +12,9 @@ namespace GMPS.API.DTOs
         [Required(ErrorMessage = "Yêu cầu nhập số điện thoại")]
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
         [StringLength(10,
-            ErrorMessage = "Số điện thoại không vượt quá 15 digits")]
+            ErrorMessage = "Số điện thoại không vượt quá 15 số")]
         public string PhoneNumber { get; set; }
-        public IFormFile AvartarUrl { get; set; }
+        public IFormFile? AvartarUrl { get; set; }
 
         [Required(ErrorMessage = "Yêu cầu nhập địa chỉ")]
         [StringLength(255,
