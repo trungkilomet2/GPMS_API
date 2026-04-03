@@ -184,10 +184,10 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            var ex = await Assert.ThrowsAsync<Exception>(() =>
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.CreateNewUser(user, new List<int> { 99 }));
 
-            Assert.Equal("Role with ID 99 not found.", ex.Message);
+            Assert.Equal("Không tìm thấy vai trò với ID 99.", ex.Message);
         }
 
         // ─── DisableAnUser ────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ namespace GPMS.TEST.Application.Services
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.AssignRoles(1, new List<int> { 99 }));
 
-            Assert.Equal("Role with ID 99 not found.", ex.Message);
+            Assert.Equal("Không tìm thấy vai trò với ID 99.", ex.Message);
         }
 
         // ─── UpdateUserForAdmin ───────────────────────────────────────────────────
