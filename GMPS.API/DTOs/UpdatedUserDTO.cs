@@ -4,27 +4,27 @@ namespace GMPS.API.DTOs
 {
     public class UpdatedUserDTO
     {
-        [Required(ErrorMessage = "Full name is required")]
-        [StringLength(100,
-            ErrorMessage = "Full name cannot exceed 100 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập tên")]
+        [StringLength(50,
+            ErrorMessage = "Tên không vượt quá 50 ký tự")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Phone number is required")]
-        [Phone(ErrorMessage = "Invalid phone number format")]
-        [StringLength(15,
-            ErrorMessage = "Phone number cannot exceed 15 digits")]
+        [Required(ErrorMessage = "Yêu cầu nhập số điện thoại")]
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        [StringLength(10,
+            ErrorMessage = "Số điện thoại không vượt quá 15 digits")]
         public string PhoneNumber { get; set; }
         public IFormFile AvartarUrl { get; set; }
 
-        [Required(ErrorMessage = "Location is required")]
-        [StringLength(2048,
-    ErrorMessage = "Location is too long")]
+        [Required(ErrorMessage = "Yêu cầu nhập địa chỉ")]
+        [StringLength(255,
+    ErrorMessage = "Địa chỉ quá dài")]
         public string Location { get; set; }
 
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
+        [Required(ErrorMessage = "Yêu cầu nhập email")]
+        [EmailAddress(ErrorMessage = "email không hợp lệ")]
         [StringLength(255,
-            ErrorMessage = "Email cannot exceed 255 characters")]
+            ErrorMessage = "Email không quá 255 ký tự")]
         public string Email { get; set; }
     }
 }
