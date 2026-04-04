@@ -25,6 +25,31 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public async Task<User> AssignWorkerRole(User entity)
+        {
+            var existing = await _context.USER
+                .Include(u => u.WS)
+                .FirstOrDefaultAsync(u => u.USER_ID == entity.Id);
+            if (existing == null)
+                throw new KeyNotFoundException($"Nhân viên '{entity.Id}' không tìm thấy");
+            if (entity.WorkerSkills != null)
+            {
+                existing.WS.Clear();
+                foreach (var role in entity.WorkerSkills)
+                {
+                    var roleEntity = await _context.WORKER_SKILL
+                        .FirstOrDefaultAsync(r => r.WS_ID == role.Id);
+
+                    if (roleEntity != null)
+                        existing.WS.Add(roleEntity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<User>(existing);
+        }
+
         public async Task<User> Create(User entity)
         {
             var userEntity = _mapper.Map<USER>(entity);
@@ -129,7 +154,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new KeyNotFoundException($"Employee '{entity.Id}' not found");
 
             existing.FULLNAME = entity.FullName;
-            existing.US_ID = entity.StatusId;
+            existing.MANAGER_ID = entity.ManagerId;
 
             if (entity.Roles != null)
             {

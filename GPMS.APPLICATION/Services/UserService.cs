@@ -47,39 +47,41 @@ namespace GPMS.APPLICATION.Services
                 {
                     var role = await _roleRepo.GetById(roleId);
                     if (role == null)
-                        throw new Exception($"Role with ID {roleId} not found.");
+                        throw new KeyNotFoundException($"Không tìm thấy vai trò với ID {roleId}.");
                     await _userRoleRepo.AddUserRole(createdUser, role.Name);
                 }
             });
             return createdUser;
         }
 
-        public async Task DisableAnUser(int userId)
+        public async Task<bool> DisableAnUser(int userId)
         {
             var user = await _userBaseRepo.GetById(userId);
             if (user == null)
-                throw new KeyNotFoundException($"User with ID {userId} not found.");
-            if (user.StatusId == UserStatus_Constants.Inactive)
-                throw new InvalidOperationException("User is already disabled.");
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
 
-            user.StatusId = UserStatus_Constants.Inactive;
+            user.StatusId = user.StatusId == UserStatus_Constants.Active
+                ? UserStatus_Constants.Inactive
+                : UserStatus_Constants.Active;
+
             await _userBaseRepo.Update(user);
+            return user.StatusId == UserStatus_Constants.Active;
         }
 
         public async Task AssignRoles(int userId, List<int> roleIds)
         {
             var user = await _userBaseRepo.GetById(userId);
             if (user == null)
-                throw new KeyNotFoundException($"User with ID {userId} not found.");
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
             if (user.StatusId == UserStatus_Constants.Inactive)
-                throw new InvalidOperationException("Cannot assign roles to a disabled user.");
+                throw new InvalidOperationException("Không thể phân quyền cho người dùng đã bị vô hiệu hóa.");
 
             var roleNames = new List<string>();
             foreach (var roleId in roleIds)
             {
                 var role = await _roleRepo.GetById(roleId);
                 if (role == null)
-                    throw new KeyNotFoundException($"Role with ID {roleId} not found.");
+                    throw new KeyNotFoundException($"Không tìm thấy vai trò với ID {roleId}.");
                 roleNames.Add(role.Name);
             }
 
@@ -127,13 +129,14 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task<User> UpdateUserForAdmin(int userId,User user)
+        public async Task<User> UpdateUserForAdmin(int userId, User user)
         {
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
                 throw new KeyNotFoundException("Không tìm thấy người dùng");
             if (result.StatusId == UserStatus_Constants.Inactive)
-                throw new InvalidOperationException("Cannot update a disabled user.");
+                throw new InvalidOperationException("Không thể cập nhật người dùng đã bị vô hiệu hóa.");
+            user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;
         }
