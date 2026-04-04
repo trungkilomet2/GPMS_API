@@ -49,4 +49,44 @@ namespace GPMS.APPLICATION.DTOs
         public int StatusId { get; set; }
         public IEnumerable<string> PartNames { get; set; } = new List<string>();
     }
+
+    // 30-3-2026:
+
+
+    public class ProductionPartCompletionEstimateViewDTO
+    {
+        public int PartId { get; set; }
+        public int ProductionId { get; set; }
+        public int RemainingQuantity { get; set; }
+        public int EstimatedDailyCapacity { get; set; }
+        public int EstimatedDaysToComplete { get; set; }
+        public DateOnly EstimatedFinishDate { get; set; }
+    }
+
+    public class ProductionWorkerProgressChartViewDTO
+    {
+        public int WorkerId { get; set; }
+        public string WorkerName { get; set; } = string.Empty;
+        public int ProductionId { get; set; }
+        public int TotalOutput { get; set; }
+        public decimal ProgressPercent { get; set; }
+    }
+
+    public class WorkerProductivityScoreViewDTO
+    {
+        public int WorkerId { get; set; }
+        public string WorkerName { get; set; } = string.Empty;
+        public int ProductionId { get; set; }
+        public int TotalOutput { get; set; }
+        public int IssueCount { get; set; }
+        public decimal ProductivityScore { get; set; }
+    }
+
+
+
+
+
+
+
+
 }

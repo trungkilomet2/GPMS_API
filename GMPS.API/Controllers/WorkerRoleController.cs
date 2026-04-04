@@ -30,7 +30,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Lấy về kỹ năng của nhân viên - PageIndex: {PageIndex}, PageSize: {PageSize}",
+                    "Lấy về chuyên môn của nhân viên - PageIndex: {PageIndex}, PageSize: {PageSize}",
                     input.PageIndex, input.PageSize);
 
                 if (!ModelState.IsValid)
@@ -46,8 +46,8 @@ namespace GMPS.API.Controllers
                 if(result == null || !result.Any())
                 {
                     _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                        "Không tìm thấy kỹ năng của nhân viên");
-                    return NotFound("Không tìm thấy kỹ năng của nhân viên");
+                        "Không tìm thấy chuyên môn của nhân viên");
+                    return NotFound("Không tìm thấy chuyên môn của nhân viên");
                 }
                 if (!string.IsNullOrEmpty(input.FilterQuery))
                 {
@@ -62,7 +62,7 @@ namespace GMPS.API.Controllers
                     .ToList();
 
                 _logger.LogInformation(CustomLogEvents.WorkerRoleController_Get,
-                    "Trả về {Count} kỹ năng của nhân viên", data.Count);
+                    "Trả về {Count} chuyên môn của nhân viên", data.Count);
 
                 return StatusCode(StatusCodes.Status200OK,new RestDTO<IEnumerable<WorkerSkill>>
                 {
@@ -85,7 +85,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Get, ex,
-                    "Lỗi khi lấy về kỹ năng của nhân viên");
+                    "Lỗi khi lấy về chuyên môn của nhân viên");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -102,7 +102,7 @@ namespace GMPS.API.Controllers
             try
             {
                 _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                    "Tạo kỹ năng mới: {Name}", input?.Name);
+                    "Tạo chuyên môn mới: {Name}", input?.Name);
 
                 if (ModelState.IsValid)
                 {
@@ -114,15 +114,15 @@ namespace GMPS.API.Controllers
                     var result = await _workerroleRepo.CreateWorkerRole(newRole);
 
                     _logger.LogInformation(CustomLogEvents.WorkerController_Post,
-                        "Kỹ năng {Id} được tạo thành công", result.Id);
+                        "Chuyên môn {Id} được tạo thành công", result.Id);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Kỹ năng '{result.Id}' được tạo thành công");
+                        $"Chuyên môn '{result.Id}' được tạo thành công");
                 }
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.WorkerController_Post,
-                        "Lỗi model state khi tạo kỹ năng: {Name}", input?.Name);
+                        "Lỗi model state khi tạo chuyên môn: {Name}", input?.Name);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -136,7 +136,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.Error_Post, ex,
-                    "Lỗi khi tạo kỹ năng: {Name}", input?.Name);
+                    "Lỗi khi tạo chuyên môn: {Name}", input?.Name);
 
                 var exceptionDetails = new ProblemDetails
                 {

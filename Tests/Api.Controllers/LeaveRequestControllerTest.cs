@@ -426,7 +426,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns201_WhenSuccessful()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(1, It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(1, It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ReturnsAsync(BuildFakeLeaveRequest(id: 5, userId: 1));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };
@@ -461,7 +461,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns500_WhenPendingStatusNotFoundInSystem()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ThrowsAsync(new InvalidOperationException("Status 'Pending' not found in system."));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };
@@ -475,7 +475,7 @@ public class LeaveRequestControllerTest
     [Fact]
     public async Task CreateLeaveRequest_Returns500_OnException()
     {
-        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+        _leaveRequestRepo.Setup(x => x.CreateLeaveRequest(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ThrowsAsync(new Exception("db error"));
 
         var input = new CreateLeaveRequestDTO { Content = "I need a day off." };

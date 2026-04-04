@@ -5,26 +5,26 @@ namespace GMPS.API.DTOs
 {
     public class CreateMaterialDTO
     {
-        [Required(ErrorMessage = "MaterialName is required")]
-        [StringLength(150, ErrorMessage = "MaterialName cannot exceed 100 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập tên nguyên liệu")]
+        [StringLength(150, ErrorMessage = "Tên nguyên liệu không vượt quá 150 ký tự")]
         public string MaterialName { get; set; }
 
-        [Url(ErrorMessage = "Image must be a valid URL")]
-        [StringLength(255, ErrorMessage = "Image URL is too long")]
+        [Url(ErrorMessage = "Link ảnh không hợp lệ")]
+        [StringLength(255, ErrorMessage = "Link ảnh quá dài")]
         public string? Image { get; set; }
-        [Required(ErrorMessage = "Color is required")]
-        [MaxLength(30, ErrorMessage = "Note cannot exceed 30 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập màu")]
+        [MaxLength(30, ErrorMessage = "Màu không được vượt quá 30 ký tự")]
         public string Color { get; set; }
 
-        [Required(ErrorMessage = "Value is required")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Value must be greater than 0")]
+        [Required(ErrorMessage = "Yêu cầu nhập số lượng")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
         public decimal Value { get; set; }
 
-        [MaxLength(500, ErrorMessage = "Note cannot exceed 500 characters")]
+        [MaxLength(100, ErrorMessage = "Ghi chú không vượt quá 100 ký tự")]
         public string? Note { get; set; }
 
-        [Required(ErrorMessage = "Uom is required")]
-        [StringLength(50, ErrorMessage = "Uom cannot exceed 50 characters")]
+        [Required(ErrorMessage = "Yêu cầu nhập đơn vị")]
+        [StringLength(50, ErrorMessage = "Đơn vị không vượt quá 50 ký tự")]
         public string Uom { get; set; }
     }
 }

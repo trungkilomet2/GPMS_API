@@ -1,4 +1,4 @@
-﻿using GPMS.APPLICATION.ContextRepo;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -25,15 +25,18 @@ namespace GPMS.APPLICATION.Services
 
         private static readonly TimeZoneInfo _vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
-        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime? fromDate, DateTime? toDate)
+        public async Task<LeaveRequest> CreateLeaveRequest(int userId, string content, DateTime fromDate, DateTime toDate)
         {
             var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone).Date;
 
-            if (toDate.HasValue && toDate.Value.Date <= today)
-                throw new ArgumentException("ToDate must be at least 1 day after the created date.");
+            if (fromDate.Date < today)
+                throw new InvalidOperationException("Ngày bắt đầu không được để quá khứ.");
 
-            if (fromDate.HasValue && toDate.HasValue && toDate.Value.Date < fromDate.Value.Date)
-                throw new ArgumentException("ToDate must be greater than or equal to FromDate.");
+            if (toDate.Date < today)
+                throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
+
+            if (toDate.Date < fromDate.Date)
+                throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
 
             var leaveRequest = new LeaveRequest
             {

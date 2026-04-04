@@ -32,7 +32,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             IQueryable<PRODUCTION_ISSUE_LOG> query = _context.PRODUCTION_ISSUE_LOG;
             if (obj is int productionId)
             {
-                query = query.Where(x => x.PRODUCTION_ID == productionId);
+                query = query.Where(x => x.PART.PRODUCTION_ID == productionId);
             }
 
             var data = await query.OrderByDescending(x => x.CREATED_AT).ToListAsync();
@@ -52,9 +52,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (db is null) throw new KeyNotFoundException("Issue not found");
             db.TITLE = entity.Title;
             db.DESCRIPTION = entity.Description;
+            db.QUANTITY = entity.Quantity;
             db.PRIORITY = entity.Priority;
             db.IS_ID = entity.StatusId;
-            db.ASSIGNED_TO = entity.AssignedTo;
+            db.ASSIGNED_TO = entity.AssignedTo ?? entity.CreatedBy;
             db.IMAGE = entity.ImageUrl;
             await _context.SaveChangesAsync();
             return _mapper.Map<ProductionIssueLog>(db);

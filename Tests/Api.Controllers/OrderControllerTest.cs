@@ -383,10 +383,7 @@ public class OrderControllerTest
             .ReturnsAsync(fakeOrder);
 
         _userRepo.Setup(x => x.GetOwner())
-            .ReturnsAsync(new List<User>
-            {
-            new User { Id = 2, Email = "owner@mail.com" }
-            });
+            .ReturnsAsync(new User { Id = 2, Email = "owner@mail.com" });
 
         _emailRepo.Setup(x => x.SendEmailAsync(
             It.IsAny<string>(),
@@ -436,7 +433,7 @@ public class OrderControllerTest
             .ThrowsAsync(new Exception("db error"));
 
         _userRepo.Setup(x => x.GetOwner())
-            .ReturnsAsync(new List<User>());
+            .ReturnsAsync(new User { Id = 2, Email = "owner@mail.com" });
 
         var input = new CreateOrderDTO
         {

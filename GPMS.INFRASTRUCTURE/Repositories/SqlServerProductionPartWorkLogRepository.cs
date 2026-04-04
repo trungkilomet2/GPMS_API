@@ -57,6 +57,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (db is null) throw new KeyNotFoundException("Work log not found");
             db.QUANTITY = entity.Quantity;
             db.IS_READ_ONLY = entity.IsReadOnly;
+            db.IS_PAYMENT = entity.IsPayment;
             await _context.SaveChangesAsync();
             return _mapper.Map<ProductionPartWorkLog>(db);
         }
