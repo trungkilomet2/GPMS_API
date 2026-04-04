@@ -421,7 +421,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity)
         {
-            if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
+            if (quantity < 0) throw new ValidationException("Số lượng phải >= 0");
             // Workflow: 
             /*
              1: Lấy thông tin tất cả các work log của công đoạn đó gồm : 
