@@ -90,6 +90,20 @@ namespace GPMS.APPLICATION.Services
             List<ProductionPart> check_parts = new List<ProductionPart>();
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
+
+                // TRUNGNT FIX: Khi PM cập nhật lại kế hoạch part bằng danh sách mới,
+                // hệ thống cần đồng bộ theo danh sách mới để tránh part cũ còn tồn tại và ghi đè dữ liệu.
+                var existingParts = (await _partRepo.GetAll(productionId)).ToList();
+                foreach (var existingPart in existingParts)
+                {
+                    var existingLogs = await _workLogRepo.GetAll(existingPart.Id);
+                    if (existingLogs.Any())
+                    {
+                        throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
+                    }
+                    await _partRepo.Delete(existingPart.Id);
+                }
+
                 foreach (var part in validatedParts)
                 {
                     check_parts.Add(await _partRepo.Create(part));
@@ -147,10 +161,7 @@ namespace GPMS.APPLICATION.Services
                 .Distinct()
                 .ToList();
 
-            if (!workers.Any())
-            {
-                throw new ValidationException("Danh sách worker id không hợp lệ");
-            }
+           
 
             foreach (var workerId in workers)
             {
@@ -356,6 +367,12 @@ namespace GPMS.APPLICATION.Services
                 }
                 // lấy thông tin production
                 var production = await _productionRepo.GetById(part.ProductionId);
+                // TRUNGNT FIX: Không cho phép ghi log work khi production đã hoàn thành
+                // để tránh việc trạng thái part bị trả ngược về đang sản xuất.
+                if (production.StatusId == ProductionStatus_Constants.Done_ID)
+                {
+                    throw new ValidationException("Production đã hoàn thành, không thể ghi nhận thêm sản lượng");
+                }
                 // lấy thông tin đơn hàng
                 var getOrder = await _orderRepo.GetById(production.OrderId);
                 // Nếu như số lượng ở trong đơn hàng vượt quá số lượng đơn hàng giao cho => Không thể cập nhật số lượng
@@ -423,6 +440,12 @@ namespace GPMS.APPLICATION.Services
                 var part = await _partRepo.GetById(partId);
                 // lấy thông tin production
                 var production = await _productionRepo.GetById(part.ProductionId);
+                // TRUNGNT FIX: Không cho phép sửa log khi production đã hoàn thành
+                // để tránh cập nhật lại trạng thái part sai nghiệp vụ.
+                if (production.StatusId == ProductionStatus_Constants.Done_ID)
+                {
+                    throw new ValidationException("Production đã hoàn thành, không thể cập nhật log sản lượng");
+                }
                 // lấy thông tin đơn hàng
                 var getOrder = await _orderRepo.GetById(production.OrderId);
                 // Lấy thông tin tất cả các worklog của công đoạn đó bao gồm cả trong lịch sử:
