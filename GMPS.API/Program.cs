@@ -1,10 +1,11 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using GMPS.API.Mapper;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Entities.GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.ChatAPI;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.EmailAPI;
@@ -175,6 +176,10 @@ builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
 
 builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventRepository>();
 builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
+
+//--------------------------- Gemini ChatBox ---------------------------
+builder.Services.AddHttpClient("Gemini");
+builder.Services.AddScoped<IChatRepositories, ChatService>();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
