@@ -143,8 +143,6 @@ namespace GMPS.API.Controllers
                 {
                     ProductionId = productionId,
                     PartName = x.PartName,
-                    StartDate = x.StartDate,
-                    EndDate = x.EndDate,
                     Cpu = x.Cpu,
                     StatusId = ProductionPart_Constrants.ToDo_ID
                 });
@@ -153,14 +151,7 @@ namespace GMPS.API.Controllers
                 {
                     throw new ValidationException("Số lượng công đoạn phải từ 3 trở lên");
                 }
-
-                foreach (var part in parts)
-                {
-                    if(part.StartDate > part.EndDate)
-                    {
-                        throw new ValidationException("Không được tồn tại ngày bắt đầu lớn hơn ngày kết thúc");
-                    }
-                }
+               
                 
                 var data = await _productionPartService.CreateParts(productionId, parts);
                 
@@ -204,8 +195,6 @@ namespace GMPS.API.Controllers
                 var part = new ProductionPart
                 {
                     PartName = dto.PartName,
-                    StartDate = dto.StartDate,
-                    EndDate = dto.EndDate,
                     Cpu = dto.Cpu,
                     StatusId = dto.StatusId
                 };
