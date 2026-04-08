@@ -56,7 +56,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var orderEntity = _mapper.Map<ORDER>(order);
             await _context.ORDER.AddAsync(orderEntity);
-            await _context.SaveChangesAsync();
 
             if (order.Size != null)
             {
@@ -70,6 +69,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     }
                     await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
                     {
+                        ORDER = orderEntity,
                         ORDER_ID = orderEntity.ORDER_ID,
                         SIZE_ID = m.SizeId,
                         COLOR = m.Color,
@@ -84,6 +84,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 {
                     await _context.O_MATERIAL.AddAsync(new O_MATERIAL
                     {
+                        ORDER = orderEntity,
                         ORDER_ID = orderEntity.ORDER_ID,
                         NAME = m.MaterialName,
                         COLOR = m.Color,
@@ -101,6 +102,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 {
                     await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
                     {
+                        ORDER = orderEntity,
                         ORDER_ID = orderEntity.ORDER_ID,
                         NAME = t.TemplateName,
                         TYPE = t.Type,
@@ -109,6 +111,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     });
                 }
             }
+            await _context.SaveChangesAsync();
             return _mapper.Map<Order>(orderEntity);
         }
 

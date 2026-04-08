@@ -4,9 +4,6 @@ namespace GMPS.API.DTOs
 {
     public class CreateGuest
     {
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Id Phải là số dương.")]
-        public int Id { get; set; }
         [Required(ErrorMessage = "Họ và tên là bắt buộc.")]
         [StringLength(100, ErrorMessage = "Họ và tên không được vượt quá 100 ký tự.")]
         public string FullName { get; set; }

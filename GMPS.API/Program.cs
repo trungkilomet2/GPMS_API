@@ -135,6 +135,7 @@ builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Size>, SqlServerSizeRepository>();
+builder.Services.AddScoped<IBaseRepositories<Guest>, SqlGuestRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 builder.Services.AddScoped<IBaseOrderStatusRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<OrderRejectReason>, SqlServerOrderRejectRepository>();

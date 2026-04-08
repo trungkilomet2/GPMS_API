@@ -690,7 +690,7 @@ namespace GMPS.API.Controllers
                         result.OrderName);
 
                     return StatusCode(StatusCodes.Status201Created,
-                        $"Order '{result.Id}' has been created");
+                        $"Đơn hàng với Id '{result.Id}' đã được tạo");
                 }
                 else
                 {

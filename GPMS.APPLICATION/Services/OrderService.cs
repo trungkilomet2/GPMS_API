@@ -80,15 +80,15 @@ namespace GPMS.APPLICATION.Services
                 if (existingSize == null)
                     throw new Exception("Kích thước không tồn tại.");
             }
+            Order createdOrder = null;
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 var createdGuest = await _guestRepo.Create(guest);
-                await _unitOfWork.SaveChangesAsync();
                 order.GuestId = createdGuest.Id;
-                 await _orderBaseRepo.CreateManualOrder(order);
+                createdOrder = await _orderBaseRepo.CreateManualOrder(order);
                 await _unitOfWork.SaveChangesAsync();
             });
-            return order;
+            return createdOrder;
         }
 
         public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)

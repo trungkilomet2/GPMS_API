@@ -4,9 +4,6 @@ namespace GMPS.API.DTOs
 {
     public class CreateManualOrderDTO
     {
-        [Required(ErrorMessage = "Phải có Id người dùng")]
-        [Range(1, int.MaxValue, ErrorMessage = "Id người dùng phải > 0")]
-        public int? GuestId { get; set; }
 
         [Url(ErrorMessage = "Link ảnh không hợp lệ")]
         [StringLength(255, ErrorMessage = "Link ảnh quá dài")]
