@@ -17,10 +17,6 @@ namespace GMPS.API.DTOs
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Tên phải từ 3 đến 100 ký tự")]
         public string OrderName { get; set; }
 
-        [Required(ErrorMessage = "Yêu cầu nhập kiểu")]
-        [StringLength(50, ErrorMessage = "Kiểu không được vượt quá 5 ký tự")]
-        public string Type { get; set; }
-
         [Required(ErrorMessage = "Phải có ngày bắt đầu")]
         public DateOnly StartDate { get; set; }
 
