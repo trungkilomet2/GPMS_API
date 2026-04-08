@@ -245,10 +245,6 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Trạng thái phải > 0");
             }
 
-            if (part.StartDate.HasValue && part.EndDate.HasValue && part.EndDate < part.StartDate)
-            {
-                throw new ValidationException("Ngày kết thúc phải lớn hơn hoặc bằng Ngày bắt đầu");
-            }
         }
 
         // Hàm tổng quát dùng để trả về một Production Part Detail
