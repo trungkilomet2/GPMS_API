@@ -624,18 +624,24 @@ namespace GMPS.API.Controllers
 
         [HttpPost("create-manual-order")]
         [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult> CreateManualOrder([FromBody] CreateOrderDTO? input, [FromBody] CreateGuest? guest)
+        public async Task<ActionResult> CreateManualOrder([FromBody] CreateManualOrderDTO? input, [FromBody] CreateGuest? guest)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
-                    "Tạo đơn hàng cho khách hàng có Id là: {UserId}", input?.UserId);
+                    "Tạo đơn hàng cho khách hàng vãng lai có Id là: {UserId}", input?.OrderName);
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
+                    var guestUser = new Guest
+                    {
+                        FullName = guest.FullName,
+                        PhoneNumber = guest.PhoneNumber,
+                        Address = guest.Address
+                    };
                     var newOrder = new Order
                     {
-                        UserId = input.UserId,
+                        GuestId = guest.Id,
                         Image = input.Image,
                         OrderName = input.OrderName,
                         Size = input.Sizes?.Select(s => new OrderSize
@@ -670,12 +676,6 @@ namespace GMPS.API.Controllers
                             Note = t.Note
                         }).ToList(),
                     };
-                    var guestUser = new Guest
-                    {
-                        FullName = guest.FullName,
-                        PhoneNumber = guest.PhoneNumber,
-                        Address = guest.Address
-                    };
                     var result = await _orderRepo.CreateManualOrder(newOrder, guestUser);
                     var owner = await _userRepo.GetOwner();
                     if (owner != null)
@@ -693,8 +693,8 @@ namespace GMPS.API.Controllers
                         await _emailRepo.SendEmailAsync(owner.Email, subject, body, EmailType.OrderNotification);
                     }
                     _logger.LogInformation(CustomLogEvents.OrderController_Post,
-                        "Order {OrderId} được tạo thành công cho khách hàng với Id là: {UserId}",
-                        result.Id, input.UserId);
+                        "Order {OrderId} được tạo thành công cho khách hàng với đơn hàng Id là: {OrderName}",
+                        result.OrderName);
 
                     return StatusCode(StatusCodes.Status201Created,
                         $"Order '{result.Id}' has been created");
@@ -702,8 +702,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Post,
-                        "Lỗi model state khi tạo đơn hàng cho khách hàng với Id là: {UserId}",
-                        input?.UserId);
+                        "Lỗi model state khi tạo đơn hàng với Id là: {OrderName}",input.OrderName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -717,7 +716,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Post, ex,
-                    "Lỗi khi tạo đơn hàng cho khách hàng với Id là: {UserId}", input?.UserId);
+                    "Lỗi khi tạo đơn hàng với Id là: {OrderName}", input?.OrderName);
 
                 var exceptionDetails = new ProblemDetails
                 {
