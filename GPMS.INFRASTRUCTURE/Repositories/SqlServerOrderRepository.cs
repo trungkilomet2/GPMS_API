@@ -45,6 +45,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
                 .Include(o => o.O_HISTORY_UPDATE)
+                .Include(o => o.ORDER_SIZE)
                 .Where(o => o.ORDER_ID == (int)id)
                 .FirstOrDefaultAsync();
             return _mapper.Map<Order>(data);
@@ -117,6 +118,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var existing = await _context.ORDER
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
+                .Include(o => o.ORDER_SIZE)
                 .Include(o => o.OS)
                 .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
 
@@ -124,12 +126,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new KeyNotFoundException($"Order '{orderId}' not exist");
 
             existing.ORDER_NAME = updatedOrder.OrderName;
-            existing.TYPE = updatedOrder.Type;
-            existing.SIZE = updatedOrder.Size;
-            existing.COLOR = updatedOrder.Color;
             existing.START_DATE = updatedOrder.StartDate;
             existing.END_DATE = updatedOrder.EndDate;
-            existing.QUANTITY = updatedOrder.Quantity;
+            existing.TOTAL_QUANTITY = updatedOrder.Quantity;
             existing.IMAGE = updatedOrder.Image;
             existing.NOTE = updatedOrder.Note;
 
@@ -165,6 +164,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     VALUE = m.Value,
                     UOM = m.Uom,
                     NOTE = m.Note
+                });
+            }
+
+            _context.ORDER_SIZE.RemoveRange(existing.ORDER_SIZE);
+            foreach (var s in updatedOrder.Size ?? Enumerable.Empty<OrderSize>())
+            {
+                await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
+                {
+                    ORDER_ID = orderId,
+                    SIZE_ID = s.SizeId,
+                    COLOR = s.Color,
+                    QUANTITY = s.Quantity,
+                    OSS_ID = s.OrderSizeStatusId
                 });
             }
 
