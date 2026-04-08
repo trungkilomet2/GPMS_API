@@ -22,7 +22,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
         private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
-
+        private readonly IBaseRepositories<ProductionPartOrderSize> _partOrderSizeRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
@@ -34,7 +34,8 @@ namespace GPMS.APPLICATION.Services
             IBaseWorkerRepository workerSkill,
             IBaseRepositories<LeaveRequest> leaveRequestRepo,
             IBaseRepositories<ProductionPartWorkLog> workLogRepo,
-            IBaseRepositories<Order> orderRepo
+            IBaseRepositories<Order> orderRepo,
+            IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo
             )
         {
             _partRepo = partRepo;
@@ -46,6 +47,7 @@ namespace GPMS.APPLICATION.Services
             _leaveRequestRepo = leaveRequestRepo;
             _workLogRepo = workLogRepo;
             _orderRepo = orderRepo;
+            _partOrderSizeRepo = partOrderSizeRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -159,8 +161,6 @@ namespace GPMS.APPLICATION.Services
                 .Distinct()
                 .ToList();
 
-           
-
             foreach (var workerId in workers)
             {
                 var worker = await _userRepo.GetById(workerId);
@@ -255,8 +255,8 @@ namespace GPMS.APPLICATION.Services
             foreach (
                 var part in parts)
             {
-                // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
-                var detail = await _partRepo.GetById(part.Id);
+                // Lấy thông tin chi tiết của Part Order Size, bao gồm cả
+                var detail = await _partOrderSizeRepo.GetById(part.Id);
                 // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
                 var assignees = detail.AssigneeIds.Distinct().ToList();
                 // Lấy danh sách người dùng được giao
@@ -273,7 +273,7 @@ namespace GPMS.APPLICATION.Services
                 // Thêm Người dùng vào kết quả trả về => Trả về một view gồm 3 khóa ngoại: Part, Team Leader, Assignees
                 result.Add(new ProductionPartDetailViewDTO
                 {
-                    Part = detail,
+                    PartOrderSize = detail,
                     Assignees = assigneeUsers
                 });
             }

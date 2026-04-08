@@ -4,7 +4,8 @@ using GPMS.DOMAIN.Entities;
 namespace GPMS.APPLICATION.Repositories
 {
     public interface IProductionPartRepositories
-    {
+    {   
+        // Lấy danh sách Part trong một Production.
         Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId);
         Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partId);
         Task<IEnumerable<ProductionPartDetailViewDTO>> CreateParts(int productionId, IEnumerable<ProductionPart> parts);
