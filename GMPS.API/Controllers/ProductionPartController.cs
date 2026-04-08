@@ -394,12 +394,15 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("parts/create-work-logs/{partId:int}")]
-        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog([Range(1, int.MaxValue)] int partId, [FromBody] CreatePartWorkLogDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog(
+            [Range(1, int.MaxValue)] int partId, 
+            [Range(1, int.MaxValue)] int partOrderSizeId,
+            [FromBody] CreatePartWorkLogDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.CreateWorkLog(partId, dto.UserId, dto.Quantity);
+                var data = await _productionPartService.CreateWorkLog(partId, partOrderSizeId, dto.UserId, dto.Quantity);
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<ProductionPartWorkLog> { Data = data });
             }
             catch (ValidationException ex)
@@ -413,12 +416,16 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]
-        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog([Range(1, int.MaxValue)] int partId, [Range(0, int.MaxValue)] int workLogId, [FromBody] UpdatePartWorkLogDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog(
+            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int partOrderSizeId,
+            [Range(0, int.MaxValue)] int workLogId,
+            [FromBody] UpdatePartWorkLogDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.UpdateWorkLog(partId, workLogId, dto.Quantity);
+                var data = await _productionPartService.UpdateWorkLog(partId, partOrderSizeId, workLogId, dto.Quantity);
                 return Ok(new RestDTO<ProductionPartWorkLog> { Data = data });
             }
             catch (ValidationException ex)
@@ -504,7 +511,7 @@ namespace GMPS.API.Controllers
                 {
                     IssueId = x.Id,
                     PartOrderSizeId = x.PartOrderSizeId,
-                    PartName = parts.TryGetValue(x.PartId, out var partName) ? partName : null,
+                    PartName = parts.TryGetValue(x.PartOrderSizeId, out var partName) ? partName : null,
                     Title = x.Title,
                     Description = x.Description,
                     Priority = x.Priority,
@@ -592,12 +599,13 @@ namespace GMPS.API.Controllers
         [HttpPatch("parts/complete-payment/{partId:int}")]
         public async Task<ActionResult<RestDTO<PartPaymentCompletionDTO>>> CompletePartPayment(
                     [Range(1, int.MaxValue)] int partId,
+                    [Range(1, int.MaxValue)] int partOrderSizeId,
                     [FromBody] CompletePartPaymentDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.CompletePartPayment(partId, dto.WorkLogIds);
+                var data = await _productionPartService.CompletePartPayment(partId,partOrderSizeId, dto.WorkLogIds);
                 return Ok(new RestDTO<PartPaymentCompletionDTO>
                 {
                     Data = _mapper.Map<PartPaymentCompletionDTO>(data)
