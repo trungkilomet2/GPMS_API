@@ -7,7 +7,7 @@ namespace GMPS.API.DTOs
     {   
 
         public int IssueId { get; set; }
-        public int PartId { get; set; }
+        public int PartOrderSizeId { get; set; }
         public string? PartName { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }

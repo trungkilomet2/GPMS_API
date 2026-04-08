@@ -430,14 +430,14 @@ namespace GMPS.API.Controllers
         [HttpPost("parts/issues/create/{partId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
-            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int partOrderSizeId,
             [FromForm] CreatePartIssueDTO dto
             )
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var part = await _productionPartService.GetPartAssignmentDetail(partId);
+                var part = await _productionPartService.GetPartAssignmentDetail(partOrderSizeId);
 
                 string? imageUrl = null;
                 if (dto.Image is not null && dto.Image.Length > 0)
@@ -447,7 +447,7 @@ namespace GMPS.API.Controllers
                 
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
                 {
-                    PartId = partId,
+                    PartOrderSizeId = partOrderSizeId,
                     CreatedBy = dto.CreatedBy,
                     AssignedTo = dto.AssignedTo,
                     Quantity = dto.Quantity,
@@ -464,7 +464,7 @@ namespace GMPS.API.Controllers
                     Data = new ProductionIssueListItemDTO
                     {
                         IssueId = issue.Id,
-                        PartId = issue.PartId,
+                        PartOrderSizeId = issue.PartOrderSizeId,
                         PartName = part.Part.PartName,
                         Title = issue.Title,
                         Description = issue.Description,
@@ -483,7 +483,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Create issue failed for part {PartId}", partId);
+                _logger.LogError(ex, "Create issue failed for part {PartOrderSizeId}", partOrderSizeId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
@@ -503,7 +503,7 @@ namespace GMPS.API.Controllers
                 var result = issues.Select(x => new ProductionIssueListItemDTO
                 {
                     IssueId = x.Id,
-                    PartId = x.PartId,
+                    PartOrderSizeId = x.PartOrderSizeId,
                     PartName = parts.TryGetValue(x.PartId, out var partName) ? partName : null,
                     Title = x.Title,
                     Description = x.Description,
