@@ -1,7 +1,9 @@
 using GMPS.API.DTOs;
+using GMPS.API.Hubs;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -13,11 +15,13 @@ namespace GMPS.API.Controllers
     {
         private readonly IChatRepositories _chatRepo;
         private readonly ILogger<ChatController> _logger;
+        private readonly IHubContext<ChatHub> _chatHubContext;
 
-        public ChatController(IChatRepositories chatRepo, ILogger<ChatController> logger)
+        public ChatController(IChatRepositories chatRepo, ILogger<ChatController> logger, IHubContext<ChatHub> chatHubContext)
         {
             _chatRepo = chatRepo ?? throw new ArgumentNullException(nameof(chatRepo));
             _logger = logger;
+            _chatHubContext = chatHubContext ?? throw new ArgumentNullException(nameof(chatHubContext));   
         }
 
         [HttpPost("/ai/gemini/chat")]
@@ -27,6 +31,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrWhiteSpace(request.Message))
                 {
                     return BadRequest(new ProblemDetails
@@ -39,6 +44,23 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation("Chatbox request: {Message}", request.Message);
 
                 var result = await _chatRepo.SendMessageAsync(request);
+                var chatMessage = new
+                {
+                    request.Message,
+                    result.Reply
+                };
+
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    await _chatHubContext.Clients
+                    .Group(ChatHub.GetUserGroupName(userId))
+                    .SendAsync("ChatMessageReceived", chatMessage);
+                }
+                else
+                {
+                    await _chatHubContext.Clients.All.SendAsync("ChatMessageReceived", chatMessage);
+                }
+
 
                 return Ok(result);
             }
