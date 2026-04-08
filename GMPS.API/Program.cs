@@ -161,7 +161,7 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
-builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
+builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartAssigneeRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<ProductionRejectReason>, SqlServerProductionRejectRepository>();
 builder.Services.AddScoped<IBaseRepositories<ProductionIssueLog>, SqlServerProductionIssueRepository>();
