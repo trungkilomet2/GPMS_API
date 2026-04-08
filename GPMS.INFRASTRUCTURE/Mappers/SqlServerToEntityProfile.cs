@@ -117,8 +117,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
                 .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PPS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PPS != null ? src.PPS.NAME : null))
@@ -128,8 +126,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PP_ID))
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.PRODUCTION_ID))
                 .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.PART_NAME))
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.START_DATE))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.END_DATE))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.PPS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.PPS != null ? src.PPS.NAME : null))
@@ -165,18 +161,18 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             // PART WORK LOG
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PART_WORK_LOG, GPMS.DOMAIN.Entities.ProductionPartWorkLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WL_ID))
-                .ForMember(dest => dest.PartId, opt => opt.MapFrom(src => src.PP_ID))
+                .ForMember(dest => dest.PartOrderSizeId, opt => opt.MapFrom(src => src.PPOS_ID))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
-                .ForMember(dest => dest.WorkDate, opt => opt.MapFrom(src => src.CREATE_DATE))
+                .ForMember(dest => dest.CreateDate, opt => opt.MapFrom(src => src.CREATE_DATE))
                 .ForMember(dest => dest.IsReadOnly, opt => opt.MapFrom(src => src.IS_READ_ONLY ?? false))
                 .ForMember(dest => dest.IsPayment, opt => opt.MapFrom(src => src.IS_PAYMENT ?? false))
                 .ReverseMap()
                 .ForMember(dest => dest.WL_ID, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.PP_ID, opt => opt.MapFrom(src => src.PartId))
+                .ForMember(dest => dest.PPOS_ID, opt => opt.MapFrom(src => src.PartOrderSizeId))
                 .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
-                .ForMember(dest => dest.CREATE_DATE, opt => opt.MapFrom(src => src.WorkDate))
+                .ForMember(dest => dest.CREATE_DATE, opt => opt.MapFrom(src => src.CreateDate))
                 .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
                 .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
@@ -200,7 +196,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
         
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PRODUCTION_ISSUE_LOG, GPMS.DOMAIN.Entities.ProductionIssueLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ISSUE_ID))
-                .ForMember(dest => dest.PartId, opt => opt.MapFrom(src => src.PART_ID))
+                .ForMember(dest => dest.PartOrderSizeId, opt => opt.MapFrom(src => src.PPOS_ID))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CREATED_BY))
                 .ForMember(dest => dest.AssignedTo, opt => opt.MapFrom(src => src.ASSIGNED_TO))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
@@ -212,7 +208,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
                 .ReverseMap()
                 .ForMember(dest => dest.ISSUE_ID, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.PART_ID, opt => opt.MapFrom(src => src.PartId))
+                .ForMember(dest => dest.PPOS_ID, opt => opt.MapFrom(src => src.PartOrderSizeId))
                 .ForMember(dest => dest.CREATED_BY, opt => opt.MapFrom(src => src.CreatedBy))
                 .ForMember(dest => dest.ASSIGNED_TO, opt => opt.MapFrom(src => src.AssignedTo))
                 .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
@@ -271,6 +267,24 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.TimeStemp, opt => opt.MapFrom(src => src.TIMPESTAMP))
                 .ForMember(dest => dest.Exception, opt => opt.MapFrom(src => src.EXCEPTION))
                 .ForMember(dest => dest.Properties, opt => opt.MapFrom(src => src.PROPERTIES)).ReverseMap();
+
+
+            CreateMap<P_PART_ORDER_SIZE, ProductionPartOrderSize>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PPOS_ID))
+                .ForMember(dest => dest.ProductionPartId, opt => opt.MapFrom(src => src.PP_ID))
+                .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.SIZE))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
+                .ForMember(dest => dest.PartOrderSizeStatusId, opt => opt.MapFrom(src => src.PPOSS_ID))
+                .ReverseMap()
+                .ForMember(dest => dest.PPOS_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PP_ID, opt => opt.MapFrom(src => src.ProductionPartId))
+                .ForMember(dest => dest.SIZE, opt => opt.MapFrom(src => src.Size))
+                .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.COLOR, opt => opt.MapFrom(src => src.Color))
+                .ForMember(dest => dest.PPOSS_ID, opt => opt.MapFrom(src => src.PartOrderSizeStatusId));
+
+
         }
     }
 }
