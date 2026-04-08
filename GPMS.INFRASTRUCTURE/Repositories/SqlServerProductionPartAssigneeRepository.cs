@@ -26,7 +26,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         // Assign worker cho production part size
-        public async Task<ProductionPartOrderSize> AssignWorkers(int partOrderSizeId, IEnumerable<int> workerIds)
+        public async Task<ProductionPart> AssignWorkers(int partOrderSizeId, IEnumerable<int> workerIds)
         {
             var dbEntity = await _context.P_PART_ORDER_SIZE
                 .Include(x => x.USER)
@@ -96,28 +96,25 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         }
 
         // Lấy danh sách GetByID của production part order size
-        public async Task<ProductionPartOrderSize> GetById(object id)
+        public async Task<ProductionPart> GetById(object id)
         {
-            if (id is not int partOrderSizeId)
+            if (id is not int partId)
             {
                 throw new Exception("Id không hợp lệ");
             }
 
-            var data = await _context.P_PART_ORDER_SIZE
-                .Include(x => x.PP)
-                .Include(x => x.USER)
-                .FirstOrDefaultAsync(x => x.PP_ID == partOrderSizeId);
+            var data = await _context.P_PART
+                .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
             return data is null ? null : ToDomain(data);
         }
 
-        private ProductionPartOrderSize ToDomain(P_PART_ORDER_SIZE source)
+        private ProductionPart ToDomain(P_PART source)
         {
-            var part = _mapper.Map<ProductionPartOrderSize>(source);
-            part.AssigneeIds = source.USER.Select(x => x.USER_ID).ToList();
+            var part = _mapper.Map<ProductionPart>(source);
             return part;
         }
-        public async Task<ProductionPartOrderSize> RemoveWorker(int partId, int workerId)
+        public async Task<ProductionPart> RemoveWorker(int partId, int workerId)
         {
             var dbEntity = await _context.P_PART_ORDER_SIZE
                 .Include(x => x.USER)

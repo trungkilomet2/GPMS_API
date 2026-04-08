@@ -251,33 +251,17 @@ namespace GPMS.APPLICATION.Services
         private async Task<IEnumerable<ProductionPartDetailViewDTO>> BuildViews(IEnumerable<ProductionPart> parts)
         {
             var result = new List<ProductionPartDetailViewDTO>();
-
             foreach (
                 var part in parts)
             {
-                // Lấy thông tin chi tiết của Part Order Size, bao gồm cả
-                var detail = await _partOrderSizeRepo.GetById(part.Id);
-                // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
-                var assignees = detail.AssigneeIds.Distinct().ToList();
-                // Lấy danh sách người dùng được giao
-                var assigneeUsers = new List<User>();
-                foreach (var assignee in assignees)
-                {
-                    // Lấy thống tin của người dùng
-                    var user = await _userRepo.GetById(assignee);
-                    if (user is not null)
-                    {
-                        assigneeUsers.Add(user);
-                    }
-                }
                 // Thêm Người dùng vào kết quả trả về => Trả về một view gồm 3 khóa ngoại: Part, Team Leader, Assignees
                 result.Add(new ProductionPartDetailViewDTO
                 {
-                    PartOrderSize = detail,
-                    Assignees = assigneeUsers
+                    Part = part,
+                    // Lấy danh sách Order Size theo PartId
+                    ListPartOrderSize = await _partOrderSizeRepo.GetAll(part.Id)
                 });
             }
-
             return result;
         }
 

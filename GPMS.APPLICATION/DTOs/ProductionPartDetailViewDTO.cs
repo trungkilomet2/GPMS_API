@@ -4,8 +4,8 @@ namespace GPMS.APPLICATION.DTOs
 {
     public class ProductionPartDetailViewDTO
     {
-        public ProductionPartOrderSize PartOrderSize { get; set; } = new();
-        public IEnumerable<User> Assignees { get; set; } = new List<User>();
+        public ProductionPart Part { get; set; } = new();
+        public IEnumerable<ProductionPartOrderSize> ListPartOrderSize { get; set; } = new List<ProductionPartOrderSize>();
 
     }
 }
