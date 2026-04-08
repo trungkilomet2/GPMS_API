@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("USERNAME", Name = "UQ__USER__B15BE12EF9F8BA5F", IsUnique = true)]
+[Index("USERNAME", Name = "UQ__USER__B15BE12E6BD36E4F", IsUnique = true)]
 public partial class USER
 {
     [Key]
@@ -77,16 +77,13 @@ public partial class USER
     [InverseProperty("FROM_USERNavigation")]
     public virtual ICollection<UO_COMMENT> UO_COMMENT { get; set; } = new List<UO_COMMENT>();
 
-    [InverseProperty("FROM_USERNavigation")]
-    public virtual ICollection<UP_COMMENT> UP_COMMENT { get; set; } = new List<UP_COMMENT>();
-
     [ForeignKey("US_ID")]
     [InverseProperty("USER")]
     public virtual U_STATUS US { get; set; } = null!;
 
     [ForeignKey("USER_ID")]
     [InverseProperty("USER")]
-    public virtual ICollection<P_PART> PP { get; set; } = new List<P_PART>();
+    public virtual ICollection<P_PART_ORDER_SIZE> PPOS { get; set; } = new List<P_PART_ORDER_SIZE>();
 
     [ForeignKey("USER_ID")]
     [InverseProperty("USER")]

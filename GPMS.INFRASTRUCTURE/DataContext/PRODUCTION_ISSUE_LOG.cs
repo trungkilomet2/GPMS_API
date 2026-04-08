@@ -23,7 +23,7 @@ public partial class PRODUCTION_ISSUE_LOG
 
     public int ASSIGNED_TO { get; set; }
 
-    public int PART_ID { get; set; }
+    public int PPOS_ID { get; set; }
 
     public int? PRIORITY { get; set; }
 
@@ -47,7 +47,7 @@ public partial class PRODUCTION_ISSUE_LOG
     [InverseProperty("PRODUCTION_ISSUE_LOG")]
     public virtual ISSUE_STATUS IS { get; set; } = null!;
 
-    [ForeignKey("PART_ID")]
+    [ForeignKey("PPOS_ID")]
     [InverseProperty("PRODUCTION_ISSUE_LOG")]
-    public virtual P_PART PART { get; set; } = null!;
+    public virtual P_PART_ORDER_SIZE PPOS { get; set; } = null!;
 }

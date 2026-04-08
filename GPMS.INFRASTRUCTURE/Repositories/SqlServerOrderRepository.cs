@@ -1,4 +1,5 @@
-using AutoMapper;
+﻿using AutoMapper;
+using DocumentFormat.OpenXml.Vml.Office;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -45,18 +46,101 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
                 .Include(o => o.O_HISTORY_UPDATE)
+                .Include(o => o.ORDER_SIZE)
                 .Where(o => o.ORDER_ID == (int)id)
                 .FirstOrDefaultAsync();
             return _mapper.Map<Order>(data);
         }
 
+        public async Task<Order> CreateManualOrder(Order order)
+        {
+            var orderEntity = _mapper.Map<ORDER>(order);
+            await _context.ORDER.AddAsync(orderEntity);
+
+            if (order.Size != null)
+            {
+                foreach (var m in order.Size)
+                {
+                    var sizeExists = await _context.SIZE.AnyAsync(x => x.SIZE_ID == m.SizeId);
+
+                    if (!sizeExists)
+                    {
+                        throw new Exception($"SizeId {m.SizeId} không tồn tại");
+                    }
+                    await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
+                    {
+                        ORDER = orderEntity,
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        SIZE_ID = m.SizeId,
+                        COLOR = m.Color,
+                        QUANTITY = m.Quantity,
+                        OSS_ID = m.OrderSizeStatusId,
+                    });
+                }
+            }
+            if (order.Material != null)
+            {
+                foreach (var m in order.Material)
+                {
+                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
+                    {
+                        ORDER = orderEntity,
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        NAME = m.MaterialName,
+                        COLOR = m.Color,
+                        IMAGE = m.Image,
+                        VALUE = m.Value,
+                        UOM = m.Uom,
+                        NOTE = m.Note
+                    });
+                }
+            }
+
+            if (order.Template != null)
+            {
+                foreach (var t in order.Template)
+                {
+                    await _context.O_TEMPLATE.AddAsync(new O_TEMPLATE
+                    {
+                        ORDER = orderEntity,
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        NAME = t.TemplateName,
+                        TYPE = t.Type,
+                        FILE = t.File,
+                        NOTE = t.Note
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(orderEntity);
+        }
+
         public async Task<Order> Create(Order entity)
         {
             var orderEntity = _mapper.Map<ORDER>(entity);
-
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
 
+            if (entity.Size != null)
+            {
+                foreach (var m in entity.Size)
+                {
+                    var sizeExists = await _context.SIZE.AnyAsync(x => x.SIZE_ID == m.SizeId);
+
+                    if (!sizeExists)
+                    {
+                        throw new Exception($"SizeId {m.SizeId} không tồn tại");
+                    }
+                    await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
+                    {
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        SIZE_ID = m.SizeId,
+                        COLOR = m.Color,
+                        QUANTITY = m.Quantity,
+                        OSS_ID = m.OrderSizeStatusId,
+                    });
+                }
+            }
             if (entity.Material != null)
             {
                 foreach (var m in entity.Material)
@@ -98,6 +182,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var existing = await _context.ORDER
                 .Include(o => o.O_TEMPLATE)
                 .Include(o => o.O_MATERIAL)
+                .Include(o => o.ORDER_SIZE)
                 .Include(o => o.OS)
                 .FirstOrDefaultAsync(o => o.ORDER_ID == orderId);
 
@@ -105,12 +190,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new KeyNotFoundException($"Order '{orderId}' not exist");
 
             existing.ORDER_NAME = updatedOrder.OrderName;
-            existing.TYPE = updatedOrder.Type;
-            existing.SIZE = updatedOrder.Size;
-            existing.COLOR = updatedOrder.Color;
             existing.START_DATE = updatedOrder.StartDate;
             existing.END_DATE = updatedOrder.EndDate;
-            existing.QUANTITY = updatedOrder.Quantity;
+            existing.TOTAL_QUANTITY = updatedOrder.Quantity;
             existing.IMAGE = updatedOrder.Image;
             existing.NOTE = updatedOrder.Note;
 
@@ -146,6 +228,19 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     VALUE = m.Value,
                     UOM = m.Uom,
                     NOTE = m.Note
+                });
+            }
+
+            _context.ORDER_SIZE.RemoveRange(existing.ORDER_SIZE);
+            foreach (var s in updatedOrder.Size ?? Enumerable.Empty<OrderSize>())
+            {
+                await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
+                {
+                    ORDER_ID = orderId,
+                    SIZE_ID = s.SizeId,
+                    COLOR = s.Color,
+                    QUANTITY = s.Quantity,
+                    OSS_ID = s.OrderSizeStatusId
                 });
             }
 
@@ -245,5 +340,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             await _context.SaveChangesAsync();
             return _mapper.Map<Order>(existing);
         }
+        
     }
 }

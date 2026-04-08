@@ -119,7 +119,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task<User> GetUserById(int id)
+        public async Task<User> GetUserById(int? id)
         {
             var data = await _userBaseRepo.GetById(id);
             if(data == null)

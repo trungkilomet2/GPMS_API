@@ -1,13 +1,9 @@
-﻿using GPMS.DOMAIN.Constants;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace GMPS.API.DTOs
 {
-    public class CreateOrderDTO
+    public class CreateManualOrderDTO
     {
-        [Required(ErrorMessage = "Phải có Id người dùng")]
-        [Range(1, int.MaxValue, ErrorMessage = "Id người dùng phải > 0")]
-        public int UserId { get; set; }
 
         [Url(ErrorMessage = "Link ảnh không hợp lệ")]
         [StringLength(255, ErrorMessage = "Link ảnh quá dài")]

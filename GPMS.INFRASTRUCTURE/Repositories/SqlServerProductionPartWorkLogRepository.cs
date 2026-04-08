@@ -37,9 +37,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<IEnumerable<ProductionPartWorkLog>> GetAll(object? obj)
         {
             IQueryable<PART_WORK_LOG> query = _context.PART_WORK_LOG;
-            if (obj is int partId)
+            if (obj is int partWorkLogId)
             {
-                query = query.Where(x => x.PP_ID == partId);
+                query = query.Where(x => x.PPOS_ID == partWorkLogId);
             }
             return _mapper.Map<IEnumerable<ProductionPartWorkLog>>(await query.OrderByDescending(x => x.CREATE_DATE).ToListAsync());
         }

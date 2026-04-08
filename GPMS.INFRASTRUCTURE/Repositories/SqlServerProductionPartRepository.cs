@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
 
-    public class SqlServerProductionPartRepository : IBaseRepositories<ProductionPart>,IBaseProductionPartAssignRepositories
+    public class SqlServerProductionPartRepository : IBaseRepositories<ProductionPart>
     {
         private readonly GPMS_SYSTEMContext _context;
         private readonly IMapper _mapper;
@@ -27,7 +27,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<ProductionPart>> GetAll(object? obj)
         {
-            IQueryable<P_PART> query = _context.P_PART.Include(x => x.PPS).Include(x => x.USER);
+            IQueryable<P_PART> query = _context.P_PART.Include(x => x.PPS);
             if (obj is int productionId)
             {
                 query = query.Where(x => x.PRODUCTION_ID == productionId);
@@ -45,7 +45,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             var data = await _context.P_PART
                 .Include(x => x.PPS)
-                .Include(x => x.USER)
                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
             return data is null ? null : ToDomain(data);
@@ -75,42 +74,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 throw new ValidationException("Không tồn tại Production Part trong hệ thống");
             }
             dbEntity.PART_NAME = entity.PartName;
-            dbEntity.START_DATE = entity.StartDate ?? DateTime.Now; // FIX Tạm
-            dbEntity.END_DATE = entity.EndDate ?? DateTime.Now; // FIX Tạm
             dbEntity.CPU = entity.Cpu;
             dbEntity.PPS_ID = entity.StatusId;
             await _context.SaveChangesAsync();
             return await GetById(entity.Id);
         }
 
-        // ????????
-        public async Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds)
-        {
-            var dbEntity = await _context.P_PART
-                           .Include(x => x.USER)
-                           .FirstOrDefaultAsync(x => x.PP_ID == partId);
-
-            if (dbEntity is null)
-            {
-                throw new ValidationException("Không tồn tại Production Part trong hệ thống");
-                return null;
-            }
-
-            dbEntity.USER.Clear();
-
-            var workers = await _context.USER
-                .Where(x => workerIds.Contains(x.USER_ID))
-                .ToListAsync();
-
-            foreach (var worker in workers)
-            {
-                dbEntity.USER.Add(worker);
-            }
-
-            await _context.SaveChangesAsync();
-            return await GetById(partId);
-        
-        }
 
         public async Task Delete(object id)
         {
@@ -128,56 +97,9 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         private ProductionPart ToDomain(P_PART source)
         {
             var part = _mapper.Map<ProductionPart>(source);
-            part.AssigneeIds = source.USER.Select(x => x.USER_ID).ToList();
             return part;
         }
 
-        public async Task<ProductionPart> RemoveWorker(int partId, int workerId)
-        {
-            var dbEntity = await _context.P_PART
-                 .Include(x => x.USER)
-                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
-            if (dbEntity is null)
-            {
-                throw new ValidationException("Production Part không tồn tại.");
-            }
-            var user = dbEntity.USER.FirstOrDefault(x => x.USER_ID == workerId);
-           
-            if (user is not null)
-            {
-                dbEntity.USER.Remove(user);
-                await _context.SaveChangesAsync();
-            }else
-            {
-                throw new ValidationException("Không tồn tại User trong Production Part");
-            }
-            return await GetById(partId);
-        }
-
-        public async Task<IEnumerable<User>> ListWorkerWithPM(int pm_id)
-        {
-            USER check_id = await _context.USER.Include(u => u.ROLE).Where(x => x.USER_ID == pm_id).FirstOrDefaultAsync(); 
-
-            if(check_id is null)
-            {
-                throw new ValidationException("Không tồn tại PM trong hệ thống");
-            }
-            if(check_id.ROLE.Where(r=>r.NAME.Equals(Roles_Constants.PM)).FirstOrDefault() is null)
-            {
-                throw new ValidationException("User đang không phải là PM trong hệ thống");
-            }
-            
-            List<USER> workers = await _context.USER
-                .Include(u => u.ROLE)
-                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
-                .ToListAsync();
-
-            var pm = _context.USER.Include(u => u.WS)
-                              .Include(u => u.US).Where(u => u.USER_ID == pm_id).FirstOrDefault();
-
-            workers.Add(pm);
-
-            return _mapper.Map<IEnumerable<User>>(workers);
-        }
+       
     }
 }

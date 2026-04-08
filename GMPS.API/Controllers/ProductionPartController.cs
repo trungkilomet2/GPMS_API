@@ -143,8 +143,6 @@ namespace GMPS.API.Controllers
                 {
                     ProductionId = productionId,
                     PartName = x.PartName,
-                    StartDate = x.StartDate,
-                    EndDate = x.EndDate,
                     Cpu = x.Cpu,
                     StatusId = ProductionPart_Constrants.ToDo_ID
                 });
@@ -153,14 +151,7 @@ namespace GMPS.API.Controllers
                 {
                     throw new ValidationException("Số lượng công đoạn phải từ 3 trở lên");
                 }
-
-                foreach (var part in parts)
-                {
-                    if(part.StartDate > part.EndDate)
-                    {
-                        throw new ValidationException("Không được tồn tại ngày bắt đầu lớn hơn ngày kết thúc");
-                    }
-                }
+               
                 
                 var data = await _productionPartService.CreateParts(productionId, parts);
                 
@@ -204,8 +195,6 @@ namespace GMPS.API.Controllers
                 var part = new ProductionPart
                 {
                     PartName = dto.PartName,
-                    StartDate = dto.StartDate,
-                    EndDate = dto.EndDate,
                     Cpu = dto.Cpu,
                     StatusId = dto.StatusId
                 };
@@ -405,12 +394,15 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("parts/create-work-logs/{partId:int}")]
-        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog([Range(1, int.MaxValue)] int partId, [FromBody] CreatePartWorkLogDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog(
+            [Range(1, int.MaxValue)] int partId, 
+            [Range(1, int.MaxValue)] int partOrderSizeId,
+            [FromBody] CreatePartWorkLogDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.CreateWorkLog(partId, dto.UserId, dto.Quantity);
+                var data = await _productionPartService.CreateWorkLog(partId, partOrderSizeId, dto.UserId, dto.Quantity);
                 return StatusCode(StatusCodes.Status201Created, new RestDTO<ProductionPartWorkLog> { Data = data });
             }
             catch (ValidationException ex)
@@ -424,12 +416,16 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]
-        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog([Range(1, int.MaxValue)] int partId, [Range(0, int.MaxValue)] int workLogId, [FromBody] UpdatePartWorkLogDTO dto)
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog(
+            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int partOrderSizeId,
+            [Range(0, int.MaxValue)] int workLogId,
+            [FromBody] UpdatePartWorkLogDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.UpdateWorkLog(partId, workLogId, dto.Quantity);
+                var data = await _productionPartService.UpdateWorkLog(partId, partOrderSizeId, workLogId, dto.Quantity);
                 return Ok(new RestDTO<ProductionPartWorkLog> { Data = data });
             }
             catch (ValidationException ex)
@@ -441,14 +437,14 @@ namespace GMPS.API.Controllers
         [HttpPost("parts/issues/create/{partId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
-            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int partOrderSizeId,
             [FromForm] CreatePartIssueDTO dto
             )
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var part = await _productionPartService.GetPartAssignmentDetail(partId);
+                var part = await _productionPartService.GetPartAssignmentDetail(partOrderSizeId);
 
                 string? imageUrl = null;
                 if (dto.Image is not null && dto.Image.Length > 0)
@@ -458,7 +454,7 @@ namespace GMPS.API.Controllers
                 
                 var issue = await _productionService.CreateProductionIssue(new ProductionIssueLog
                 {
-                    PartId = partId,
+                    PartOrderSizeId = partOrderSizeId,
                     CreatedBy = dto.CreatedBy,
                     AssignedTo = dto.AssignedTo,
                     Quantity = dto.Quantity,
@@ -475,7 +471,7 @@ namespace GMPS.API.Controllers
                     Data = new ProductionIssueListItemDTO
                     {
                         IssueId = issue.Id,
-                        PartId = issue.PartId,
+                        PartOrderSizeId = issue.PartOrderSizeId,
                         PartName = part.Part.PartName,
                         Title = issue.Title,
                         Description = issue.Description,
@@ -494,7 +490,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Create issue failed for part {PartId}", partId);
+                _logger.LogError(ex, "Create issue failed for part {PartOrderSizeId}", partOrderSizeId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
@@ -514,8 +510,8 @@ namespace GMPS.API.Controllers
                 var result = issues.Select(x => new ProductionIssueListItemDTO
                 {
                     IssueId = x.Id,
-                    PartId = x.PartId,
-                    PartName = parts.TryGetValue(x.PartId, out var partName) ? partName : null,
+                    PartOrderSizeId = x.PartOrderSizeId,
+                    PartName = parts.TryGetValue(x.PartOrderSizeId, out var partName) ? partName : null,
                     Title = x.Title,
                     Description = x.Description,
                     Priority = x.Priority,
@@ -603,12 +599,13 @@ namespace GMPS.API.Controllers
         [HttpPatch("parts/complete-payment/{partId:int}")]
         public async Task<ActionResult<RestDTO<PartPaymentCompletionDTO>>> CompletePartPayment(
                     [Range(1, int.MaxValue)] int partId,
+                    [Range(1, int.MaxValue)] int partOrderSizeId,
                     [FromBody] CompletePartPaymentDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.CompletePartPayment(partId, dto.WorkLogIds);
+                var data = await _productionPartService.CompletePartPayment(partId,partOrderSizeId, dto.WorkLogIds);
                 return Ok(new RestDTO<PartPaymentCompletionDTO>
                 {
                     Data = _mapper.Map<PartPaymentCompletionDTO>(data)

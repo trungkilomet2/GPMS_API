@@ -137,6 +137,8 @@ builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 
 builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
+builder.Services.AddScoped<IBaseRepositories<Size>, SqlServerSizeRepository>();
+builder.Services.AddScoped<IBaseRepositories<Guest>, SqlGuestRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 builder.Services.AddScoped<IBaseOrderStatusRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<OrderRejectReason>, SqlServerOrderRejectRepository>();
@@ -165,7 +167,7 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
-builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
+builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartAssigneeRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<ProductionRejectReason>, SqlServerProductionRejectRepository>();
 builder.Services.AddScoped<IBaseRepositories<ProductionIssueLog>, SqlServerProductionIssueRepository>();
@@ -173,6 +175,8 @@ builder.Services.AddScoped<IBaseRepositories<ProductionPartWorkLog>, SqlServerPr
 builder.Services.AddScoped<IBaseRepositories<TemplateDefinition>, SqlServerTemplateRepository>();
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingNotebookRepository>();
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionPartOrderSize>, SqlServerProductionPartOrderSizeRepository>();
+
 
 builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
 builder.Services.AddScoped<ITemplateRepositories, TemplateService>();

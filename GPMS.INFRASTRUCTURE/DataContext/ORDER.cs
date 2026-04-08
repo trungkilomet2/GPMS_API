@@ -11,7 +11,9 @@ public partial class ORDER
     [Key]
     public int ORDER_ID { get; set; }
 
-    public int USER_ID { get; set; }
+    public int? USER_ID { get; set; }
+
+    public int? GUEST_ID { get; set; }
 
     [StringLength(255)]
     public string? IMAGE { get; set; }
@@ -19,21 +21,11 @@ public partial class ORDER
     [StringLength(100)]
     public string ORDER_NAME { get; set; } = null!;
 
-    [StringLength(50)]
-    public string TYPE { get; set; } = null!;
-
-    [StringLength(5)]
-    [Unicode(false)]
-    public string? SIZE { get; set; }
-
-    [StringLength(30)]
-    public string COLOR { get; set; } = null!;
-
     public DateOnly START_DATE { get; set; }
 
     public DateOnly END_DATE { get; set; }
 
-    public int QUANTITY { get; set; }
+    public int TOTAL_QUANTITY { get; set; }
 
     [Column(TypeName = "decimal(18, 2)")]
     public decimal CPU { get; set; }
@@ -46,8 +38,15 @@ public partial class ORDER
 
     public int OS_ID { get; set; }
 
+    [ForeignKey("GUEST_ID")]
+    [InverseProperty("ORDER")]
+    public virtual GUEST_ORDER? GUEST { get; set; }
+
     [InverseProperty("ORDER")]
     public virtual ORDER_REJECT_REASON? ORDER_REJECT_REASON { get; set; }
+
+    [InverseProperty("ORDER")]
+    public virtual ICollection<ORDER_SIZE> ORDER_SIZE { get; set; } = new List<ORDER_SIZE>();
 
     [ForeignKey("OS_ID")]
     [InverseProperty("ORDER")]
@@ -70,5 +69,5 @@ public partial class ORDER
 
     [ForeignKey("USER_ID")]
     [InverseProperty("ORDER")]
-    public virtual USER USER { get; set; } = null!;
+    public virtual USER? USER { get; set; }
 }

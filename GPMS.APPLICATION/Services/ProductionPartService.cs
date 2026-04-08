@@ -22,7 +22,7 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
         private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
-
+        private readonly IBaseRepositories<ProductionPartOrderSize> _partOrderSizeRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ProductionPartService(
@@ -34,7 +34,8 @@ namespace GPMS.APPLICATION.Services
             IBaseWorkerRepository workerSkill,
             IBaseRepositories<LeaveRequest> leaveRequestRepo,
             IBaseRepositories<ProductionPartWorkLog> workLogRepo,
-            IBaseRepositories<Order> orderRepo
+            IBaseRepositories<Order> orderRepo,
+            IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo
             )
         {
             _partRepo = partRepo;
@@ -46,6 +47,7 @@ namespace GPMS.APPLICATION.Services
             _leaveRequestRepo = leaveRequestRepo;
             _workLogRepo = workLogRepo;
             _orderRepo = orderRepo;
+            _partOrderSizeRepo = partOrderSizeRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -141,8 +143,6 @@ namespace GPMS.APPLICATION.Services
             existing.PartName = part.PartName;
             existing.Cpu = part.Cpu;
             existing.StatusId = part.StatusId;
-            existing.StartDate = part.StartDate;
-            existing.EndDate = part.EndDate;
 
             var updated = await _partRepo.Update(existing);
             return (await BuildViews(new[] { updated })).First();
@@ -160,8 +160,6 @@ namespace GPMS.APPLICATION.Services
                 .Where(x => x > 0)
                 .Distinct()
                 .ToList();
-
-           
 
             foreach (var workerId in workers)
             {
@@ -247,43 +245,23 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Trạng thái phải > 0");
             }
 
-            if (part.StartDate.HasValue && part.EndDate.HasValue && part.EndDate < part.StartDate)
-            {
-                throw new ValidationException("Ngày kết thúc phải lớn hơn hoặc bằng Ngày bắt đầu");
-            }
         }
 
         // Hàm tổng quát dùng để trả về một Production Part Detail
         private async Task<IEnumerable<ProductionPartDetailViewDTO>> BuildViews(IEnumerable<ProductionPart> parts)
         {
             var result = new List<ProductionPartDetailViewDTO>();
-
             foreach (
                 var part in parts)
             {
-                // Lấy thông tin chi tiết của Part, bao gồm cả Team Leader và Assignees
-                var detail = await _partRepo.GetById(part.Id);
-                // Lấy danh sách người được giao việc, loại bỏ trùng lặp nếu có
-                var assignees = detail.AssigneeIds.Distinct().ToList();
-                // Lấy danh sách người dùng được giao
-                var assigneeUsers = new List<User>();
-                foreach (var assignee in assignees)
-                {
-                    // Lấy thống tin của người dùng
-                    var user = await _userRepo.GetById(assignee);
-                    if (user is not null)
-                    {
-                        assigneeUsers.Add(user);
-                    }
-                }
                 // Thêm Người dùng vào kết quả trả về => Trả về một view gồm 3 khóa ngoại: Part, Team Leader, Assignees
                 result.Add(new ProductionPartDetailViewDTO
                 {
-                    Part = detail,
-                    Assignees = assigneeUsers
+                    Part = part,
+                    // Lấy danh sách Order Size theo PartId
+                    ListPartOrderSize = await _partOrderSizeRepo.GetAll(part.Id)
                 });
             }
-
             return result;
         }
 
@@ -335,20 +313,17 @@ namespace GPMS.APPLICATION.Services
             var normalized = new List<ProductionPartWorkLog>();
             foreach (var log in logs)
             {
-                log.IsReadOnly = log.IsReadOnly || now - log.WorkDate > TimeSpan.FromHours(24);
+                log.IsReadOnly = (log.IsReadOnly == true) || now - log.CreateDate > TimeSpan.FromHours(24);
                 normalized.Add(log);
             }
             return normalized;
         }
 
-        public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int userId, int quantity)
+        public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int partOrderSizeId, int userId, int quantity)
         {
             var productionPart = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
-
-            if (!productionPart.AssigneeIds.Contains(userId))
-            {
-                throw new ValidationException("Nhân viên không được phân công cho làm công đoạn này");
-            }
+            
+            var productionPartOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId) ?? throw new ValidationException("Production part order size không tồn tại");
 
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
 
@@ -407,10 +382,10 @@ namespace GPMS.APPLICATION.Services
 
                 returnData = await _workLogRepo.Create(new ProductionPartWorkLog
                 {
-                    PartId = partId,
+                    PartOrderSizeId = partOrderSizeId,
                     UserId = userId,
                     Quantity = quantity,
-                    WorkDate = VietnamTime.Now(),
+                    CreateDate = VietnamTime.Now(),
                     IsReadOnly = false,
                     IsPayment = false
                 });
@@ -419,7 +394,7 @@ namespace GPMS.APPLICATION.Services
             return returnData;
         }
 
-        public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int workLogId, int quantity)
+        public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId,int partOrderSizeId, int workLogId, int quantity)
         {
             if (quantity < 0) throw new ValidationException("Số lượng phải >= 0");
             // Workflow: 
@@ -454,7 +429,7 @@ namespace GPMS.APPLICATION.Services
                 int quantityHistoryWorkLog = 0;
                 // Lấy thông tin ghi chép của công nhân hiện tại
                 var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
-                if (log.PartId != partId) throw new ValidationException("Work log không thuộc công đoạn này");
+                if (log.PartOrderSizeId != partOrderSizeId) throw new ValidationException("Work log không thuộc công đoạn này");
 
                 foreach (var worklog in historyWorkLogs)
                 {
@@ -544,7 +519,7 @@ namespace GPMS.APPLICATION.Services
             return workers;
         }
 
-        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, IEnumerable<int> workLogIds)
+        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId,int partOrderSizeId, IEnumerable<int> workLogIds)
         {
             var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
             var selectedLogIds = (workLogIds ?? Enumerable.Empty<int>()).Where(x => x > 0).Distinct().ToList();
@@ -560,15 +535,15 @@ namespace GPMS.APPLICATION.Services
                 foreach (var logId in selectedLogIds)
                 {
                     var log = await _workLogRepo.GetById(logId) ?? throw new ValidationException($"Không tồn tại work log ID = {logId}");
-                    if (log.PartId != part.Id)
+                    if (log.PartOrderSizeId != partOrderSizeId)
                     {
                         throw new ValidationException($"Work log ID = {logId} không thuộc công đoạn hiện tại");
                     }
-                    if (DateOnly.FromDateTime(log.WorkDate) == today)
+                    if (DateOnly.FromDateTime(log.CreateDate) == today)
                     {
                         throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
                     }
-                    if (log.IsPayment)
+                    if (log.IsPayment == true)
                     {
                         continue;
                     }
@@ -610,7 +585,7 @@ namespace GPMS.APPLICATION.Services
             var dailyCapacity = allLogs.Count == 0
                 ? selectedWorkers.Count * 10
                 : Math.Max(1, (int)Math.Ceiling(allLogs
-                    .GroupBy(x => new { x.UserId, Day = DateOnly.FromDateTime(x.WorkDate) })
+                    .GroupBy(x => new { x.UserId, Day = DateOnly.FromDateTime(x.CreateDate) })
                     .Select(g => g.Sum(x => x.Quantity))
                     .Average()));
 
@@ -633,7 +608,7 @@ namespace GPMS.APPLICATION.Services
             var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại");
 
             var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
-            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.Id)).ToList();
             var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
 
             var result = new List<ProductionWorkerProgressChartViewDTO>();
@@ -659,7 +634,7 @@ namespace GPMS.APPLICATION.Services
         {
             _ = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
             var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
-            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var logs = (await _workLogRepo.GetAll(null)).Where(x => partIds.Contains(x.Id)).ToList();
             var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
 
             var scores = new List<WorkerProductivityScoreViewDTO>();
@@ -670,7 +645,7 @@ namespace GPMS.APPLICATION.Services
 
                 var workerLogs = logs.Where(x => x.UserId == workerId).ToList();
                 var totalOutput = workerLogs.Sum(x => x.Quantity);
-                var activeDays = workerLogs.Select(x => DateOnly.FromDateTime(x.WorkDate)).Distinct().Count();
+                var activeDays = workerLogs.Select(x => DateOnly.FromDateTime(x.CreateDate)).Distinct().Count();
                 var avgPerDay = activeDays == 0 ? 0 : (decimal)totalOutput / activeDays;
                 var qualityPenalty = workerLogs.Count(x => x.IsReadOnly && !x.IsPayment) * 0.5m;
                 var score = Math.Round(Math.Max(0, avgPerDay - qualityPenalty), 2);
@@ -689,11 +664,6 @@ namespace GPMS.APPLICATION.Services
             return scores.OrderByDescending(x => x.ProductivityScore);
         }
 
-
-
-
-
-
-
+       
     }
 }
