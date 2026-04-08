@@ -10,9 +10,7 @@ namespace GMPS.API.DTOs
         public string? UserPhone { get; set; }
         public string? UserLocation { get; set; }
         public string OrderName { get; set; }
-        public string Type { get; set; }
-        public string? Size { get; set; }
-        public string Color { get; set; }
+        public IEnumerable<OrderSize>? Size { get; set; }
         public int Quantity { get; set; }
         public decimal? Cpu { get; set; }
         public DateOnly StartDate { get; set; }
