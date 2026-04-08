@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
@@ -53,23 +53,26 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<Order> Create(Order entity)
         {
             var orderEntity = _mapper.Map<ORDER>(entity);
-
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
 
-            if (entity.size != null)
+            if (entity.Size != null)
             {
-                foreach (var m in entity.size)
+                foreach (var m in entity.Size)
                 {
-                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
+                    var sizeExists = await _context.SIZE.AnyAsync(x => x.SIZE_ID == m.SizeId);
+
+                    if (!sizeExists)
+                    {
+                        throw new Exception($"SizeId {m.SizeId} không tồn tại");
+                    }
+                    await _context.ORDER_SIZE.AddAsync(new ORDER_SIZE
                     {
                         ORDER_ID = orderEntity.ORDER_ID,
-                        NAME = m.MaterialName,
+                        SIZE_ID = m.SizeId,
                         COLOR = m.Color,
-                        IMAGE = m.Image,
-                        VALUE = m.Value,
-                        UOM = m.Uom,
-                        NOTE = m.Note
+                        QUANTITY = m.Quantity,
+                        OSS_ID = m.OrderSizeStatusId,
                     });
                 }
             }

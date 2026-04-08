@@ -15,17 +15,20 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<OMaterial> _materialBaseRepo;
         private readonly IBaseRepositories<User> _userBaseRepo;
         private readonly IBaseOrderStatusRepositories _orderStatusRepo;
+        private readonly IBaseRepositories<Size> _sizeRepo;
 
         public OrderService(
             IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
             IBaseRepositories<User> userBaseRepo,
-            IBaseOrderStatusRepositories orderStatusRepo)
+            IBaseOrderStatusRepositories orderStatusRepo,
+            IBaseRepositories<Size> sizeRepo)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
             _materialBaseRepo = materialBaseRepo ?? throw new ArgumentNullException(nameof(materialBaseRepo));
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
             _orderStatusRepo = orderStatusRepo ?? throw new ArgumentNullException(nameof(orderStatusRepo));
+            _sizeRepo = sizeRepo ?? throw new ArgumentNullException(nameof(sizeRepo));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
@@ -45,9 +48,15 @@ namespace GPMS.APPLICATION.Services
             if (existing == null)
                 throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
-                throw new Exception("End date must be greater than start date.");
+                throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if(order.StartDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new Exception("Start date must be greater than current date.");
+                throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
+            foreach (var size in order.Size)
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new Exception("Kích thước không tồn tại.");
+            }
             return await _orderBaseRepo.Create(order);
         }
 
@@ -83,8 +92,8 @@ namespace GPMS.APPLICATION.Services
 
             TrackChange("OrderName", existing.OrderName, input.OrderName);
             TrackChange("Type", existing.Type, input.Type);
-            TrackChange("Size", existing.Size, input.Size);
-            TrackChange("Color", existing.Color, input.Color);
+            //TrackChange("Size", existing.Size, input.Size);
+            //TrackChange("Color", existing.Color, input.Color);
             TrackChange("StartDate", existing.StartDate.ToString(), input.StartDate.ToString());
             TrackChange("EndDate", existing.EndDate.ToString(), input.EndDate.ToString());
             TrackChange("Quantity", existing.Quantity.ToString(), input.Quantity.ToString());
@@ -97,8 +106,8 @@ namespace GPMS.APPLICATION.Services
                 UserId = userId,
                 OrderName = input.OrderName,
                 Type = input.Type,
-                Size = input.Size,
-                Color = input.Color,
+                //Size = input.Size,
+                //Color = input.Color,
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,

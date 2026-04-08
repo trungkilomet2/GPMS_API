@@ -535,11 +535,12 @@ namespace GMPS.API.Controllers
                         Image = input.Image,
                         OrderName = input.OrderName,
                         Type = input.Type,
-                        size = input.Sizes?.Select(s => new OrderSize
+                        Size = input.Sizes?.Select(s => new OrderSize
                         {
                             SizeId = s.SizeId,
                             Color = s.Color,
-                            Quantity = s.Quantity
+                            Quantity = s.Quantity,
+                            OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
                         }).ToList(),
                         StartDate = input.StartDate,
                         EndDate = input.EndDate,

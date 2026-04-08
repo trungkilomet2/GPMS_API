@@ -8,8 +8,10 @@ namespace GPMS.DOMAIN.Entities
 {
     public class OrderSize
     {
+        public int OrderId { get; set; }
         public int SizeId { get; set; }
-        public string? Color { get; set; }
-        public int? Quantity { get; set; }
+        public string Color { get; set; }
+        public int Quantity { get; set; }
+        public int OrderSizeStatusId { get; set; }
     }
 }
