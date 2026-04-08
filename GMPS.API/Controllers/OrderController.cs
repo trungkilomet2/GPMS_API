@@ -900,14 +900,18 @@ namespace GMPS.API.Controllers
                 var updateInput = new UpdateOrderInput
                 {
                     OrderName = input!.OrderName,
-                    Type = input.Type,
-                    Size = input.Size,
-                    Color = input.Color,
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
                     Image = input.Image,
                     Note = input.Note,
+                    Sizes = input.Sizes?.Select(s => new OrderSize
+                    {
+                        SizeId = s.SizeId,
+                        Color = s.Color,
+                        Quantity = s.Quantity,
+                        OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
+                    }).ToList(),
                     Templates = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName,

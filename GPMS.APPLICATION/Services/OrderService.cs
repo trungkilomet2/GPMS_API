@@ -125,28 +125,38 @@ namespace GPMS.APPLICATION.Services
             }
 
             TrackChange("OrderName", existing.OrderName, input.OrderName);
-            TrackChange("Type", existing.Type, input.Type);
-            //TrackChange("Size", existing.Size, input.Size);
-            //TrackChange("Color", existing.Color, input.Color);
             TrackChange("StartDate", existing.StartDate.ToString(), input.StartDate.ToString());
             TrackChange("EndDate", existing.EndDate.ToString(), input.EndDate.ToString());
             TrackChange("Quantity", existing.Quantity.ToString(), input.Quantity.ToString());
             TrackChange("Image", existing.Image, resolvedImage);
             TrackChange("Note", existing.Note, input.Note);
 
+            var oldSizes = existing.Size != null
+                ? string.Join(",", existing.Size.Select(s => $"(SizeId:{s.SizeId},Color:{s.Color},Qty:{s.Quantity})"))
+                : string.Empty;
+            var newSizes = input.Sizes != null
+                ? string.Join(",", input.Sizes.Select(s => $"(SizeId:{s.SizeId},Color:{s.Color},Qty:{s.Quantity})"))
+                : string.Empty;
+            TrackChange("Sizes", oldSizes, newSizes);
+
+            foreach (var size in input.Sizes ?? Enumerable.Empty<OrderSize>())
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new KeyNotFoundException($"Kích thước với Id '{size.SizeId}' không tồn tại.");
+            }
+
             var updatedOrder = new Order
             {
                 Id = orderId,
                 UserId = userId,
                 OrderName = input.OrderName,
-                Type = input.Type,
-                //Size = input.Size,
-                //Color = input.Color,
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,
                 Image = resolvedImage,
                 Note = input.Note,
+                Size = input.Sizes,
                 Template = input.Templates,
                 Material = input.Materials
             };

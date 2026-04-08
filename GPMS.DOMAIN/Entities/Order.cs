@@ -28,6 +28,6 @@ namespace GPMS.DOMAIN.Entities
         public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
         public List<OrderMaterial>? Material { get; set; }
         public List<OrderTemplate>? Template { get; set; }
-        public List<OrderSize>? Size { get; set; }
+        public IEnumerable<OrderSize>? Size { get; set; }
     }
 }
