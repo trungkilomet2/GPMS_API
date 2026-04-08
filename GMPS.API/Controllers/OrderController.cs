@@ -535,8 +535,12 @@ namespace GMPS.API.Controllers
                         Image = input.Image,
                         OrderName = input.OrderName,
                         Type = input.Type,
-                        Size = input.Size,
-                        Color = input.Color,
+                        size = input.Sizes?.Select(s => new OrderSize
+                        {
+                            SizeId = s.SizeId,
+                            Color = s.Color,
+                            Quantity = s.Quantity
+                        }).ToList(),
                         StartDate = input.StartDate,
                         EndDate = input.EndDate,
                         Quantity = input.Quantity,
@@ -573,8 +577,6 @@ namespace GMPS.API.Controllers
                                            <p>Mã đơn hàng: {result.Id}</p>
                                            <p>Tên đơn hàng: {result.OrderName}</p>
                                            <p>Kiểu: {result.Type}</p>
-                                           <p>Kích thước: {result.Size}</p>
-                                           <p>Màu sắc: {result.Color}</p>
                                            <p>Số lượng: {result.Quantity}</p>
                                            <p>Giá từng sản phẩm: {result.Cpu}</p>
                                            <p>Ghi chú: {result.Note}</p>

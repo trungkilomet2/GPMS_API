@@ -21,15 +21,6 @@ namespace GMPS.API.DTOs
         [StringLength(50, ErrorMessage = "Kiểu không được vượt quá 5 ký tự")]
         public string Type { get; set; }
 
-        [StringLength(5, ErrorMessage = "Kích thước không được vượt quá 5 ký tự")]
-        [RegularExpression("^(XS|S|M|L|XL|XXL|XXXL)$",
-    ErrorMessage = "Size must be XS, S, M, L, XL, XXL, or XXXL")]
-        public string? Size { get; set; }
-
-        [Required(ErrorMessage = "Yêu cầu chọn màu")]
-        [StringLength(30, ErrorMessage = "Màu không được vượt quá 30 ký tự")]
-        public string Color { get; set; }
-
         [Required(ErrorMessage = "Phải có ngày bắt đầu")]
         public DateOnly StartDate { get; set; }
 
@@ -50,5 +41,6 @@ namespace GMPS.API.DTOs
         public List<CreateMaterialDTO>? Materials { get; set; }
 
         public List<CreateTemplateDTO>? Templates { get; set; }
+        public List<CreateSizeDTO>? Sizes { get; set; }
     }
 }

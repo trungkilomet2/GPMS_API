@@ -15,8 +15,6 @@ namespace GPMS.DOMAIN.Entities
         public string? Image { get; set; }
         public string OrderName { get; set; }
         public string Type { get; set; }
-        public string? Size { get; set; }
-        public string Color { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public int Quantity { get; set; }
@@ -30,5 +28,6 @@ namespace GPMS.DOMAIN.Entities
         public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
         public List<OrderMaterial>? Material { get; set; }
         public List<OrderTemplate>? Template { get; set; }
+        public List<OrderSize>? size { get; set; }
     }
 }

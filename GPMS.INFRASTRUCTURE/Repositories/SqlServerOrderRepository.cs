@@ -57,6 +57,22 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             await _context.ORDER.AddAsync(orderEntity);
             await _context.SaveChangesAsync();
 
+            if (entity.size != null)
+            {
+                foreach (var m in entity.size)
+                {
+                    await _context.O_MATERIAL.AddAsync(new O_MATERIAL
+                    {
+                        ORDER_ID = orderEntity.ORDER_ID,
+                        NAME = m.MaterialName,
+                        COLOR = m.Color,
+                        IMAGE = m.Image,
+                        VALUE = m.Value,
+                        UOM = m.Uom,
+                        NOTE = m.Note
+                    });
+                }
+            }
             if (entity.Material != null)
             {
                 foreach (var m in entity.Material)
