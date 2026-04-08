@@ -156,8 +156,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CREATED_AT))
                 .ReverseMap();
 
-
-
             // PART WORK LOG
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PART_WORK_LOG, GPMS.DOMAIN.Entities.ProductionPartWorkLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WL_ID))
@@ -193,7 +191,6 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.CREATED_AT, opt => opt.MapFrom(src => src.CreatedAt));
 
             // PRODUCTION ISSUE LOG
-        
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PRODUCTION_ISSUE_LOG, GPMS.DOMAIN.Entities.ProductionIssueLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ISSUE_ID))
                 .ForMember(dest => dest.PartOrderSizeId, opt => opt.MapFrom(src => src.PPOS_ID))
@@ -268,7 +265,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Exception, opt => opt.MapFrom(src => src.EXCEPTION))
                 .ForMember(dest => dest.Properties, opt => opt.MapFrom(src => src.PROPERTIES)).ReverseMap();
 
-
+            // Mapping part order size
             CreateMap<P_PART_ORDER_SIZE, ProductionPartOrderSize>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.PPOS_ID))
                 .ForMember(dest => dest.ProductionPartId, opt => opt.MapFrom(src => src.PP_ID))
