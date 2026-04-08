@@ -10,18 +10,6 @@ namespace GMPS.API.DTOs
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Order name must be between 3 and 100 characters")]
         public string OrderName { get; set; } = null!;
 
-        [Required(ErrorMessage = "Type is required")]
-        [StringLength(50, ErrorMessage = "Type cannot exceed 50 characters")]
-        public string Type { get; set; } = null!;
-
-        [StringLength(5, ErrorMessage = "Size cannot exceed 5 characters")]
-        [RegularExpression("^(XS|S|M|L|XL|XXL|XXXL)$", ErrorMessage = "Size must be XS, S, M, L, XL, XXL, or XXXL")]
-        public string? Size { get; set; }
-
-        [Required(ErrorMessage = "Color is required")]
-        [StringLength(30, ErrorMessage = "Color cannot exceed 30 characters")]
-        public string Color { get; set; } = null!;
-
         [Required(ErrorMessage = "StartDate is required")]
         public DateOnly StartDate { get; set; }
 
@@ -38,6 +26,8 @@ namespace GMPS.API.DTOs
 
         [StringLength(200, ErrorMessage = "Note cannot exceed 200 characters")]
         public string? Note { get; set; }
+
+        public List<CreateSizeDTO>? Sizes { get; set; }
 
         public List<UpdateTemplateDTO>? Templates { get; set; }
 
