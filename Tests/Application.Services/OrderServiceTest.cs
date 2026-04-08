@@ -14,13 +14,15 @@ public class OrderServiceTest
     private readonly Mock<IBaseRepositories<OMaterial>> _materialBaseRepo = new();
     private readonly Mock<IBaseRepositories<User>> _userBaseRepo = new();
     private readonly Mock<IBaseOrderStatusRepositories> _orderStatusRepo = new();
+    private readonly Mock<IBaseRepositories<Size>> _sizeRepo = new();
 
     private OrderService BuildService()
         => new OrderService(
             _orderBaseRepo.Object,
             _materialBaseRepo.Object,
             _userBaseRepo.Object,
-            _orderStatusRepo.Object);
+            _orderStatusRepo.Object,
+            _sizeRepo.Object);
 
     private static Order BuildFakeOrder(
         int id = 1,
@@ -31,9 +33,6 @@ public class OrderServiceTest
             Id = id,
             UserId = userId,
             OrderName = "Test Order",
-            Type = "Clothes",
-            Size = "L",
-            Color = "Red",
             Quantity = 10,
             Cpu = 100,
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
@@ -195,8 +194,6 @@ public class OrderServiceTest
         return new UpdateOrderInput
         {
             OrderName = orderName,
-            Type = "Shirt",
-            Color = "Blue",
             Quantity = 5,
             StartDate = start,
             EndDate = end

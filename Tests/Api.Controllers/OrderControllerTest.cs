@@ -502,8 +502,6 @@ public class OrderControllerTest
         DateOnly? endDate = null) => new UpdateOrderDTO
         {
             OrderName = "Updated",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 5
