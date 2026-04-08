@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("PRODUCTION_ID", Name = "UQ__PRODUCTI__4E709CAB5A9413F3", IsUnique = true)]
+[Index("PRODUCTION_ID", Name = "UQ__PRODUCTI__4E709CAB12484C8B", IsUnique = true)]
 public partial class PRODUCTION_REJECT_REASON
 {
     [Key]
