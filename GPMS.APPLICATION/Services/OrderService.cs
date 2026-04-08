@@ -70,9 +70,6 @@ namespace GPMS.APPLICATION.Services
         {
             if (order == null)
                 throw new Exception("Failed to create order.");
-            var existing = await _userBaseRepo.GetById(order.UserId);
-            if (existing == null)
-                throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
                 throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if (order.StartDate < DateOnly.FromDateTime(DateTime.Now))

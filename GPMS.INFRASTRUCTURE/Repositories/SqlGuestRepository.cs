@@ -24,7 +24,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             var guestEntity = _mapper.Map<GUEST_ORDER>(entity);
             await _context.GUEST_ORDER.AddAsync(guestEntity);
-            await _context.SaveChangesAsync();
             return _mapper.Map<Guest>(guestEntity);
         }
 

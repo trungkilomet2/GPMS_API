@@ -617,42 +617,41 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("create-manual-order")]
-        [Authorize(Roles = "Customer,Owner")]
-        public async Task<ActionResult> CreateManualOrder([FromBody] CreateManualOrderDTO? input, [FromBody] CreateGuest? guest)
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> CreateManualOrder([FromBody] CreateManualOrderRequest? request)
         {
             try
             {
                 _logger.LogInformation(CustomLogEvents.OrderController_Post,
-                    "Tạo đơn hàng cho khách hàng vãng lai có Id là: {UserId}", input?.OrderName);
+                    "Tạo đơn hàng cho khách hàng vãng lai có Id là: {Name}", request?.Guest?.FullName);
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 if (ModelState.IsValid)
                 {
                     var guestUser = new Guest
                     {
-                        FullName = guest.FullName,
-                        PhoneNumber = guest.PhoneNumber,
-                        Address = guest.Address
+                        FullName = request.Guest.FullName,
+                        PhoneNumber = request.Guest.PhoneNumber,
+                        Address = request.Guest.Address
                     };
                     var newOrder = new Order
                     {
-                        GuestId = guest.Id,
-                        Image = input.Image,
-                        OrderName = input.OrderName,
-                        Size = input.Sizes?.Select(s => new OrderSize
+                        Image = request.Order.Image,
+                        OrderName = request.Order.OrderName,
+                        Size = request.Order.Sizes?.Select(s => new OrderSize
                         {
                             SizeId = s.SizeId,
                             Color = s.Color,
                             Quantity = s.Quantity,
                             OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
                         }).ToList(),
-                        StartDate = input.StartDate,
-                        EndDate = input.EndDate,
-                        Quantity = input.Quantity,
-                        Cpu = input.Cpu,
-                        Note = input.Note,
+                        StartDate = request.Order.StartDate,
+                        EndDate = request.Order.EndDate,
+                        Quantity = request.Order.Quantity,
+                        Cpu = request.Order.Cpu,
+                        Note = request.Order.Note,
                         Status = OrderStatus_Constants.Pending_ID,
                         CreateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone),
-                        Material = input.Materials?.Select(m => new OrderMaterial
+                        Material = request.Order.Materials?.Select(m => new OrderMaterial
                         {
                             MaterialName = m.MaterialName,
                             Image = m.Image,
@@ -662,7 +661,7 @@ namespace GMPS.API.Controllers
                             Note = m.Note
                         }).ToList(),
 
-                        Template = input.Templates?.Select(t => new OrderTemplate
+                        Template = request.Order.Templates?.Select(t => new OrderTemplate
                         {
                             TemplateName = t.TemplateName,
                             Type = t.Type,
@@ -696,7 +695,7 @@ namespace GMPS.API.Controllers
                 else
                 {
                     _logger.LogWarning(CustomLogEvents.OrderController_Post,
-                        "Lỗi model state khi tạo đơn hàng với Id là: {OrderName}",input.OrderName);
+                        "Lỗi model state khi tạo đơn hàng với Id là: {OrderName}", request.Order.OrderName);
 
                     var errorDetails = new ValidationProblemDetails(ModelState)
                     {
@@ -710,7 +709,7 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.OrderController_Post, ex,
-                    "Lỗi khi tạo đơn hàng với Id là: {OrderName}", input?.OrderName);
+                    "Lỗi khi tạo đơn hàng với Id là: {OrderName}", request.Order.OrderName);
 
                 var exceptionDetails = new ProblemDetails
                 {

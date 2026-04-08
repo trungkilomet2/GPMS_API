@@ -109,8 +109,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     });
                 }
             }
-
-            await _context.SaveChangesAsync();
             return _mapper.Map<Order>(orderEntity);
         }
 
