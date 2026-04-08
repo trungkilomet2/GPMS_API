@@ -215,12 +215,11 @@ builder.Services.AddCors(options =>
     }
     else
     {
-        cfg.SetIsOriginAllowed(origin => true);
+        cfg.SetIsOriginAllowed(_ => true);
+        cfg.AllowAnyHeader();
+        cfg.AllowAnyMethod();
+        cfg.AllowCredentials();
     }
-
-            cfg.AllowAnyHeader();
-            cfg.AllowAnyMethod();
-            cfg.AllowCredentials();
 });
 
 });
