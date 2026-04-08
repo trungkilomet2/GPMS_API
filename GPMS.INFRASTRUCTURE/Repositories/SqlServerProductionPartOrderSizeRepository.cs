@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace GPMS.INFRASTRUCTURE.Repositories
 {
-    internal class SqlServerProductionPartOrderSizeRepository : IBaseRepositories<ProductionPartOrderSize>
+    public class SqlServerProductionPartOrderSizeRepository : IBaseRepositories<ProductionPartOrderSize>
     {
 
         private readonly GPMS_SYSTEMContext _context;
