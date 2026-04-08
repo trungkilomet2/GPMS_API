@@ -10,9 +10,9 @@ namespace GPMS.APPLICATION.ContextRepo
     public interface IBaseProductionPartAssignRepositories
     {   
         // Assign Task To Worker
-        Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds);
+        Task<ProductionPartOrderSize> AssignWorkers(int partOrderSizeId, IEnumerable<int> workerIds);
         // Remove Worker From Task  
-        Task<ProductionPart> RemoveWorker(int partId, int workerId);
+        Task<ProductionPartOrderSize> RemoveWorker(int partOrderSizeId, int workerId);
         // Lấy danh sách PM có thể phụ trách worker đó gồm tên user + kĩ năng + lịch nghỉ phép
         Task<IEnumerable<User>> ListWorkerWithPM(int pm_id);
     }

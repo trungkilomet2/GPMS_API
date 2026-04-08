@@ -32,7 +32,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             IQueryable<PRODUCTION_ISSUE_LOG> query = _context.PRODUCTION_ISSUE_LOG;
             if (obj is int productionId)
             {
-                query = query.Where(x => x.PART.PRODUCTION_ID == productionId);
+                query = query.Where(x => x.PPOS.PP.PRODUCTION_ID == productionId);
             }
 
             var data = await query.OrderByDescending(x => x.CREATED_AT).ToListAsync();

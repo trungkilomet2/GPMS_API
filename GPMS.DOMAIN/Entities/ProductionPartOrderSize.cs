@@ -13,6 +13,7 @@ namespace GPMS.DOMAIN.Entities
         public string Size { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string Color { get; set; } = string.Empty;
-        public int PartOrderSizeStatusId { get; set; }  
+        public int PartOrderSizeStatusId { get; set; }
+        public IEnumerable<int> AssigneeIds { get; set; } = new List<int>();
     }
 }
