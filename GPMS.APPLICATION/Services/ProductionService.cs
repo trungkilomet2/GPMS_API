@@ -271,7 +271,7 @@ namespace GPMS.APPLICATION.Services
             var partDictionary = (await _productionPartRepo.GetAll(productionId))
                 .ToDictionary(x => x.Id, x => x.PartName);
 
-            return issues.GroupBy(x => partDictionary.TryGetValue(x.PartId, out var partName) ? partName : "Unknown").Select(g => new ProductionIssueLog
+            return issues.GroupBy(x => partDictionary.TryGetValue(x.PartOrderSizeId, out var partName) ? partName : "Unknown").Select(g => new ProductionIssueLog
             {
                 Title = g.Key,
                 CreatedAt = g.Max(x => x.CreatedAt),
@@ -282,7 +282,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue)
         {
-            var part = await _productionPartRepo.GetById(issue.PartId) ?? throw new ValidationException("Công đoạn không tồn tại");
+            var part = await _productionPartRepo.GetById(issue.PartOrderSizeId) ?? throw new ValidationException("Công đoạn không tồn tại");
             _ = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
             _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
             
@@ -416,7 +416,7 @@ namespace GPMS.APPLICATION.Services
             var users = (await _workerRepo.GetAll(managerData)).ToList();
             var partIds = (await _productionPartRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
             var notebookIds = (await _cuttingNotebookRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
-            var partLogs = (await _productionPartWorkLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartId)).ToList();
+            var partLogs = (await _productionPartWorkLogRepo.GetAll(null)).Where(x => partIds.Contains(x.PartOrderSizeId)).ToList();
             var cuttingLogs = (await _cuttingNotebookLogRepo.GetAll(null)).Where(x => notebookIds.Contains(x.NotebookId)).ToList();
             var issueLogs = (await _productionIssueRepo.GetAll(productionId)).ToList();
 
@@ -440,16 +440,16 @@ namespace GPMS.APPLICATION.Services
 
             foreach (var workLog in await _productionPartWorkLogRepo.GetAll(null))
             {
-                if (!users.ContainsKey(workLog.UserId) || !parts.ContainsKey(workLog.PartId)) continue;
+                if (!users.ContainsKey(workLog.UserId) || !parts.ContainsKey(workLog.PartOrderSizeId)) continue;
                 result.Add(new WorkerProductivityHistoryViewDTO
                 {
                     WorkerId = workLog.UserId,
                     WorkerName = users[workLog.UserId],
-                    ProductionId = parts[workLog.PartId],
+                    ProductionId = parts[workLog.PartOrderSizeId],
                     SourceType = "PartWorkLog",
                     SourceId = workLog.Id,
                     Quantity = workLog.Quantity,
-                    SubmittedAt = workLog.WorkDate
+                    SubmittedAt = workLog.CreateDate
                 });
             }
 
@@ -480,7 +480,7 @@ namespace GPMS.APPLICATION.Services
             var notebookIds = (await _cuttingNotebookRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
 
             var partOutput = (await _productionPartWorkLogRepo.GetAll(null))
-                .Where(x => partIds.Contains(x.PartId))
+                .Where(x => partIds.Contains(x.PartOrderSizeId))
                 .Sum(x => x.Quantity);
 
             var cuttingOutput = (await _cuttingNotebookLogRepo.GetAll(null))
@@ -509,7 +509,6 @@ namespace GPMS.APPLICATION.Services
             _ = await _userRepositories.GetById(workerId) ?? throw new ValidationException("Worker không tồn tại");
 
             var workerParts = (await _productionPartRepo.GetAll(null))
-                .Where(x => x.AssigneeIds.Contains(workerId))
                 .ToList();
 
             var groupedByProduction = workerParts.GroupBy(x => x.ProductionId);
