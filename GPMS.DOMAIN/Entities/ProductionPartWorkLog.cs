@@ -13,8 +13,8 @@ namespace GPMS.DOMAIN.Entities
         public int UserId { get; set; }
         public int Quantity { get; set; }
         public DateTime CreateDate { get; set; }
-        public bool? IsReadOnly { get; set; }
-        public bool? IsPayment { get; set; }
+        public bool IsReadOnly { get; set; }
+        public bool IsPayment { get; set; }
         public string? Note { get; set; }
     }
 }
