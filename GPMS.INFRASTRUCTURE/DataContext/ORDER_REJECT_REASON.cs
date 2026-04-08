@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("ORDER_ID", Name = "UQ__ORDER_RE__460A946568668156", IsUnique = true)]
+[Index("ORDER_ID", Name = "UQ__ORDER_RE__460A94656687F954", IsUnique = true)]
 public partial class ORDER_REJECT_REASON
 {
     [Key]
