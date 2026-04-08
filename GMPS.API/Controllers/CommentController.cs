@@ -1,9 +1,11 @@
 ﻿using GMPS.API.DTOs;
+using GMPS.API.Hubs;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,11 +22,13 @@ namespace GMPS.API.Controllers
     {
         private readonly ICommentRepositories _commentRepo;
         private readonly ILogger<CommentController> _logger;
+        private readonly IHubContext<CommentHub> _commentHubContext;
 
-        public CommentController(ICommentRepositories commentInterface, ILogger<CommentController> logger)
+        public CommentController(ICommentRepositories commentInterface, ILogger<CommentController> logger, IHubContext<CommentHub> commentHubContext)
         {
             _commentRepo = commentInterface ?? throw new ArgumentNullException(nameof(commentInterface));
             _logger = logger;
+            _commentHubContext = commentHubContext ?? throw new ArgumentNullException(nameof(commentHubContext));
         }
 
         [HttpGet("get-comment-by-orderId/{orderId}")]
@@ -101,6 +105,19 @@ namespace GMPS.API.Controllers
                     };
 
                     var result = await _commentRepo.CreateComment(userId,newComment);
+                    var commentResponse = new CommentDTO
+                    {
+                        Id = result.Id,
+                        FromUserId = result.fromUserId,
+                        ToOrderId = result.toOrderId,
+                        Content = result.Content,
+                        SendDateTime = result.SendDateTime,
+                        FromUserName = User.Identity?.Name ?? string.Empty
+                    };
+
+                    await _commentHubContext.Clients
+                    .Group(CommentHub.GetOrderGroupName(result.toOrderId))
+                    .SendAsync("CommentCreated", commentResponse);
 
                     _logger.LogInformation(CustomLogEvents.CommentController_Post,
                         "Comment {CommentId} được tạo thành công cho OrderId {OrderId}",

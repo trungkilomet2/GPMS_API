@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using GMPS.API.Mapper;
+using GMPS.API.Hubs;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
@@ -24,6 +25,7 @@ using System.Text;
 Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
+const string signalRCorsPolicy = "SignalR";
 
 builder.Logging.ClearProviders();
 //--------------------------- Controller Config ---------------------------
@@ -39,6 +41,7 @@ builder.Services.AddControllers(
     });
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 //--------------------------- Bearer Token for Swagger ---------------------------
 builder.Services.AddSwaggerGen(
    options =>
@@ -203,6 +206,23 @@ builder.Services.AddCors(options =>
             cfg.AllowAnyHeader();
             cfg.AllowAnyMethod();
         });
+    options.AddPolicy(name: signalRCorsPolicy,
+        cfg =>
+{
+    if (builder.Configuration["AllowedOrigins"].Length > 0)
+    {
+        cfg.WithOrigins(builder.Configuration["AllowedOrigins"]);
+    }
+    else
+    {
+        cfg.SetIsOriginAllowed(origin => true);
+    }
+
+            cfg.AllowAnyHeader();
+            cfg.AllowAnyMethod();
+            cfg.AllowCredentials();
+});
+
 });
 
 //-------------------------------------------------------
@@ -233,6 +253,23 @@ builder.Services.AddAuthentication(
                 System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
             )
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrWhiteSpace(accessToken) &&
+                (path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/hubs/comments")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+
     }); ;
 
 builder.Services.AddAuthorization();
@@ -256,5 +293,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/hubs/chat").RequireCors(signalRCorsPolicy);
+
+app.MapHub<CommentHub>("/hubs/comments").RequireCors(signalRCorsPolicy);
+
 
 app.Run();
