@@ -141,8 +141,6 @@ namespace GPMS.APPLICATION.Services
             existing.PartName = part.PartName;
             existing.Cpu = part.Cpu;
             existing.StatusId = part.StatusId;
-            existing.StartDate = part.StartDate;
-            existing.EndDate = part.EndDate;
 
             var updated = await _partRepo.Update(existing);
             return (await BuildViews(new[] { updated })).First();
