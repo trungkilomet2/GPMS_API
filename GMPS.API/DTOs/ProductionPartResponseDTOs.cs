@@ -14,4 +14,15 @@ namespace GMPS.API.DTOs
         public string? StatusName { get; set; }
         public IEnumerable<ProductionPartOrderSize> ListPartOrderSizes { get; set; } = new List<ProductionPartOrderSize>();
     }
+
+
+    public class ProductionPartUserDTO
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+        public string? Email { get; set; }
+    }
+
+
 }

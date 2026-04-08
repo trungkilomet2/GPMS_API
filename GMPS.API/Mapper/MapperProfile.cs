@@ -98,6 +98,12 @@ namespace GMPS.API.Mapper
             CreateMap<ProductionWorkerProgressChartViewDTO, ProductionWorkerProgressChartDTO>();
             CreateMap<WorkerProductivityScoreViewDTO, WorkerProductivityScoreDTO>();
 
+            //Mapp User For Log work
+            CreateMap<User, ProductionPartUserDTO>()
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+               .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+               .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+               .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
         }
 
     }
