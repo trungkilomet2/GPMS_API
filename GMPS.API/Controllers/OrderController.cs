@@ -534,7 +534,6 @@ namespace GMPS.API.Controllers
                         UserId = input.UserId,
                         Image = input.Image,
                         OrderName = input.OrderName,
-                        Type = input.Type,
                         Size = input.Sizes?.Select(s => new OrderSize
                         {
                             SizeId = s.SizeId,
@@ -577,7 +576,6 @@ namespace GMPS.API.Controllers
                                           <h3>Chi tiết</h3>
                                            <p>Mã đơn hàng: {result.Id}</p>
                                            <p>Tên đơn hàng: {result.OrderName}</p>
-                                           <p>Kiểu: {result.Type}</p>
                                            <p>Số lượng: {result.Quantity}</p>
                                            <p>Giá từng sản phẩm: {result.Cpu}</p>
                                            <p>Ghi chú: {result.Note}</p>

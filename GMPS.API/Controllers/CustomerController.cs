@@ -126,9 +126,6 @@ namespace GMPS.API.Controllers
                 {
                     Id = o.Id,
                     OrderName = o.OrderName,
-                 //   Size = o.Size,
-                    Type = o.Type,
-                 //   Color = o.Color,
                     Quantity = o.Quantity,
                     Cpu = o.Cpu,
                     StartDate = o.StartDate,

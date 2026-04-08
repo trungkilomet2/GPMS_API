@@ -69,9 +69,6 @@ public class OrderControllerTest
             Id = id,
             UserId = userId,
             OrderName = "Test Order",
-            Type = "Clothes",
-            Size = "L",
-            Color = "Red",
             Quantity = 10,
             Cpu = 100,
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
@@ -395,8 +392,6 @@ public class OrderControllerTest
         {
             UserId = 1,
             OrderName = "New Order",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 10
@@ -439,8 +434,6 @@ public class OrderControllerTest
         {
             UserId = 1,
             OrderName = "New Order",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 10

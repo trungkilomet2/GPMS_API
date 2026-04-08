@@ -14,7 +14,6 @@ namespace GPMS.DOMAIN.Entities
         public int UserId { get; set; }
         public string? Image { get; set; }
         public string OrderName { get; set; }
-        public string Type { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public int Quantity { get; set; }
