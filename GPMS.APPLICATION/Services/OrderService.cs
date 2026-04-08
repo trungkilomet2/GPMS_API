@@ -16,19 +16,25 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<User> _userBaseRepo;
         private readonly IBaseOrderStatusRepositories _orderStatusRepo;
         private readonly IBaseRepositories<Size> _sizeRepo;
+        private readonly IBaseRepositories<Guest> _guestRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
         public OrderService(
             IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
             IBaseRepositories<User> userBaseRepo,
             IBaseOrderStatusRepositories orderStatusRepo,
-            IBaseRepositories<Size> sizeRepo)
+            IBaseRepositories<Size> sizeRepo,
+            IBaseRepositories<Guest> guestRepo,
+            IUnitOfWork unitOfWork)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
             _materialBaseRepo = materialBaseRepo ?? throw new ArgumentNullException(nameof(materialBaseRepo));
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
             _orderStatusRepo = orderStatusRepo ?? throw new ArgumentNullException(nameof(orderStatusRepo));
             _sizeRepo = sizeRepo ?? throw new ArgumentNullException(nameof(sizeRepo));
+            _guestRepo = guestRepo ?? throw new ArgumentNullException(nameof(guestRepo));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
@@ -58,6 +64,34 @@ namespace GPMS.APPLICATION.Services
                     throw new Exception("Kích thước không tồn tại.");
             }
             return await _orderBaseRepo.Create(order);
+        }
+
+        public async Task<Order> CreateManualOrder(Order order, Guest guest)
+        {
+            if (order == null)
+                throw new Exception("Failed to create order.");
+            var existing = await _userBaseRepo.GetById(order.UserId);
+            if (existing == null)
+                throw new Exception("User not found.");
+            if (order.EndDate < order.StartDate)
+                throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
+            if (order.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
+            foreach (var size in order.Size)
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new Exception("Kích thước không tồn tại.");
+            }
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var createdGuest = await _guestRepo.Create(guest);
+                await _unitOfWork.SaveChangesAsync();
+                order.GuestId = createdGuest.Id;
+                 await _orderBaseRepo.CreateManualOrder(order);
+                await _unitOfWork.SaveChangesAsync();
+            });
+            return order;
         }
 
         public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)
@@ -209,5 +243,6 @@ namespace GPMS.APPLICATION.Services
 
             return await _orderStatusRepo.ApproveOrder(orderId, updatedOrder, histories);
         }
+       
     }
 }

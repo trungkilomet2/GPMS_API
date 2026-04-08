@@ -78,6 +78,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER, GPMS.DOMAIN.Entities.Order>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ORDER_ID))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
+                .ForMember(dest => dest.GuestId, opt => opt.MapFrom(src => src.GUEST_ID))
                 .ForMember(dest => dest.OrderName, opt => opt.MapFrom(src => src.ORDER_NAME))
                 .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.IMAGE))
                 .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.ORDER_SIZE))
@@ -92,6 +93,12 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
                 .ReverseMap();
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.GUEST_ORDER, GPMS.DOMAIN.Entities.Guest>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.GUEST_ID))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.GUEST_NAME))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.GUEST_PHONE))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.GUEST_ADDRESS)).ReverseMap();
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.UO_COMMENT, GPMS.DOMAIN.Entities.Comment>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OC_ID))

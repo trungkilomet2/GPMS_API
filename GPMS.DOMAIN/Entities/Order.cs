@@ -11,7 +11,8 @@ namespace GPMS.DOMAIN.Entities
     public class Order
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
+        public int? GuestId { get; set; }
         public string? Image { get; set; }
         public string OrderName { get; set; }
         public DateOnly StartDate { get; set; }

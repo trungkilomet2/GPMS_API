@@ -622,6 +622,115 @@ namespace GMPS.API.Controllers
             }
         }
 
+        [HttpPost("create-manual-order")]
+        [Authorize(Roles = "Customer,Owner")]
+        public async Task<ActionResult> CreateManualOrder([FromBody] CreateOrderDTO? input, [FromBody] CreateGuest? guest)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Tạo đơn hàng cho khách hàng có Id là: {UserId}", input?.UserId);
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                if (ModelState.IsValid)
+                {
+                    var newOrder = new Order
+                    {
+                        UserId = input.UserId,
+                        Image = input.Image,
+                        OrderName = input.OrderName,
+                        Size = input.Sizes?.Select(s => new OrderSize
+                        {
+                            SizeId = s.SizeId,
+                            Color = s.Color,
+                            Quantity = s.Quantity,
+                            OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
+                        }).ToList(),
+                        StartDate = input.StartDate,
+                        EndDate = input.EndDate,
+                        Quantity = input.Quantity,
+                        Cpu = input.Cpu,
+                        Note = input.Note,
+                        Status = OrderStatus_Constants.Pending_ID,
+                        CreateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone),
+                        Material = input.Materials?.Select(m => new OrderMaterial
+                        {
+                            MaterialName = m.MaterialName,
+                            Image = m.Image,
+                            Value = m.Value,
+                            Color = m.Color,
+                            Uom = m.Uom,
+                            Note = m.Note
+                        }).ToList(),
+
+                        Template = input.Templates?.Select(t => new OrderTemplate
+                        {
+                            TemplateName = t.TemplateName,
+                            Type = t.Type,
+                            File = t.File,
+                            Note = t.Note
+                        }).ToList(),
+                    };
+                    var guestUser = new Guest
+                    {
+                        FullName = guest.FullName,
+                        PhoneNumber = guest.PhoneNumber,
+                        Address = guest.Address
+                    };
+                    var result = await _orderRepo.CreateManualOrder(newOrder, guestUser);
+                    var owner = await _userRepo.GetOwner();
+                    if (owner != null)
+                    {
+                        var subject = $"Đơn hàng mới đã được tạo với Id là - {result.Id}";
+                        var body = $@"
+                                          <h3>Chi tiết</h3>
+                                           <p>Mã đơn hàng: {result.Id}</p>
+                                           <p>Tên đơn hàng: {result.OrderName}</p>
+                                           <p>Số lượng: {result.Quantity}</p>
+                                           <p>Giá từng sản phẩm: {result.Cpu}</p>
+                                           <p>Ghi chú: {result.Note}</p>
+                                           <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
+
+                        await _emailRepo.SendEmailAsync(owner.Email, subject, body, EmailType.OrderNotification);
+                    }
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} được tạo thành công cho khách hàng với Id là: {UserId}",
+                        result.Id, input.UserId);
+
+                    return StatusCode(StatusCodes.Status201Created,
+                        $"Order '{result.Id}' has been created");
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Lỗi model state khi tạo đơn hàng cho khách hàng với Id là: {UserId}",
+                        input?.UserId);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,
+                    "Lỗi khi tạo đơn hàng cho khách hàng với Id là: {UserId}", input?.UserId);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    exceptionDetails.Detail);
+            }
+        }
+
         // api/order/{orderId}/materials
         [HttpPost("{orderId}/materials", Name = "Add material to order")]
         [Consumes("multipart/form-data")]
