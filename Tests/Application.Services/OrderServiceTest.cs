@@ -187,6 +187,23 @@ public class OrderServiceTest
         Assert.Equal("Ngày bắt đầu phải lớn hơn ngày hiện tại.", ex.Message);
     }
 
+    [Fact]
+    public async Task CreateOrder_ThrowsException_WhenSizeNotFound()
+    {
+        var order = BuildFakeOrder();
+        order.Size = new List<OrderSize> { new OrderSize { SizeId = 999, Color = "Red", Quantity = 5 } };
+
+        _userBaseRepo.Setup(x => x.GetById(order.UserId))
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
+        _sizeRepo.Setup(x => x.GetById(999)).ReturnsAsync((Size)null);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
+
+        Assert.Equal("Kích thước không tồn tại.", ex.Message);
+    }
+
 
     private static UpdateOrderInput BuildFakeInput(
         DateOnly? startDate = null,
@@ -287,6 +304,24 @@ public class OrderServiceTest
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             service.UpdateOrder(1, 1, BuildFakeInput()));
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenSizeNotFound()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _sizeRepo.Setup(x => x.GetById(999)).ReturnsAsync((Size)null);
+
+        var input = BuildFakeInput();
+        input.Sizes = new List<OrderSize> { new OrderSize { SizeId = 999, Color = "Red", Quantity = 5 } };
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.UpdateOrder(1, 1, input));
+
+        Assert.Equal("Kích thước với Id '999' không tồn tại.", ex.Message);
     }
 
     [Fact]
