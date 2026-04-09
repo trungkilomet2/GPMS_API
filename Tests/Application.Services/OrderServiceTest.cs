@@ -15,6 +15,8 @@ public class OrderServiceTest
     private readonly Mock<IBaseRepositories<User>> _userBaseRepo = new();
     private readonly Mock<IBaseOrderStatusRepositories> _orderStatusRepo = new();
     private readonly Mock<IBaseRepositories<Size>> _sizeRepo = new();
+    private readonly Mock<IBaseRepositories<Guest>> _guestRepo = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private OrderService BuildService()
         => new OrderService(
@@ -22,7 +24,9 @@ public class OrderServiceTest
             _materialBaseRepo.Object,
             _userBaseRepo.Object,
             _orderStatusRepo.Object,
-            _sizeRepo.Object);
+            _sizeRepo.Object,
+            _guestRepo.Object,
+            _unitOfWork.Object);
 
     private static Order BuildFakeOrder(
         int id = 1,
@@ -41,7 +45,8 @@ public class OrderServiceTest
             StatusName = statusName,
             Templates = new List<OTemplate>(),
             Materials = new List<OMaterial>(),
-            Histories = new List<OHistoryUpdate>()
+            Histories = new List<OHistoryUpdate>(),
+            Size = new List<OrderSize>()
         };
 
 
@@ -124,7 +129,7 @@ public class OrderServiceTest
         var created = BuildFakeOrder(id: 10);
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         _orderBaseRepo.Setup(x => x.Create(order))
             .ReturnsAsync(created);
@@ -157,13 +162,13 @@ public class OrderServiceTest
         order.EndDate = order.StartDate.AddDays(-1);
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
 
-        Assert.Equal("End date must be greater than start date.", ex.Message);
+        Assert.Equal("Ngày kết thúc phải lớn hơn ngày bắt đầu.", ex.Message);
     }
 
     [Fact]
@@ -173,13 +178,13 @@ public class OrderServiceTest
         order.StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
 
-        Assert.Equal("Start date must be greater than current date.", ex.Message);
+        Assert.Equal("Ngày bắt đầu phải lớn hơn ngày hiện tại.", ex.Message);
     }
 
 
@@ -241,7 +246,7 @@ public class OrderServiceTest
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
             service.UpdateOrder(1, 1, input));
 
-        Assert.Equal("End date must be greater than start date.", ex.Message);
+        Assert.Equal("Ngày kết thúc phải lớn hơn ngày bắt đầu.", ex.Message);
     }
 
     [Fact]
@@ -255,7 +260,7 @@ public class OrderServiceTest
         var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
             service.UpdateOrder(1, 1, input));
 
-        Assert.Equal("Start date must be greater than current date.", ex.Message);
+        Assert.Equal("Ngày bắt đầu phải lớn hơn ngày hiện tại.", ex.Message);
     }
 
     [Fact]

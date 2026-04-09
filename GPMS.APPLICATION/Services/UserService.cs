@@ -138,8 +138,6 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
                 throw new KeyNotFoundException("Không tìm thấy người dùng");
-            if (result.StatusId == UserStatus_Constants.Inactive)
-                throw new InvalidOperationException("Không thể cập nhật người dùng đã bị vô hiệu hóa.");
             if (!string.IsNullOrEmpty(user.Email))
             {
                 var emailOwner = await _accRepo.GetUserByMail(user.Email.Trim().ToLower());
