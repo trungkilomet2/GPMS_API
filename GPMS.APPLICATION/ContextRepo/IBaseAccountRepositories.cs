@@ -15,6 +15,8 @@ namespace GPMS.APPLICATION.ContextRepo
         Task<User> GetOwner();
         Task<User> GetUserByMail(string mail);
         Task UpdatePassword(string email, string newPasswordHash);
+        Task<User> GetUserById(int id);
+        Task UpdatePasswordById(int userId, string newPasswordHash);
 
     }
 }
