@@ -174,9 +174,7 @@ namespace GMPS.API.Controllers
                         Id = o.Id,
                         UserId = o.UserId,
                         OrderName = o.OrderName,
-                        Type = o.Type,
                         Size = o.Size,
-                        Color = o.Color,
                         Quantity = o.Quantity,
                         Cpu = o.Cpu,
                         StartDate = o.StartDate,
@@ -265,9 +263,7 @@ namespace GMPS.API.Controllers
                         Id = o.Id,
                         UserId = o.UserId,
                         OrderName = o.OrderName,
-                        Type = o.Type,
                         Size = o.Size,
-                        Color = o.Color,
                         Quantity = o.Quantity,
                         Cpu = o.Cpu,
                         StartDate = o.StartDate,
@@ -373,9 +369,7 @@ namespace GMPS.API.Controllers
                     UserPhone = orderUser?.PhoneNumber,
                     UserLocation = orderUser?.Location,
                     OrderName = order.OrderName,
-                    Type = order.Type,
                     Size = order.Size,
-                    Color = order.Color,
                     Quantity = order.Quantity,
                     Cpu = order.Cpu,
                     StartDate = order.StartDate,
@@ -534,9 +528,13 @@ namespace GMPS.API.Controllers
                         UserId = input.UserId,
                         Image = input.Image,
                         OrderName = input.OrderName,
-                        Type = input.Type,
-                        Size = input.Size,
-                        Color = input.Color,
+                        Size = input.Sizes?.Select(s => new OrderSize
+                        {
+                            SizeId = s.SizeId,
+                            Color = s.Color,
+                            Quantity = s.Quantity,
+                            OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
+                        }).ToList(),
                         StartDate = input.StartDate,
                         EndDate = input.EndDate,
                         Quantity = input.Quantity,
@@ -572,9 +570,6 @@ namespace GMPS.API.Controllers
                                           <h3>Chi tiết</h3>
                                            <p>Mã đơn hàng: {result.Id}</p>
                                            <p>Tên đơn hàng: {result.OrderName}</p>
-                                           <p>Kiểu: {result.Type}</p>
-                                           <p>Kích thước: {result.Size}</p>
-                                           <p>Màu sắc: {result.Color}</p>
                                            <p>Số lượng: {result.Quantity}</p>
                                            <p>Giá từng sản phẩm: {result.Cpu}</p>
                                            <p>Ghi chú: {result.Note}</p>
@@ -608,6 +603,113 @@ namespace GMPS.API.Controllers
             {
                 _logger.LogError(CustomLogEvents.OrderController_Post, ex,
                     "Lỗi khi tạo đơn hàng cho khách hàng với Id là: {UserId}", input?.UserId);
+
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    exceptionDetails.Detail);
+            }
+        }
+
+        [HttpPost("create-manual-order")]
+        [Authorize(Roles = "Owner")]
+        public async Task<ActionResult> CreateManualOrder([FromBody] CreateManualOrderRequest? request)
+        {
+            try
+            {
+                _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                    "Tạo đơn hàng cho khách hàng vãng lai có Id là: {Name}", request?.Guest?.FullName);
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                if (ModelState.IsValid)
+                {
+                    var guestUser = new Guest
+                    {
+                        FullName = request.Guest.FullName,
+                        PhoneNumber = request.Guest.PhoneNumber,
+                        Address = request.Guest.Address
+                    };
+                    var newOrder = new Order
+                    {
+                        Image = request.Order.Image,
+                        OrderName = request.Order.OrderName,
+                        Size = request.Order.Sizes?.Select(s => new OrderSize
+                        {
+                            SizeId = s.SizeId,
+                            Color = s.Color,
+                            Quantity = s.Quantity,
+                            OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
+                        }).ToList(),
+                        StartDate = request.Order.StartDate,
+                        EndDate = request.Order.EndDate,
+                        Quantity = request.Order.Quantity,
+                        Cpu = request.Order.Cpu,
+                        Note = request.Order.Note,
+                        Status = OrderStatus_Constants.Pending_ID,
+                        CreateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone),
+                        Material = request.Order.Materials?.Select(m => new OrderMaterial
+                        {
+                            MaterialName = m.MaterialName,
+                            Image = m.Image,
+                            Value = m.Value,
+                            Color = m.Color,
+                            Uom = m.Uom,
+                            Note = m.Note
+                        }).ToList(),
+
+                        Template = request.Order.Templates?.Select(t => new OrderTemplate
+                        {
+                            TemplateName = t.TemplateName,
+                            Type = t.Type,
+                            File = t.File,
+                            Note = t.Note
+                        }).ToList(),
+                    };
+                    var result = await _orderRepo.CreateManualOrder(newOrder, guestUser);
+                    var owner = await _userRepo.GetOwner();
+                    if (owner != null)
+                    {
+                        var subject = $"Đơn hàng mới đã được tạo với Id là - {result.Id}";
+                        var body = $@"
+                                          <h3>Chi tiết</h3>
+                                           <p>Mã đơn hàng: {result.Id}</p>
+                                           <p>Tên đơn hàng: {result.OrderName}</p>
+                                           <p>Số lượng: {result.Quantity}</p>
+                                           <p>Giá từng sản phẩm: {result.Cpu}</p>
+                                           <p>Ghi chú: {result.Note}</p>
+                                           <p>Trạng thái: {OrderStatus_Constants.Pending}</p>";
+
+                        await _emailRepo.SendEmailAsync(owner.Email, subject, body, EmailType.OrderNotification);
+                    }
+                    _logger.LogInformation(CustomLogEvents.OrderController_Post,
+                        "Order {OrderId} được tạo thành công cho khách hàng với đơn hàng Id là: {OrderName}",
+                        result.OrderName);
+
+                    return StatusCode(StatusCodes.Status201Created,
+                        $"Đơn hàng với Id '{result.Id}' đã được tạo");
+                }
+                else
+                {
+                    _logger.LogWarning(CustomLogEvents.OrderController_Post,
+                        "Lỗi model state khi tạo đơn hàng với Id là: {OrderName}", request.Order.OrderName);
+
+                    var errorDetails = new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    };
+
+                    return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.OrderController_Post, ex,
+                    "Lỗi khi tạo đơn hàng với Id là: {OrderName}", request.Order.OrderName);
 
                 var exceptionDetails = new ProblemDetails
                 {
@@ -790,14 +892,18 @@ namespace GMPS.API.Controllers
                 var updateInput = new UpdateOrderInput
                 {
                     OrderName = input!.OrderName,
-                    Type = input.Type,
-                    Size = input.Size,
-                    Color = input.Color,
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
                     Image = input.Image,
                     Note = input.Note,
+                    Sizes = input.Sizes?.Select(s => new OrderSize
+                    {
+                        SizeId = s.SizeId,
+                        Color = s.Color,
+                        Quantity = s.Quantity,
+                        OrderSizeStatusId = OrderSizeStatus_Constants.Pending_Id
+                    }).ToList(),
                     Templates = input.Templates?.Select(t => new OrderTemplate
                     {
                         TemplateName = t.TemplateName,

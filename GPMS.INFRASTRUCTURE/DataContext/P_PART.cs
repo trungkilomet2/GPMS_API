@@ -16,19 +16,10 @@ public partial class P_PART
     [StringLength(150)]
     public string PART_NAME { get; set; } = null!;
 
-    [Column(TypeName = "datetime")]
-    public DateTime START_DATE { get; set; }
-
-    [Column(TypeName = "datetime")]
-    public DateTime END_DATE { get; set; }
-
     [Column(TypeName = "decimal(18, 2)")]
     public decimal CPU { get; set; }
 
     public int PPS_ID { get; set; }
-
-    [InverseProperty("PP")]
-    public virtual ICollection<PART_WORK_LOG> PART_WORK_LOG { get; set; } = new List<PART_WORK_LOG>();
 
     [ForeignKey("PPS_ID")]
     [InverseProperty("P_PART")]
@@ -38,10 +29,6 @@ public partial class P_PART
     [InverseProperty("P_PART")]
     public virtual PRODUCTION PRODUCTION { get; set; } = null!;
 
-    [InverseProperty("PART")]
-    public virtual ICollection<PRODUCTION_ISSUE_LOG> PRODUCTION_ISSUE_LOG { get; set; } = new List<PRODUCTION_ISSUE_LOG>();
-
-    [ForeignKey("PP_ID")]
     [InverseProperty("PP")]
-    public virtual ICollection<USER> USER { get; set; } = new List<USER>();
+    public virtual ICollection<P_PART_ORDER_SIZE> P_PART_ORDER_SIZE { get; set; } = new List<P_PART_ORDER_SIZE>();
 }

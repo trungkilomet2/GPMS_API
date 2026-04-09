@@ -425,7 +425,7 @@ namespace GMPS.API.Controllers
                 var data = issues.Select(x => new ProductionIssueListItemDTO
                 {
                     IssueId = x.Id,
-                    PartId = x.PartId,
+                    PartOrderSizeId = x.PartOrderSizeId,
                     Title = x.Title,
                     Description = x.Description,
                     Priority = x.Priority,

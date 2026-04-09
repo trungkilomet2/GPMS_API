@@ -15,17 +15,26 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<OMaterial> _materialBaseRepo;
         private readonly IBaseRepositories<User> _userBaseRepo;
         private readonly IBaseOrderStatusRepositories _orderStatusRepo;
+        private readonly IBaseRepositories<Size> _sizeRepo;
+        private readonly IBaseRepositories<Guest> _guestRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
         public OrderService(
             IBaseOrderRepositories orderBaseRepo,
             IBaseRepositories<OMaterial> materialBaseRepo,
             IBaseRepositories<User> userBaseRepo,
-            IBaseOrderStatusRepositories orderStatusRepo)
+            IBaseOrderStatusRepositories orderStatusRepo,
+            IBaseRepositories<Size> sizeRepo,
+            IBaseRepositories<Guest> guestRepo,
+            IUnitOfWork unitOfWork)
         {
             _orderBaseRepo = orderBaseRepo ?? throw new ArgumentNullException(nameof(orderBaseRepo));
             _materialBaseRepo = materialBaseRepo ?? throw new ArgumentNullException(nameof(materialBaseRepo));
             _userBaseRepo = userBaseRepo ?? throw new ArgumentNullException(nameof(userBaseRepo));
             _orderStatusRepo = orderStatusRepo ?? throw new ArgumentNullException(nameof(orderStatusRepo));
+            _sizeRepo = sizeRepo ?? throw new ArgumentNullException(nameof(sizeRepo));
+            _guestRepo = guestRepo ?? throw new ArgumentNullException(nameof(guestRepo));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<IEnumerable<Order>> GetAllOrders()
@@ -45,10 +54,41 @@ namespace GPMS.APPLICATION.Services
             if (existing == null)
                 throw new Exception("User not found.");
             if (order.EndDate < order.StartDate)
-                throw new Exception("End date must be greater than start date.");
+                throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if(order.StartDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new Exception("Start date must be greater than current date.");
+                throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
+            foreach (var size in order.Size)
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new Exception("Kích thước không tồn tại.");
+            }
             return await _orderBaseRepo.Create(order);
+        }
+
+        public async Task<Order> CreateManualOrder(Order order, Guest guest)
+        {
+            if (order == null)
+                throw new Exception("Failed to create order.");
+            if (order.EndDate < order.StartDate)
+                throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
+            if (order.StartDate < DateOnly.FromDateTime(DateTime.Now))
+                throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
+            foreach (var size in order.Size)
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new Exception("Kích thước không tồn tại.");
+            }
+            Order createdOrder = null;
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var createdGuest = await _guestRepo.Create(guest);
+                order.GuestId = createdGuest.Id;
+                createdOrder = await _orderBaseRepo.CreateManualOrder(order);
+                await _unitOfWork.SaveChangesAsync();
+            });
+            return createdOrder;
         }
 
         public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)
@@ -82,29 +122,39 @@ namespace GPMS.APPLICATION.Services
             }
 
             TrackChange("OrderName", existing.OrderName, input.OrderName);
-            TrackChange("Type", existing.Type, input.Type);
-            TrackChange("Size", existing.Size, input.Size);
-            TrackChange("Color", existing.Color, input.Color);
             TrackChange("StartDate", existing.StartDate.ToString(), input.StartDate.ToString());
             TrackChange("EndDate", existing.EndDate.ToString(), input.EndDate.ToString());
             TrackChange("Quantity", existing.Quantity.ToString(), input.Quantity.ToString());
             TrackChange("Image", existing.Image, resolvedImage);
             TrackChange("Note", existing.Note, input.Note);
 
+            var oldSizes = existing.Size != null
+                ? string.Join(",", existing.Size.Select(s => $"(SizeId:{s.SizeId},Color:{s.Color},Qty:{s.Quantity})"))
+                : string.Empty;
+            var newSizes = input.Sizes != null
+                ? string.Join(",", input.Sizes.Select(s => $"(SizeId:{s.SizeId},Color:{s.Color},Qty:{s.Quantity})"))
+                : string.Empty;
+            TrackChange("Sizes", oldSizes, newSizes);
+
+            foreach (var size in input.Sizes ?? Enumerable.Empty<OrderSize>())
+            {
+                var existingSize = await _sizeRepo.GetById(size.SizeId);
+                if (existingSize == null)
+                    throw new KeyNotFoundException($"Kích thước với Id '{size.SizeId}' không tồn tại.");
+            }
+
             var updatedOrder = new Order
             {
                 Id = orderId,
                 UserId = userId,
                 OrderName = input.OrderName,
-                Type = input.Type,
-                Size = input.Size,
-                Color = input.Color,
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,
                 Cpu = existing.Cpu,
                 Image = resolvedImage,
                 Note = input.Note,
+                Size = input.Sizes,
                 Template = input.Templates,
                 Material = input.Materials
             };
@@ -201,5 +251,6 @@ namespace GPMS.APPLICATION.Services
 
             return await _orderStatusRepo.ApproveOrder(orderId, updatedOrder, histories);
         }
+       
     }
 }

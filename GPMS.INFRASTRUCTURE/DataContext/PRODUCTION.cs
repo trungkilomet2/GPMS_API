@@ -41,7 +41,4 @@ public partial class PRODUCTION
 
     [InverseProperty("PRODUCTION")]
     public virtual ICollection<P_PART> P_PART { get; set; } = new List<P_PART>();
-
-    [InverseProperty("TO_PRODUCTIONNavigation")]
-    public virtual ICollection<UP_COMMENT> UP_COMMENT { get; set; } = new List<UP_COMMENT>();
 }

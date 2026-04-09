@@ -11,7 +11,7 @@ public partial class PART_WORK_LOG
     [Key]
     public int WL_ID { get; set; }
 
-    public int PP_ID { get; set; }
+    public int PPOS_ID { get; set; }
 
     public int USER_ID { get; set; }
 
@@ -24,9 +24,12 @@ public partial class PART_WORK_LOG
 
     public bool? IS_PAYMENT { get; set; }
 
-    [ForeignKey("PP_ID")]
+    [StringLength(255)]
+    public string? NOTE { get; set; }
+
+    [ForeignKey("PPOS_ID")]
     [InverseProperty("PART_WORK_LOG")]
-    public virtual P_PART PP { get; set; } = null!;
+    public virtual P_PART_ORDER_SIZE PPOS { get; set; } = null!;
 
     [ForeignKey("USER_ID")]
     [InverseProperty("PART_WORK_LOG")]
