@@ -5,6 +5,7 @@ using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.EmailAPI;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -218,6 +219,65 @@ namespace GMPS.API.Controllers
                     Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
                 };
                 return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDTO input)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ValidationProblemDetails(ModelState)
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (!input.NewPassword.Equals(input.ConfirmPassword))
+                {
+                    var details = new ValidationProblemDetails
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    details.Errors.Add("ConfirmPassword", new[] { "Mật khẩu xác nhận không khớp" });
+                    return new BadRequestObjectResult(details);
+                }
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out var userId))
+                    return Unauthorized(new { Message = "Token không hợp lệ" });
+
+                await _accountRepo.ChangePassword(userId, input.CurrentPassword, input.NewPassword);
+
+                _logger.LogInformation(CustomLogEvents.AccountController_Post, "Người dùng ID={UserId} đã đổi mật khẩu thành công", userId);
+
+                return Ok(new { Message = "Đổi mật khẩu thành công" });
+            }
+            catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+            {
+                var details = new ValidationProblemDetails
+                {
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = ex.Message
+                };
+                return new BadRequestObjectResult(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.AccountController_Post, ex, "Lỗi khi đổi mật khẩu");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                });
             }
         }
 
