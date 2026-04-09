@@ -265,7 +265,10 @@ namespace GMPS.API.Controllers
 
                 var user = await _accountBaseRepo.GetUserByMail(email);
                 if (user == null)
+                {
+                    _memoryCache.Remove(cacheKey);
                     return NotFound(new { Message = "Không tìm thấy tài khoản với email này" });
+                }
 
                 var hashedPassword = new PasswordHasher<GPMS.DOMAIN.Entities.User>().HashPassword(user, input.NewPassword);
                 await _accountBaseRepo.UpdatePassword(email, hashedPassword);
