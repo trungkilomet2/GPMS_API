@@ -179,6 +179,7 @@ public class AccountControllerTest
         var email = "test@example.com";
         object? cachedOtp = null;
         _memoryCache.Setup(x => x.TryGetValue(email + "_reset_otp", out cachedOtp)).Returns(false);
+        _memoryCache.Setup(x => x.Remove(email + "_reset_otp"));
 
         var result = await _controller.ResetPassword(new ResetPasswordDTO
         {
@@ -189,6 +190,27 @@ public class AccountControllerTest
         });
 
         Assert.IsType<BadRequestObjectResult>(result);
+        _memoryCache.Verify(x => x.Remove(email + "_reset_otp"), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetPassword_Returns400_WhenOtpMismatch()
+    {
+        var email = "test@example.com";
+        object? cachedOtp = (object)"123456";
+        _memoryCache.Setup(x => x.TryGetValue(email + "_reset_otp", out cachedOtp)).Returns(true);
+        _memoryCache.Setup(x => x.Remove(email + "_reset_otp"));
+
+        var result = await _controller.ResetPassword(new ResetPasswordDTO
+        {
+            Email = email,
+            Otp = "999999",
+            NewPassword = "newpass123",
+            ConfirmPassword = "newpass123"
+        });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        _memoryCache.Verify(x => x.Remove(email + "_reset_otp"), Times.Once);
     }
 
     [Fact]

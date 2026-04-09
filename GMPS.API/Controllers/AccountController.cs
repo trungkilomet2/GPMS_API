@@ -253,6 +253,7 @@ namespace GMPS.API.Controllers
 
                 if (!_memoryCache.TryGetValue(cacheKey, out string? cachedOtp) || cachedOtp != input.Otp)
                 {
+                    _memoryCache.Remove(cacheKey);
                     var details = new ValidationProblemDetails
                     {
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
