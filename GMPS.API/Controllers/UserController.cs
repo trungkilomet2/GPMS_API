@@ -262,6 +262,16 @@ namespace GMPS.API.Controllers
                     }
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(CustomLogEvents.UserController_Post, ex.Message);
+                return BadRequest(new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Detail = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(CustomLogEvents.UserController_Post, ex, "Lỗi xảy ra khi tạo người dùng với tên tài khoản: {UserName}", input.UserName);

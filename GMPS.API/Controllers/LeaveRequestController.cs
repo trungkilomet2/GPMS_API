@@ -41,7 +41,7 @@ namespace GMPS.API.Controllers
                 };
                 errorDetails.Errors = new Dictionary<string, string[]>
                 {
-                    { "status", new[] { $"Status must be one of: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}', '{LeaveRequestStatus_Constants.Cancelled}'." } }
+                    { "status", new[] { $"Trạng thái phải là một trong: '{LeaveRequestStatus_Constants.Pending}', '{LeaveRequestStatus_Constants.Approved}', '{LeaveRequestStatus_Constants.Denied}', '{LeaveRequestStatus_Constants.Cancelled}'." } }
                 };
                 return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
             }
@@ -56,7 +56,7 @@ namespace GMPS.API.Controllers
                 };
                 errorDetails.Errors = new Dictionary<string, string[]>
                 {
-                    { "dateCreateFrom", new[] { "DateCreateFrom must be less than or equal to DateCreateTo." } }
+                    { "dateCreateFrom", new[] { "Ngày tạo từ phải nhỏ hơn hoặc bằng ngày tạo đến." } }
                 };
                 return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
             }
@@ -132,7 +132,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                        { "pageIndex", new[] { $"Trang {input.PageIndex} không tồn tại. Tổng số trang hiện có: {totalPages}" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -221,7 +221,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "pageIndex", new[] { $"Page {input.PageIndex} not exist. Total number of pages currently available: {totalPages}" } }
+                        { "pageIndex", new[] { $"Trang {input.PageIndex} không tồn tại. Tổng số trang hiện có: {totalPages}" } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -301,7 +301,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                        { "id", new[] { "Id yêu cầu nghỉ phép phải lớn hơn 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -320,7 +320,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { $"Leave request with id '{id}' not found." } }
+                        { "id", new[] { $"Không tìm thấy yêu cầu nghỉ phép với id '{id}'." } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -338,7 +338,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "authorization", new[] { "You do not have permission to view this leave request." } }
+                        { "authorization", new[] { "Bạn không có quyền xem yêu cầu nghỉ phép này." } }
                     };
                     return StatusCode(StatusCodes.Status403Forbidden, errorDetails);
                 }
@@ -409,7 +409,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                        { "id", new[] { "Id yêu cầu nghỉ phép phải lớn hơn 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -428,7 +428,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { $"Leave request with id '{id}' not found" } }
+                        { "id", new[] { $"Không tìm thấy yêu cầu nghỉ phép với id '{id}'." } }
                     };
                     return StatusCode(StatusCodes.Status404NotFound, errorDetails);
                 }
@@ -503,7 +503,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "body", new[] { "Request body is required." } }
+                        { "body", new[] { "Nội dung yêu cầu là bắt buộc." } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -613,7 +613,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                        { "id", new[] { "Id yêu cầu nghỉ phép phải lớn hơn 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -630,7 +630,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "body", new[] { "Request body is required." } }
+                        { "body", new[] { "Nội dung yêu cầu là bắt buộc." } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -659,7 +659,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "LeaveRequestId {LeaveRequestId} denied successfully", id);
 
-                return Ok($"Leave request '{id}' has been denied successfully.");
+                return Ok($"Yêu cầu nghỉ phép '{id}' đã được từ chối thành công.");
             }
             catch (KeyNotFoundException ex)
             {
@@ -734,7 +734,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                        { "id", new[] { "Id yêu cầu nghỉ phép phải lớn hơn 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -744,7 +744,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "LeaveRequestId {LeaveRequestId} cancelled by UserId {UserId} successfully", id, userId);
 
-                return Ok($"Leave request '{id}' has been cancelled successfully.");
+                return Ok($"Yêu cầu nghỉ phép '{id}' đã được hủy thành công.");
             }
             catch (KeyNotFoundException ex)
             {
@@ -825,7 +825,7 @@ namespace GMPS.API.Controllers
                     };
                     errorDetails.Errors = new Dictionary<string, string[]>
                     {
-                        { "id", new[] { "Leave request Id must be greater than 0" } }
+                        { "id", new[] { "Id yêu cầu nghỉ phép phải lớn hơn 0" } }
                     };
                     return StatusCode(StatusCodes.Status400BadRequest, errorDetails);
                 }
@@ -835,7 +835,7 @@ namespace GMPS.API.Controllers
                 _logger.LogInformation(CustomLogEvents.LeaveRequestController_Put,
                     "LeaveRequestId {LeaveRequestId} approved successfully", id);
 
-                return Ok($"Leave request '{id}' has been approved successfully.");
+                return Ok($"Yêu cầu nghỉ phép '{id}' đã được phê duyệt thành công.");
             }
             catch (KeyNotFoundException ex)
             {

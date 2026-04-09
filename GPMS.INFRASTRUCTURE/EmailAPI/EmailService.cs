@@ -23,8 +23,7 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
 
         private string GenerateOtp()
         {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
+            return System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string body, EmailType emailType)
@@ -38,24 +37,31 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                 ),
                 EnableSsl = true
             };
+
+            var normalizedEmail = toEmail.Trim().ToLower();
+            string? generatedOtp = null;
+            string? cacheKey = null;
+
             switch (emailType)
             {
                 case EmailType.Verification:
-                    var otp = GenerateOtp();
-                    _memoryCache.Set(toEmail.Trim().ToLower() + "_otp", otp, TimeSpan.FromMinutes(5));
+                    generatedOtp = GenerateOtp();
+                    cacheKey = normalizedEmail + "_otp";
                     subject = "Xác nhận email";
-                    body = $"Mã OTP của bạn là: <b>{otp}</b>. Có hiệu lực 5 phút.";
+                    body = $"Mã OTP của bạn là: <b>{generatedOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.ResendOTP:
-                    _memoryCache.Remove(toEmail.Trim().ToLower() + "_otp");
-                    var newOtp = GenerateOtp();
-                    _memoryCache.Set(toEmail.Trim().ToLower() + "_otp", newOtp, TimeSpan.FromMinutes(5));
-
+                    _memoryCache.Remove(normalizedEmail + "_otp");
+                    generatedOtp = GenerateOtp();
+                    cacheKey = normalizedEmail + "_otp";
                     subject = "Gửi lại mã OTP";
-                    body = $"Mã OTP mới của bạn là: <b>{newOtp}</b>. Có hiệu lực 5 phút.";
+                    body = $"Mã OTP mới của bạn là: <b>{generatedOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.PasswordReset:
-                    subject = "Password Reset Request";
+                    generatedOtp = GenerateOtp();
+                    cacheKey = normalizedEmail + "_reset_otp";
+                    subject = "Yêu cầu đặt lại mật khẩu";
+                    body = $"Mã OTP đặt lại mật khẩu của bạn là: <b>{generatedOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.OrderNotification:
                     subject = "Order Notification";
@@ -76,6 +82,11 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
             mail.To.Add(toEmail);
 
             await smtpClient.SendMailAsync(mail);
+
+            if (generatedOtp != null && cacheKey != null)
+            {
+                _memoryCache.Set(cacheKey, generatedOtp, TimeSpan.FromMinutes(5));
+            }
         }
 
     }

@@ -94,9 +94,9 @@ namespace GPMS.APPLICATION.Services
         public async Task<Order> UpdateOrder(int orderId, int userId, UpdateOrderInput input)
         {
             if (input.EndDate < input.StartDate)
-                throw new ArgumentException("End date must be greater than start date.");
+                throw new ArgumentException("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if (input.StartDate < DateOnly.FromDateTime(DateTime.Now))
-                throw new ArgumentException("Start date must be greater than current date.");
+                throw new ArgumentException("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
 
             var existing = await _orderBaseRepo.GetById(orderId);
             if (existing is null)
@@ -151,6 +151,7 @@ namespace GPMS.APPLICATION.Services
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,
+                Cpu = existing.Cpu,
                 Image = resolvedImage,
                 Note = input.Note,
                 Size = input.Sizes,
@@ -207,7 +208,7 @@ namespace GPMS.APPLICATION.Services
                     OrderId = orderId,
                     FieldName = "Status",
                     OldValue = existing.StatusName ?? string.Empty,
-                    NewValue = OrderStatus_Constants.Modification
+                    NewValue = OrderStatus_Constants.Cancelled
                 }
             };
 

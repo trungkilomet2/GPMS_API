@@ -726,4 +726,71 @@ public class OrderControllerTest
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);
     }
+
+    // ─── RequestOrderModification ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task RequestOrderModification_Returns200_WhenSuccessful()
+    {
+        var order = BuildFakeOrder(userId: 5, statusName: OrderStatus_Constants.Pending);
+        var user = new User { Id = 5, Email = "customer@mail.com" };
+
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(order);
+        _userRepo.Setup(x => x.GetUserById(5)).ReturnsAsync(user);
+        _emailRepo.Setup(x => x.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>(), EmailType.OrderNotification))
+            .Returns(Task.CompletedTask);
+
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().RequestOrderModification(0);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns404_WhenOrderNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().RequestOrderModification(99);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns403_WhenStatusNotPending()
+    {
+        var order = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns500_OnException()
+    {
+        var order = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
 }
