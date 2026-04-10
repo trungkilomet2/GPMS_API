@@ -185,7 +185,6 @@ builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventReposit
 builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
 
 //--------------------------- Gemini ChatBox ---------------------------
-builder.Services.AddHttpClient("Gemini");
 builder.Services.AddScoped<IChatRepositories, ChatService>();
 
 //----------------------Identity-----------------------------

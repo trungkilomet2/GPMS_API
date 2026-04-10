@@ -1,110 +1,126 @@
+using Google.GenAI;
+using Google.GenAI.Types;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
-using GPMS.DOMAIN.Constants;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System.Text;
-using System.Text.Json;
+using IOFile = System.IO.File;
+using IOPath = System.IO.Path;
 
 namespace GPMS.INFRASTRUCTURE.ChatAPI
 {
     public class ChatService : IChatRepositories
     {
         private readonly IConfiguration _config;
-        private readonly HttpClient _httpClient;
         private static string? _cachedContext;
         private static DateTime _lastRead = DateTime.MinValue;
 
-        public ChatService(IConfiguration config, IHttpClientFactory httpClientFactory)
+        
+        private static readonly string[] FallbackModels =
+        [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-2.5-pro-preview-03-25"
+        ];
+
+        public ChatService(IConfiguration config)
         {
             _config = config;
-            _httpClient = httpClientFactory.CreateClient("Gemini");
         }
 
         public async Task<ChatResponseDTO> SendMessageAsync(ChatRequestDTO request)
         {
             var apiKey = _config["Gemini:ApiKey"];
-            var model = _config["Gemini:Model"] ?? "gemini-1.5-flash";
-
             if (string.IsNullOrWhiteSpace(apiKey))
-                throw new InvalidOperationException(
-                    "Gemini API Key chưa được cấu hình.");
+                throw new InvalidOperationException("Gemini API Key chưa được cấu hình.");
+
+            
+            var primaryModel = _config["Gemini:Model"] ?? FallbackModels[0];
+
+            
+            var modelsToTry = new List<string> { primaryModel };
+            foreach (var m in FallbackModels)
+            {
+                if (!modelsToTry.Contains(m, StringComparer.OrdinalIgnoreCase))
+                    modelsToTry.Add(m);
+            }
 
             string docxContext = GetDocxContext();
             string systemPrompt = BuildUnifiedSystemPrompt(docxContext);
+            string fullPrompt = $"[SYSTEM INSTRUCTION]\n{systemPrompt}\n\n[USER QUESTION]\n{request.Message}";
 
-            var url = $"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={apiKey}";
+            var client = new Client(apiKey: apiKey);
 
-            var payload = new
+            Exception? lastException = null;
+
+            foreach (var model in modelsToTry)
             {
-                contents = new[]
+                try
                 {
-                    new
-                    {
-                        role = "user",
-                        parts = new[]
+                    var response = await client.Models.GenerateContentAsync(
+                        model: model,
+                        contents: fullPrompt,
+                        config: new GenerateContentConfig
                         {
-                            new
-                            {
-                                text = $"[SYSTEM INSTRUCTION]\n{systemPrompt}\n\n[USER QUESTION]\n{request.Message}"
-                            }
+                            Temperature = 0.7f,
+                            MaxOutputTokens = 1200
                         }
-                    }
-                },
-                generationConfig = new
-                {
-                    temperature = 0.7,
-                    maxOutputTokens = 2000
+                    );
+
+                    var reply = response.Text
+                        ?? "Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.";
+
+                    return new ChatResponseDTO
+                    {
+                        Reply = reply.Trim()
+                    };
                 }
-            };
-
-            var json = JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync(url, content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException(
-                    $"Gemini API trả về lỗi [{response.StatusCode}]: {errorBody}");
+                catch (Exception ex) when (IsQuotaOrTokenError(ex))
+                {
+                    
+                    lastException = ex;
+                    continue;
+                }
             }
+            throw new InvalidOperationException(
+                "Tất cả các model Gemini đều đã vượt quá giới hạn quota. Vui lòng thử lại sau.",
+                lastException);
+        }
 
-            var responseJson = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(responseJson);
+ 
+        private static bool IsQuotaOrTokenError(Exception ex)
+        {
+            var msg = ex.Message;
+            if (ex is ClientError &&
+                (msg.Contains("is not found", StringComparison.OrdinalIgnoreCase) ||
+                 msg.Contains("not supported", StringComparison.OrdinalIgnoreCase)))
+                return true;
 
-            var reply = doc.RootElement
-                .GetProperty("candidates")[0]
-                .GetProperty("content")
-                .GetProperty("parts")[0]
-                .GetProperty("text")
-                .GetString() ?? "Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.";
-
-            return new ChatResponseDTO
-            {
-                Reply = reply.Trim()
-            };
+            return msg.Contains("429")
+                || msg.Contains("503")
+                || msg.Contains("quota", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("RESOURCE_EXHAUSTED", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("rate limit", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("TOKEN_LIMIT_EXCEEDED", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("high demand", StringComparison.OrdinalIgnoreCase)
+                || ex is ServerError;
         }
 
         private string GetDocxContext()
-        {            
+        {
             if (_cachedContext != null && (DateTime.Now - _lastRead).TotalMinutes < 5)
+                return _cachedContext;
+
+            string filePath = IOPath.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "ChatContext.docx");
+
+            if (!IOFile.Exists(filePath))
+                filePath = IOPath.Combine(Directory.GetCurrentDirectory(), "Data", "ChatContext.docx");
+
+            if (IOFile.Exists(filePath))
             {
+                _cachedContext = DocxReader.ReadTextFromDocx(filePath);
+                _lastRead = DateTime.Now;
                 return _cachedContext;
             }
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "ChatContext.docx");
-                
-                if (!File.Exists(filePath))
-                {
-                    filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "ChatContext.docx");
-                }
-
-                if (File.Exists(filePath))
-                {
-                    _cachedContext = DocxReader.ReadTextFromDocx(filePath);
-                    _lastRead = DateTime.Now;
-                    return _cachedContext;
-                }
 
             return string.Empty;
         }
