@@ -15,7 +15,6 @@ namespace GMPS.API.Mapper
             //    .ForMember(dest => dest.Production.Id, opt => opt.MapFrom(src => src.Id))
             //    .ReverseMap();
 
-
             CreateMap<ProductionDetailViewDTO, ListProductionDTO>()
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
                 .ForMember(dest => dest.PmInfo, opt => opt.MapFrom(src => src.ProjectManager))
