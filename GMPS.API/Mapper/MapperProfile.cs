@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using static GMPS.API.DTOs.ProductionOutputDTO;
 
@@ -37,10 +38,15 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<User, ProductionDetailPMDTO>();
             CreateMap<Order, ProductionDetailOrderDTO>()
+                .ForMember(dest => dest.OrderSizes, opt => opt.MapFrom(src => src.Size))
                 .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.Template))
                 .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.Material));
-
-
+            CreateMap<OrderSize, ProductionDetailOrderSizeDTO>()
+                .ForMember(dest => dest.OrderSizeStatusName, 
+                opt => opt.MapFrom(src => src.OrderSizeStatusId == OrderSizeStatus_Constants.Pending_Id ? OrderSizeStatus_Constants.Pending :
+                src.OrderSizeStatusId == OrderSizeStatus_Constants.InProgress_Id ? OrderSizeStatus_Constants.InProgress :
+                src.OrderSizeStatusId == OrderSizeStatus_Constants.Completed_Id ? OrderSizeStatus_Constants.Completed : "Không Xác Định"
+                ));
 
 
 
