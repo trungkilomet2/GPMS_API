@@ -48,7 +48,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<ProductionIssueLog> ConfirmUnfixableIssue(int issueId, int confirmedQuantity);
 
         // Danh sách delivery đã gửi theo user đặt đơn.
-        Task<IEnumerable<Delivery>> GetDeliveriesByUser(int userId);
+        Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId);
 
         // Tạo nhiều delivery cho một order theo danh sách đầu vào.
         Task<IEnumerable<Delivery>> CreateDeliveries(int orderId, IEnumerable<Delivery> deliveries);

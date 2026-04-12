@@ -851,14 +851,14 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Mục đích: lấy danh sách delivery đã gửi cho user đặt đơn.
-        [HttpGet("delivery/user/{userId:int}")]
-        public async Task<ActionResult<RestDTO<IEnumerable<DeliveryResponseDTO>>>> GetDeliveriesByUser([Range(1, int.MaxValue)] int userId)
+        // Mục đích: lấy danh sách delivery của một order.
+        [HttpGet("delivery/order/{orderId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<DeliveryResponseDTO>>>> GetDeliveriesByOrder([Range(1, int.MaxValue)] int orderId)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.GetDeliveriesByUser(userId);
+                var data = await _productionPartService.GetDeliveriesByOrder(orderId);
                 return Ok(new RestDTO<IEnumerable<DeliveryResponseDTO>> { Data = _mapper.Map<IEnumerable<DeliveryResponseDTO>>(data) });
             }
             catch (ValidationException ex)
@@ -867,7 +867,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Get deliveries failed for userId {UserId}", userId);
+                _logger.LogError(ex, "Get deliveries failed for orderId {OrderId}", orderId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }

@@ -1005,10 +1005,12 @@ namespace GPMS.APPLICATION.Services
         }
 
         // Mục đích: lấy danh sách delivery theo user để hiển thị lịch sử gửi hàng.
-        public async Task<IEnumerable<Delivery>> GetDeliveriesByUser(int userId)
+        public async Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId)
         {
-            _ = await _userRepo.GetById(userId) ?? throw new ValidationException("User không tồn tại");
-            return await _deliveryRepo.GetAll(userId);
+            _ = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
+            var orderSizeIds = (await _orderSizeRepo.GetAll(orderId)).Select(x => x.Id).ToHashSet();
+            var deliveries = await _deliveryRepo.GetAll(null);
+            return deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId));
         }
 
         // Mục đích: tạo nhiều delivery cho một order theo danh sách order_size được chọn.
@@ -1041,7 +1043,7 @@ namespace GPMS.APPLICATION.Services
                         OrderSizeId = delivery.OrderSizeId,
                         DeliverQuantity = delivery.DeliverQuantity,
                         DeliveredAt = VietnamTime.Now(),
-                        DeliverStatusId = delivery.DeliverStatusId,
+                        DeliverStatusId = DeliveryStatus_Constrants.ToDo_ID,
                         ReceivedDate = null
                     });
                     created.Add(createdDelivery);
