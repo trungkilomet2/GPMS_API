@@ -226,9 +226,10 @@ namespace GMPS.API.Controllers
         // PATCH: Phân công Production Part cho một nhóm Worker,
         // truyền vào một list workerId cùng một lúc,
         // trả về thông tin chi tiết của part sau khi đã được phân công
-        [HttpPatch("parts/update-assign-workers/{partId:int}")]
+        [HttpPatch("parts/update-assign-workers/{partId:int}/{partOrderSizeId:int}")]
         public async Task<ActionResult<RestDTO<ProductionPartDetailDTO>>> AssignWorkers(
                     [Range(1, int.MaxValue)] int partId,
+                    [Range(1, int.MaxValue)] int partOrderSizeId,
                     [FromBody] AssignProductionPartWorkersDTO dto)
         {
             if (!ModelState.IsValid)
@@ -237,7 +238,7 @@ namespace GMPS.API.Controllers
             }
             try
             {
-                var data = await _productionPartService.AssignWorkers(partId, dto.WorkerIds);
+                var data = await _productionPartService.AssignWorkers(partId,partOrderSizeId, dto.WorkerIds);
                 return Ok(new RestDTO<ProductionPartDetailDTO>
                 {
                     Data = _mapper.Map<ProductionPartDetailDTO>(data)

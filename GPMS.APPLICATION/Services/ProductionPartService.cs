@@ -194,7 +194,7 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-        public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds)
+        public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId,int partOrderSizeId, IEnumerable<int> workerIds)
         {
             if (partId <= 0)
             {
@@ -220,6 +220,17 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Production part không tồn tại trong hệ thống");
             }
+
+            var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId);
+            if(partOrderSize is null)
+            {
+                throw new ValidationException("Production part size không tồn tại trong hệ thống");
+            }
+            if (partOrderSize.ProductionPartId != partId)
+            {
+                throw new ValidationException("Production part order size không khớp production part này");
+            }
+
             var production = await _productionRepo.GetById(part.ProductionId);
             if (production is null)
             {
@@ -230,7 +241,7 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Chỉ có thể phân công công đoạn khi production đang ở trạng thái Đang Sản Xuất");
             }
             //     var updated = new ProductionPartDetailViewDTO();
-            var updated = await _partAssignRepo.AssignWorkers(partId, workers);
+            var updated = await _partAssignRepo.AssignWorkers(partOrderSizeId, workers);
             //   return null;
             return (await BuildViews(new[] { updated })).First();
         }
