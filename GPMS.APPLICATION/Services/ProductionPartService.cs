@@ -95,6 +95,7 @@ namespace GPMS.APPLICATION.Services
 
                 // TRUNGNT FIX: Khi PM cập nhật lại kế hoạch part bằng danh sách mới,
                 // hệ thống cần đồng bộ theo danh sách mới để tránh part cũ còn tồn tại và ghi đè dữ liệu.
+                // Xóa luôn toàn bộ production part size cũ đi
                 var existingParts = (await _partRepo.GetAll(productionId)).ToList();
                 foreach (var existingPart in existingParts)
                 {
@@ -103,12 +104,22 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
                     }
+                    // Xóa luôn toàn bộ danh sách partOrderSize cũ đi tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
+                    var existingPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);  
+                        foreach (var partOrderSize in existingPartOrderSizes)
+                        {
+                            await _partOrderSizeRepo.Delete(partOrderSize.Id);
+                        }
                     await _partRepo.Delete(existingPart.Id);
                 }
 
                 foreach (var part in validatedParts)
                 {
+                    // Thêm mới danh sách production part mới vào hệ thống theo danh sách mới PM gửi lên
                     check_parts.Add(await _partRepo.Create(part));
+                    // Lấy danh sách order size theo part đó để tạo mới danh sách part order size tương ứng tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
+
+                    _partOrderSizeRepo.Create();
                 }
 
                 // Chuyển trạng thái thành Chờ Xét Duyệt Của Chủ Xưởng

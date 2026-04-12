@@ -24,10 +24,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper;
         }
 
-        public Task<ProductionPartOrderSize> Create(ProductionPartOrderSize entity)
+        public async Task<ProductionPartOrderSize> Create(ProductionPartOrderSize entity)
         {
-            throw new NotImplementedException();
+            var data = await _context.P_PART_ORDER_SIZE.AddAsync(_mapper.Map<P_PART_ORDER_SIZE>(entity));
+            return _mapper.Map<ProductionPartOrderSize>(data);
         }
+
 
         public Task Delete(object id)
         {
