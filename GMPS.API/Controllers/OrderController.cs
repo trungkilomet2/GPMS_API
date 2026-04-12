@@ -359,7 +359,9 @@ namespace GMPS.API.Controllers
                         });
                 }
 
-                var orderUser = await _userRepo.GetUserById(order.UserId);
+                var orderUser = order.UserId.HasValue
+                    ? await _userRepo.GetUserById(order.UserId)
+                    : null;
 
                 var data = new OrderDetailDTO
                 {
