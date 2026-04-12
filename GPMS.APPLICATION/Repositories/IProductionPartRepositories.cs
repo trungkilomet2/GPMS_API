@@ -32,5 +32,9 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<ProductionWorkerProgressChartViewDTO>> GetProductionWorkerProgressChart(int productionId);
         Task<IEnumerable<WorkerProductivityScoreViewDTO>> GetWorkerProductivityScores(int productionId);
 
+
+        // TrungNT 13-04-26
+        Task<IEnumerable<ProductionPartWorkLog>> GetProductionWorkLogs(int productionId, int? workerId);
+
     }
 }

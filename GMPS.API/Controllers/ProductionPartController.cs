@@ -697,5 +697,37 @@ namespace GMPS.API.Controllers
         }
 
 
+        // Mục đích: lấy danh sách work log của cả production và filter theo worker nếu truyền lên.
+        [HttpGet("production/work-logs/{productionId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartWorkLog>>>> GetProductionWorkLogs(
+            [Range(1, int.MaxValue)] int productionId,
+            [FromQuery] ProductionWorkLogFilterDTO filter,
+            [FromQuery] RequestDTO<ProductionPartWorkLog> input)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = (await _productionPartService.GetProductionWorkLogs(productionId, filter.WorkerId)).ToList();
+                var paged = data.Skip(input.PageIndex * input.PageSize).Take(input.PageSize);
+                return Ok(new RestDTO<IEnumerable<ProductionPartWorkLog>>
+                {
+                    Data = paged,
+                    PageIndex = input.PageIndex,
+                    PageSize = input.PageSize,
+                    RecordCount = data.Count,
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get production work logs failed for production {ProductionId}", productionId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
     }
 }
