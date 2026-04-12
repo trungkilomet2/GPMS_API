@@ -97,6 +97,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.TOTAL_QUANTITY))
                 .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.CPU))
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
+                .ForMember(dest => dest.CreateTime, opt => opt.MapFrom(src => src.CREATE_TIME))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
                 .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.ORDER_SIZE))
@@ -115,6 +116,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.TOTAL_QUANTITY, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.CPU, opt => opt.MapFrom(src => src.Cpu ?? 0))
                 .ForMember(dest => dest.NOTE, opt => opt.MapFrom(src => src.Note))
+                .ForMember(dest => dest.CREATE_TIME, opt => opt.MapFrom(src => src.CreateTime))
                 .ForMember(dest => dest.OS_ID, opt => opt.MapFrom(src => src.Status));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.SIZE, GPMS.DOMAIN.Entities.Size>()

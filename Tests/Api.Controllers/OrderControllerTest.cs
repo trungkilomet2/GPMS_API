@@ -1,5 +1,6 @@
 using GMPS.API.Controllers;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
@@ -21,6 +22,7 @@ public class OrderControllerTest
     private readonly Mock<ICloudinaryService> _cloudinary = new();
     private readonly Mock<IEmailRepositories> _emailRepo = new();
     private readonly Mock<IUserRepositories> _userRepo = new();
+    private readonly Mock<IBaseRepositories<Guest>> _guestRepo = new();
 
     private OrderController BuildController(int userId = 1)
     {
@@ -29,7 +31,8 @@ public class OrderControllerTest
             _logger.Object,
             _cloudinary.Object,
             _emailRepo.Object,
-            _userRepo.Object
+            _userRepo.Object,
+            _guestRepo.Object
         );
 
         ControllerTestHelper.AttachHttpContext(
@@ -47,7 +50,8 @@ public class OrderControllerTest
             _logger.Object,
             _cloudinary.Object,
             _emailRepo.Object,
-            _userRepo.Object
+            _userRepo.Object,
+            _guestRepo.Object
         );
 
         var identity = new ClaimsIdentity(new[]

@@ -39,9 +39,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<Guest> GetById(object id)
+        public async Task<Guest> GetById(object id)
         {
-            throw new NotImplementedException();
+            var data = await _context.GUEST_ORDER.FindAsync((int)id);
+            return _mapper.Map<Guest>(data);
         }
 
         public Task<Guest> Update(Guest entity)
