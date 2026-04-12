@@ -187,8 +187,8 @@ builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventReposit
 builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
 
 //--------------------------- Gemini ChatBox ---------------------------
-builder.Services.AddHttpClient("Gemini");
 builder.Services.AddScoped<IChatRepositories, ChatService>();
+builder.Services.AddHttpClient();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();

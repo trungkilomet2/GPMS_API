@@ -1,10 +1,9 @@
-using GMPS.API.DTOs;
-using GMPS.API.Hubs;
+﻿using GMPS.API.Hubs;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace GMPS.API.Controllers
@@ -17,15 +16,18 @@ namespace GMPS.API.Controllers
         private readonly ILogger<ChatController> _logger;
         private readonly IHubContext<ChatHub> _chatHubContext;
 
-        public ChatController(IChatRepositories chatRepo, ILogger<ChatController> logger, IHubContext<ChatHub> chatHubContext)
+        public ChatController(
+            IChatRepositories chatRepo,
+            ILogger<ChatController> logger,
+            IHubContext<ChatHub> chatHubContext)
         {
             _chatRepo = chatRepo ?? throw new ArgumentNullException(nameof(chatRepo));
             _logger = logger;
-            _chatHubContext = chatHubContext ?? throw new ArgumentNullException(nameof(chatHubContext));   
+            _chatHubContext = chatHubContext ?? throw new ArgumentNullException(nameof(chatHubContext));
         }
 
-        [HttpPost("/ai/gemini/chat")]
-        [AllowAnonymous]
+        [HttpPost("/ai/openrouter/chat")]
+        [Consumes("application/json")]
         [ResponseCache(CacheProfileName = "NoCache")]
         public async Task<ActionResult<ChatResponseDTO>> Send([FromBody] ChatRequestDTO request)
         {
@@ -36,7 +38,7 @@ namespace GMPS.API.Controllers
                 {
                     return BadRequest(new ProblemDetails
                     {
-                        Detail = "Tin nhắn không được để trống.",
+                        Detail = "Tin nhan khong duoc de trong.",
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
@@ -53,20 +55,19 @@ namespace GMPS.API.Controllers
                 if (!string.IsNullOrWhiteSpace(userId))
                 {
                     await _chatHubContext.Clients
-                    .Group(ChatHub.GetUserGroupName(userId))
-                    .SendAsync("ChatMessageReceived", chatMessage);
+                        .Group(ChatHub.GetUserGroupName(userId))
+                        .SendAsync("ChatMessageReceived", chatMessage);
                 }
                 else
                 {
                     await _chatHubContext.Clients.All.SendAsync("ChatMessageReceived", chatMessage);
                 }
 
-
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Lỗi cấu hình Gemini");
+                _logger.LogError(ex, "Lỗi cấu hình AI");
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
                 {
                     Detail = ex.Message,
@@ -75,7 +76,7 @@ namespace GMPS.API.Controllers
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Lỗi kết nối Gemini API");
+                _logger.LogError(ex, "Lỗi kết nối AI API");
                 return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
                 {
                     Detail = "Không thể kết nối tới dịch vụ AI. Vui lòng thử lại sau.",
