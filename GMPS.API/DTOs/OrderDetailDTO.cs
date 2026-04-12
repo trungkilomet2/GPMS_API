@@ -18,7 +18,7 @@ namespace GMPS.API.DTOs
         public string? Image { get; set; }
         public string? Note { get; set; }
         public string? Status { get; set; }
-        public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
-        public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
+        public List<OrderTemplate>? Templates { get; set; }
+        public List<OrderMaterial>? Materials { get; set; }
     }
 }

@@ -23,8 +23,6 @@ namespace GPMS.DOMAIN.Entities
         public int Status { get; set; }
         public DateTime? CreateTime { get; set; }
         public string? StatusName { get; set; }
-        public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
-        public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
         public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
         public List<OrderMaterial>? Material { get; set; }
         public List<OrderTemplate>? Template { get; set; }

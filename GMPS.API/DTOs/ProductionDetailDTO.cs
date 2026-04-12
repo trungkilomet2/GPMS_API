@@ -38,8 +38,8 @@ namespace GMPS.API.DTOs
         public string? Note { get; set; }
         public int Status { get; set; }
         public string? StatusName { get; set; }
-        public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
-        public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
+        public List<OrderTemplate>? Templates { get; set; }
+        public List<OrderMaterial>? Materials { get; set; }
 
     }
 
