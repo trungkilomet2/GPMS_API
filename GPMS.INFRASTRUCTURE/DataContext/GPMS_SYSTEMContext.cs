@@ -19,6 +19,10 @@ public partial class GPMS_SYSTEMContext : DbContext
 
     public virtual DbSet<CUTTING_NOTEBOOK_LOG> CUTTING_NOTEBOOK_LOG { get; set; }
 
+    public virtual DbSet<DELIVERY> DELIVERY { get; set; }
+
+    public virtual DbSet<D_STATUS> D_STATUS { get; set; }
+
     public virtual DbSet<GUEST_ORDER> GUEST_ORDER { get; set; }
 
     public virtual DbSet<ISSUE_STATUS> ISSUE_STATUS { get; set; }
@@ -80,13 +84,12 @@ public partial class GPMS_SYSTEMContext : DbContext
     public virtual DbSet<U_STATUS> U_STATUS { get; set; }
 
     public virtual DbSet<WORKER_SKILL> WORKER_SKILL { get; set; }
-
-
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CUTTING_NOTEBOOK>(entity =>
         {
-            entity.HasKey(e => e.CP_ID).HasName("PK__CUTTING___7F18CA88562E47AF");
+            entity.HasKey(e => e.CP_ID).HasName("PK__CUTTING___7F18CA886AAEF8EB");
 
             entity.HasOne(d => d.PRODUCTION).WithMany(p => p.CUTTING_NOTEBOOK)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -95,7 +98,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<CUTTING_NOTEBOOK_LOG>(entity =>
         {
-            entity.HasKey(e => e.CND_ID).HasName("PK__CUTTING___524390FA4E5CB32A");
+            entity.HasKey(e => e.CND_ID).HasName("PK__CUTTING___524390FAB40BF510");
 
             entity.Property(e => e.DATE_CREATE).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IS_PAYMENT).HasDefaultValue(false);
@@ -110,19 +113,39 @@ public partial class GPMS_SYSTEMContext : DbContext
                 .HasConstraintName("FK__CUTTING_N__USER___0A9D95DB");
         });
 
+        modelBuilder.Entity<DELIVERY>(entity =>
+        {
+            entity.HasKey(e => e.DELIVERY_ID).HasName("PK__DELIVERY__7D75E88BDB361D20");
+
+            entity.Property(e => e.SHIPPED_DATE).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.DS).WithMany(p => p.DELIVERY)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__DELIVERY__DS_ID__37703C52");
+
+            entity.HasOne(d => d.ORDER_SIZE).WithMany(p => p.DELIVERY)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__DELIVERY__ORDER___367C1819");
+        });
+
+        modelBuilder.Entity<D_STATUS>(entity =>
+        {
+            entity.HasKey(e => e.DS_ID).HasName("PK__D_STATUS__EFC56BC6D69115C7");
+        });
+
         modelBuilder.Entity<GUEST_ORDER>(entity =>
         {
-            entity.HasKey(e => e.GUEST_ID).HasName("PK__GUEST_OR__798B6DF580355766");
+            entity.HasKey(e => e.GUEST_ID).HasName("PK__GUEST_OR__798B6DF59F9667DA");
         });
 
         modelBuilder.Entity<ISSUE_STATUS>(entity =>
         {
-            entity.HasKey(e => e.IS_ID).HasName("PK__ISSUE_ST__C738A1B037941BE5");
+            entity.HasKey(e => e.IS_ID).HasName("PK__ISSUE_ST__C738A1B0608A4623");
         });
 
         modelBuilder.Entity<LEAVE_REQUEST>(entity =>
         {
-            entity.HasKey(e => e.LR_ID).HasName("PK__LEAVE_RE__266E7F0F92F7429C");
+            entity.HasKey(e => e.LR_ID).HasName("PK__LEAVE_RE__266E7F0F0ACD31D5");
 
             entity.HasOne(d => d.APPROVED_BYNavigation).WithMany(p => p.LEAVE_REQUESTAPPROVED_BYNavigation).HasConstraintName("FK__LEAVE_REQ__APPRO__4CA06362");
 
@@ -142,12 +165,12 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<LR_STATUS>(entity =>
         {
-            entity.HasKey(e => e.LRS_ID).HasName("PK__LR_STATU__0C9B456A37B6C170");
+            entity.HasKey(e => e.LRS_ID).HasName("PK__LR_STATU__0C9B456A24A8FDE8");
         });
 
         modelBuilder.Entity<ORDER>(entity =>
         {
-            entity.HasKey(e => e.ORDER_ID).HasName("PK__ORDER__460A94649D2ABC10");
+            entity.HasKey(e => e.ORDER_ID).HasName("PK__ORDER__460A9464FBEE7085");
 
             entity.Property(e => e.CREATE_TIME).HasDefaultValueSql("(getdate())");
 
@@ -162,7 +185,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<ORDER_REJECT_REASON>(entity =>
         {
-            entity.HasKey(e => e.ORR_ID).HasName("PK__ORDER_RE__6FCBE6DED497F29F");
+            entity.HasKey(e => e.ORR_ID).HasName("PK__ORDER_RE__6FCBE6DE35F21073");
 
             entity.Property(e => e.CREATED_AT).HasDefaultValueSql("(getdate())");
 
@@ -177,7 +200,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<ORDER_SIZE>(entity =>
         {
-            entity.HasKey(e => e.OD_ID).HasName("PK__ORDER_SI__3D0CE883F1DC144B");
+            entity.HasKey(e => e.OD_ID).HasName("PK__ORDER_SI__3D0CE883E98C0FD8");
 
             entity.HasOne(d => d.ORDER).WithMany(p => p.ORDER_SIZE)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -194,12 +217,12 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<ORDER_SIZE_STATUS>(entity =>
         {
-            entity.HasKey(e => e.OSS_ID).HasName("PK__ORDER_SI__F5B4ECDFBC8176E7");
+            entity.HasKey(e => e.OSS_ID).HasName("PK__ORDER_SI__F5B4ECDF5623995D");
         });
 
         modelBuilder.Entity<O_HISTORY_UPDATE>(entity =>
         {
-            entity.HasKey(e => e.OHU_ID).HasName("PK__O_HISTOR__B86AF0FD81D7C526");
+            entity.HasKey(e => e.OHU_ID).HasName("PK__O_HISTOR__B86AF0FD58DADFA7");
 
             entity.Property(e => e.CHANGE_AT).HasDefaultValueSql("(getdate())");
 
@@ -210,7 +233,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<O_MATERIAL>(entity =>
         {
-            entity.HasKey(e => e.OM_ID).HasName("PK__O_MATERI__AE0FC29B4F22E24E");
+            entity.HasKey(e => e.OM_ID).HasName("PK__O_MATERI__AE0FC29B729FDCE3");
 
             entity.HasOne(d => d.ORDER).WithMany(p => p.O_MATERIAL)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -219,12 +242,12 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<O_STATUS>(entity =>
         {
-            entity.HasKey(e => e.OS_ID).HasName("PK__O_STATUS__85A506ED46AD9B88");
+            entity.HasKey(e => e.OS_ID).HasName("PK__O_STATUS__85A506EDAE054EB2");
         });
 
         modelBuilder.Entity<O_TEMPLATE>(entity =>
         {
-            entity.HasKey(e => e.OT_ID).HasName("PK__O_TEMPLA__A9E9ACD2B9AD047B");
+            entity.HasKey(e => e.OT_ID).HasName("PK__O_TEMPLA__A9E9ACD247046DAB");
 
             entity.HasOne(d => d.ORDER).WithMany(p => p.O_TEMPLATE)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -233,7 +256,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<PART_WORK_LOG>(entity =>
         {
-            entity.HasKey(e => e.WL_ID).HasName("PK__PART_WOR__931092C216A421E7");
+            entity.HasKey(e => e.WL_ID).HasName("PK__PART_WOR__931092C2275AF670");
 
             entity.Property(e => e.IS_PAYMENT).HasDefaultValue(false);
             entity.Property(e => e.IS_READ_ONLY).HasDefaultValue(false);
@@ -249,7 +272,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<PRODUCTION>(entity =>
         {
-            entity.HasKey(e => e.PRODUCTION_ID).HasName("PK__PRODUCTI__4E709CAAF1F1F810");
+            entity.HasKey(e => e.PRODUCTION_ID).HasName("PK__PRODUCTI__4E709CAA1224873C");
 
             entity.HasOne(d => d.ORDER).WithMany(p => p.PRODUCTION)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -266,7 +289,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<PRODUCTION_ISSUE_LOG>(entity =>
         {
-            entity.HasKey(e => e.ISSUE_ID).HasName("PK__PRODUCTI__E67F509CF8138CC6");
+            entity.HasKey(e => e.ISSUE_ID).HasName("PK__PRODUCTI__E67F509CC122AF2C");
 
             entity.Property(e => e.CREATED_AT).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.PRIORITY).HasDefaultValue(2);
@@ -290,7 +313,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<PRODUCTION_REJECT_REASON>(entity =>
         {
-            entity.HasKey(e => e.ORR_ID).HasName("PK__PRODUCTI__6FCBE6DE0BF72667");
+            entity.HasKey(e => e.ORR_ID).HasName("PK__PRODUCTI__6FCBE6DED81993D3");
 
             entity.Property(e => e.CREATED_AT).HasDefaultValueSql("(getdate())");
 
@@ -305,7 +328,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<P_PART>(entity =>
         {
-            entity.HasKey(e => e.PP_ID).HasName("PK__P_PART__1662724A5A8CAF38");
+            entity.HasKey(e => e.PP_ID).HasName("PK__P_PART__1662724A3831F7AE");
 
             entity.HasOne(d => d.PPS).WithMany(p => p.P_PART)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -318,7 +341,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<P_PART_ORDER_SIZE>(entity =>
         {
-            entity.HasKey(e => e.PPOS_ID).HasName("PK__P_PART_O__483DBE4B3BB8E206");
+            entity.HasKey(e => e.PPOS_ID).HasName("PK__P_PART_O__483DBE4B48D95C49");
 
             entity.HasOne(d => d.PPOSS).WithMany(p => p.P_PART_ORDER_SIZE)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -341,43 +364,43 @@ public partial class GPMS_SYSTEMContext : DbContext
                         .HasConstraintName("FK__P_PART_AS__PPOS___1AD3FDA4"),
                     j =>
                     {
-                        j.HasKey("PPOS_ID", "USER_ID").HasName("PK__P_PART_A__A70650F4F1D2FE85");
+                        j.HasKey("PPOS_ID", "USER_ID").HasName("PK__P_PART_A__A70650F434D68E92");
                     });
         });
 
         modelBuilder.Entity<P_PART_ORDER_SIZE_STATUS>(entity =>
         {
-            entity.HasKey(e => e.PPOSS_ID).HasName("PK__P_PART_O__DADC95F220DB9FEF");
+            entity.HasKey(e => e.PPOSS_ID).HasName("PK__P_PART_O__DADC95F2ADCFB0D8");
         });
 
         modelBuilder.Entity<P_PART_STATUS>(entity =>
         {
-            entity.HasKey(e => e.PPS_ID).HasName("PK__P_PART_S__D138327A26F316EB");
+            entity.HasKey(e => e.PPS_ID).HasName("PK__P_PART_S__D138327A457B3AC9");
         });
 
         modelBuilder.Entity<P_STATUS>(entity =>
         {
-            entity.HasKey(e => e.PS_ID).HasName("PK__P_STATUS__0119474C8778E4BA");
+            entity.HasKey(e => e.PS_ID).HasName("PK__P_STATUS__0119474C8E1D7910");
         });
 
         modelBuilder.Entity<ROLE>(entity =>
         {
-            entity.HasKey(e => e.ROLE_ID).HasName("PK__ROLE__5AC4D2224A04DF25");
+            entity.HasKey(e => e.ROLE_ID).HasName("PK__ROLE__5AC4D2224D475890");
         });
 
         modelBuilder.Entity<SIZE>(entity =>
         {
-            entity.HasKey(e => e.SIZE_ID).HasName("PK__SIZE__694E1A7D67430B9F");
+            entity.HasKey(e => e.SIZE_ID).HasName("PK__SIZE__694E1A7DF5EAFB58");
         });
 
         modelBuilder.Entity<TEMPLATE>(entity =>
         {
-            entity.HasKey(e => e.TEMPLATE_ID).HasName("PK__TEMPLATE__BACD412F4BD911EB");
+            entity.HasKey(e => e.TEMPLATE_ID).HasName("PK__TEMPLATE__BACD412F979F8BFC");
         });
 
         modelBuilder.Entity<TEMPLATE_STEP>(entity =>
         {
-            entity.HasKey(e => e.STEP_ID).HasName("PK__TEMPLATE__A894037478856088");
+            entity.HasKey(e => e.STEP_ID).HasName("PK__TEMPLATE__A894037449432128");
 
             entity.HasOne(d => d.TEMPLATE).WithMany(p => p.TEMPLATE_STEP)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -386,7 +409,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<UO_COMMENT>(entity =>
         {
-            entity.HasKey(e => e.OC_ID).HasName("PK__UO_COMME__10D5574C9C7DFE97");
+            entity.HasKey(e => e.OC_ID).HasName("PK__UO_COMME__10D5574C681341FE");
 
             entity.Property(e => e.SEND_DATETIME).HasDefaultValueSql("(getdate())");
 
@@ -401,7 +424,7 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<USER>(entity =>
         {
-            entity.HasKey(e => e.USER_ID).HasName("PK__USER__F3BEEBFF6454A139");
+            entity.HasKey(e => e.USER_ID).HasName("PK__USER__F3BEEBFFE45B5CA9");
 
             entity.HasOne(d => d.MANAGER).WithMany(p => p.InverseMANAGER).HasConstraintName("FK__USER__MANAGER_ID__3B75D760");
 
@@ -422,7 +445,7 @@ public partial class GPMS_SYSTEMContext : DbContext
                         .HasConstraintName("FK__USER_ROLE__USER___403A8C7D"),
                     j =>
                     {
-                        j.HasKey("USER_ID", "ROLE_ID").HasName("PK__USER_ROL__C612A6DDA471D031");
+                        j.HasKey("USER_ID", "ROLE_ID").HasName("PK__USER_ROL__C612A6DD2843C6DF");
                         j.ToTable(tb => tb.HasTrigger("TRG_Prevent_Multiple_Active_Owner_On_InsertRole"));
                     });
 
@@ -439,7 +462,7 @@ public partial class GPMS_SYSTEMContext : DbContext
                         .HasConstraintName("FK__USER_WORK__USER___45F365D3"),
                     j =>
                     {
-                        j.HasKey("USER_ID", "WS_ID").HasName("PK__USER_WOR__037771FDAFF83996");
+                        j.HasKey("USER_ID", "WS_ID").HasName("PK__USER_WOR__037771FDCED5ED7A");
                     });
         });
 
@@ -450,12 +473,12 @@ public partial class GPMS_SYSTEMContext : DbContext
 
         modelBuilder.Entity<U_STATUS>(entity =>
         {
-            entity.HasKey(e => e.US_ID).HasName("PK__U_STATUS__DE473D8176744C9B");
+            entity.HasKey(e => e.US_ID).HasName("PK__U_STATUS__DE473D816E8C9A0F");
         });
 
         modelBuilder.Entity<WORKER_SKILL>(entity =>
         {
-            entity.HasKey(e => e.WS_ID).HasName("PK__WORKER_S__0C99A02EBAC861AD");
+            entity.HasKey(e => e.WS_ID).HasName("PK__WORKER_S__0C99A02EB49E892C");
         });
 
         OnModelCreatingPartial(modelBuilder);

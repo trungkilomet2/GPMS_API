@@ -6,15 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GPMS.INFRASTRUCTURE.DataContext;
 
-[Index("NAME", Name = "UQ__P_PART_S__D9C1FA00EB9E344F", IsUnique = true)]
-public partial class P_PART_STATUS
+public partial class D_STATUS
 {
     [Key]
-    public int PPS_ID { get; set; }
+    public int DS_ID { get; set; }
 
     [StringLength(100)]
     public string NAME { get; set; } = null!;
 
-    [InverseProperty("PPS")]
-    public virtual ICollection<P_PART> P_PART { get; set; } = new List<P_PART>();
+    [InverseProperty("DS")]
+    public virtual ICollection<DELIVERY> DELIVERY { get; set; } = new List<DELIVERY>();
 }
