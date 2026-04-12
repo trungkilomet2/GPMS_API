@@ -395,14 +395,17 @@ namespace GPMS.APPLICATION.Services
                     throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
                 }
                 var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId); 
-                
                 if (partOrderSize is null)
-                 {
+                {
                       throw new ValidationException("Production part size không tồn tại trong hệ thống");
                 }
                 if(partOrderSize.ProductionPartId != partId)
                 {
                     throw new ValidationException("Production part order size không khớp production part này");
+                }
+                if(!partOrderSize.AssigneeIds.Contains(userId))
+                {
+                    throw new ValidationException("Người này không được phân công để làm việc này");
                 }
                 // lấy thông tin production
                 var production = await _productionRepo.GetById(part.ProductionId);

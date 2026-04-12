@@ -50,6 +50,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (obj is int partid)
             {
                 var data = await _context.P_PART_ORDER_SIZE.Include(pos=> pos.USER).Where(x => x.PP_ID == partid).ToListAsync();
+
                 return _mapper.Map<IEnumerable<ProductionPartOrderSize>>(data);
             }
             return null;
@@ -60,7 +61,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             if (id is int partOrderSizeId)
             {
                 var data = await _context.P_PART_ORDER_SIZE.Include(pos => pos.USER).FirstOrDefaultAsync(x => x.PPOS_ID == (int)id);
-                return _mapper.Map<ProductionPartOrderSize>(data);
+                return data is null ? null : ToDomain(data);
             }
             return null;
         }
@@ -68,6 +69,14 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public Task<ProductionPartOrderSize> Update(ProductionPartOrderSize entity)
         {
             throw new NotImplementedException();
+        }
+
+
+        private ProductionPartOrderSize ToDomain(P_PART_ORDER_SIZE source)
+        {
+            var part = _mapper.Map<ProductionPartOrderSize>(source);
+            part.AssigneeIds = source.USER.Select(x => x.USER_ID).ToList();
+            return part;
         }
     }
 }
