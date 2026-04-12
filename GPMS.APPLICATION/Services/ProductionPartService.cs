@@ -902,6 +902,8 @@ namespace GPMS.APPLICATION.Services
         }
 
         // Mục đích: xác nhận issue không thể sửa và đồng bộ trừ sản lượng của part size + order tổng.
+
+        // Mục đích: xác nhận issue không thể sửa và đồng bộ trừ sản lượng của part size + order tổng.
         public async Task<ProductionIssueLog> ConfirmUnfixableIssue(int issueId, int confirmedQuantity)
         {
             if (confirmedQuantity <= 0) throw new ValidationException("Số lượng lỗi xác nhận phải > 0");
@@ -917,12 +919,12 @@ namespace GPMS.APPLICATION.Services
 
                 if (issue.StatusId != IssueStatus_Constrants.Error_ID)
                 {
-                    throw new ValidationException("Issue phải ở trạng thái 'Không thể sửa' trước khi xác nhận");
+                    throw new ValidationException("Lỗi phải ở trạng thái 'Không thể sửa' trước khi xác nhận");
                 }
 
                 if (confirmedQuantity > issue.Quantity)
                 {
-                    throw new ValidationException("Số lượng xác nhận không thể lớn hơn số lượng issue đã báo");
+                    throw new ValidationException("Số lượng xác nhận không thể lớn hơn số lượng lỗi đã báo");
                 }
 
                 var relatedPartSizes = new List<ProductionPartOrderSize>();
@@ -951,6 +953,43 @@ namespace GPMS.APPLICATION.Services
                 {
                     workLog.IsReadOnly = true;
                     await _workLogRepo.Update(workLog);
+                }
+
+                // Trừ số lượng ORDER_SIZE liên quan (cùng màu + size với partOrderSize của issue).
+                // Vì một đơn có thể có nhiều dòng ORDER_SIZE cùng màu/size, hệ thống sẽ phân bổ trừ lần lượt.
+                var orderSizes = (await _orderSizeRepo.GetAll(order.Id)).ToList();
+
+                // Do OrderSize domain chỉ có SizeId, cần map size-name từ bảng Size để so khớp với partOrderSize.Size.
+                var matchedOrderSizes = new List<OrderSize>();
+                foreach (var orderSize in orderSizes)
+                {
+                    var size = await _sizeRepo.GetById(orderSize.SizeId);
+                    var isMatchedColor = string.Equals(orderSize.Color?.Trim(), partOrderSize.Color?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    var isMatchedSize = string.Equals(size?.Name?.Trim(), partOrderSize.Size?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    if (isMatchedColor && isMatchedSize)
+                    {
+                        matchedOrderSizes.Add(orderSize);
+                    }
+                }
+
+                if (!matchedOrderSizes.Any())
+                {
+                    throw new ValidationException("Không tìm thấy lỗi liên quan để trừ theo issue");
+                }
+
+                var remainToDeduct = confirmedQuantity;
+                foreach (var matchedOrderSize in matchedOrderSizes.OrderBy(x => x.Id))
+                {
+                    if (remainToDeduct <= 0) break;
+                    var deduct = Math.Min(matchedOrderSize.Quantity, remainToDeduct);
+                    matchedOrderSize.Quantity -= deduct;
+                    remainToDeduct -= deduct;
+                    await _orderSizeRepo.Update(matchedOrderSize);
+                }
+
+                if (remainToDeduct > 0)
+                {
+                    throw new ValidationException("Tổng số lượng trong đơn hàng liên quan không đủ để trừ theo lỗi");
                 }
 
                 order.Quantity -= confirmedQuantity;

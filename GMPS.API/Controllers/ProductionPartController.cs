@@ -560,8 +560,8 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Mục đích: PM/Owner cập nhật trạng thái issue theo workflow.
-        [HttpPatch("parts/issues/{issueId:int}/status")]
+        // Mục đích: cập nhật trạng thái issue theo workflow.
+        [HttpPatch("parts/issues/update-status/{issueId:int}")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> UpdateIssueStatus(
             [Range(1, int.MaxValue)] int issueId,
             [FromBody] UpdateIssueStatusRequestDTO dto)
@@ -599,7 +599,7 @@ namespace GMPS.API.Controllers
         }
 
         // Mục đích: PM xác nhận issue không thể sửa, chốt số lượng lỗi và đồng bộ trừ sản lượng.
-        [HttpPatch("parts/issues/{issueId:int}/confirm-unfixable")]
+        [HttpPatch("parts/issues/confirm-unfixable/{issueId:int}")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> ConfirmUnfixableIssue(
             [Range(1, int.MaxValue)] int issueId,
             [FromBody] ConfirmUnfixableIssueRequestDTO dto)
@@ -829,7 +829,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Mục đích: xóa work log nếu bản ghi chưa khóa (IsReadOnly = false).
+        // TRUNGNT: xóa work log nếu bản ghi chưa khóa (IsReadOnly = false).
         [HttpDelete("production/work-logs/{workLogId:int}")]
         public async Task<ActionResult> DeleteProductionWorkLog(
             [Range(1, int.MaxValue)] int workLogId)

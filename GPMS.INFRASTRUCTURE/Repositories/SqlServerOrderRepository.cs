@@ -273,7 +273,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             existing.START_DATE = entity.StartDate;
             existing.END_DATE = entity.EndDate;
             existing.TOTAL_QUANTITY = entity.Quantity;
-            existing.CPU = entity.Cpu;
+            existing.CPU = entity.Cpu ?? 0;
             existing.NOTE = entity.Note;
             existing.OS_ID = entity.Status;
             existing.IMAGE = entity.Image;
