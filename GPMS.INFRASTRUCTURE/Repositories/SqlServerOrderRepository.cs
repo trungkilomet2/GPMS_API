@@ -197,6 +197,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             existing.START_DATE = updatedOrder.StartDate;
             existing.END_DATE = updatedOrder.EndDate;
             existing.TOTAL_QUANTITY = updatedOrder.Quantity;
+            existing.CPU = updatedOrder.Cpu ?? existing.CPU;
             existing.IMAGE = updatedOrder.Image;
             existing.NOTE = updatedOrder.Note;
 

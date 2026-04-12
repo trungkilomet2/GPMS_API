@@ -10,6 +10,7 @@ namespace GPMS.APPLICATION.DTOs
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public int Quantity { get; set; }
+        public decimal? Cpu { get; set; }
         public string? Image { get; set; }
         public string? Note { get; set; }
         public List<OrderSize>? Sizes { get; set; }

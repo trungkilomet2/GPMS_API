@@ -125,6 +125,7 @@ namespace GPMS.APPLICATION.Services
             TrackChange("StartDate", existing.StartDate.ToString(), input.StartDate.ToString());
             TrackChange("EndDate", existing.EndDate.ToString(), input.EndDate.ToString());
             TrackChange("Quantity", existing.Quantity.ToString(), input.Quantity.ToString());
+            TrackChange("Cpu", existing.Cpu?.ToString(), input.Cpu?.ToString());
             TrackChange("Image", existing.Image, resolvedImage);
             TrackChange("Note", existing.Note, input.Note);
 
@@ -151,7 +152,7 @@ namespace GPMS.APPLICATION.Services
                 StartDate = input.StartDate,
                 EndDate = input.EndDate,
                 Quantity = input.Quantity,
-                Cpu = existing.Cpu,
+                Cpu = input.Cpu ?? existing.Cpu,
                 Image = resolvedImage,
                 Note = input.Note,
                 Size = input.Sizes,
