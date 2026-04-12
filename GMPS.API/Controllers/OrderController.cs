@@ -1052,7 +1052,7 @@ namespace GMPS.API.Controllers
                 var updatedOrder = new Order
                 {
                     Id = orderId,
-                    Status = 2
+                    Status = OrderStatus_Constants.Modification_ID
                 };
                 await _orderRepo.RequestOrderModification(orderId, updatedOrder, histories);
                 var user = await _userRepo.GetUserById(existingOrder.UserId);

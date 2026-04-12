@@ -99,10 +99,23 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
+                .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.ORDER_SIZE))
                 .ForMember(dest => dest.Template, opt => opt.MapFrom(src => src.O_TEMPLATE))
                 .ForMember(dest => dest.Material, opt => opt.MapFrom(src => src.O_MATERIAL))
-                .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
-                .ReverseMap();
+                .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE));
+
+            CreateMap<GPMS.DOMAIN.Entities.Order, GPMS.INFRASTRUCTURE.DataContext.ORDER>()
+                .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.USER_ID, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.GUEST_ID, opt => opt.MapFrom(src => src.GuestId))
+                .ForMember(dest => dest.ORDER_NAME, opt => opt.MapFrom(src => src.OrderName))
+                .ForMember(dest => dest.IMAGE, opt => opt.MapFrom(src => src.Image))
+                .ForMember(dest => dest.START_DATE, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.END_DATE, opt => opt.MapFrom(src => src.EndDate))
+                .ForMember(dest => dest.TOTAL_QUANTITY, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.CPU, opt => opt.MapFrom(src => src.Cpu ?? 0))
+                .ForMember(dest => dest.NOTE, opt => opt.MapFrom(src => src.Note))
+                .ForMember(dest => dest.OS_ID, opt => opt.MapFrom(src => src.Status));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.SIZE, GPMS.DOMAIN.Entities.Size>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SIZE_ID))
