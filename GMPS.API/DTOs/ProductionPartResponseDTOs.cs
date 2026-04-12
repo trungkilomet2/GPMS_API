@@ -24,5 +24,25 @@ namespace GMPS.API.DTOs
         public string? Email { get; set; }
     }
 
+    public class ProductionPartWorkLogResponseDTO
+    {
+        public int Id { get; set; }
+        public int PartOrderSizeId { get; set; }
+        public int UserId { get; set; }
+        public int Quantity { get; set; }
+        public DateTime CreateDate { get; set; }
+        public bool IsReadOnly { get; set; }
+        public bool IsPayment { get; set; }
+    }
+
+    public class DeliveryResponseDTO
+    {
+        public int Id { get; set; }
+        public int OrderSizeId { get; set; }
+        public int DeliverQuantity { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+        public DateTime? ReceivedDate { get; set; }
+        public int DeliverStatusId { get; set; }
+    }
 
 }
