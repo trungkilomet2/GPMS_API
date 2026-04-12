@@ -20,6 +20,10 @@ namespace GMPS.API.DTOs
         [Range(1, 9999, ErrorMessage = "Quantity must be between 1 and 9999")]
         public int Quantity { get; set; }
 
+        [Required(ErrorMessage = "Yêu cầu nhập giá mỗi sản phẩm")]
+        [Range(1000, 10000000, ErrorMessage = "Giá mỗi sản phẩm phải từ 1000 và không được vượt quá 10000000")]
+        public decimal? Cpu { get; set; }
+
         [Url(ErrorMessage = "Image must be a valid URL")]
         [StringLength(255, ErrorMessage = "Image URL is too long")]
         public string? Image { get; set; }
