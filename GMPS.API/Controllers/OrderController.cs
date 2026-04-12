@@ -372,7 +372,7 @@ namespace GMPS.API.Controllers
                 var data = new OrderDetailDTO
                 {
                     Id = order.Id,
-                    UserId = order.UserId,
+                    IsGuest = order.GuestId.HasValue,
                     UserFullName = orderUser?.FullName ?? orderGuest?.FullName,
                     UserPhone = orderUser?.PhoneNumber ?? orderGuest?.PhoneNumber,
                     UserLocation = orderUser?.Location ?? orderGuest?.Address,
