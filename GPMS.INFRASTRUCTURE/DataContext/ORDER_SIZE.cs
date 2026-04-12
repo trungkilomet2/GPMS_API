@@ -22,6 +22,9 @@ public partial class ORDER_SIZE
 
     public int OSS_ID { get; set; }
 
+    [InverseProperty("ORDER_SIZE")]
+    public virtual ICollection<DELIVERY> DELIVERY { get; set; } = new List<DELIVERY>();
+
     [ForeignKey("ORDER_ID")]
     [InverseProperty("ORDER_SIZE")]
     public virtual ORDER ORDER { get; set; } = null!;

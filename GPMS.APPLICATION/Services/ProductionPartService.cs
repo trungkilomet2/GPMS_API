@@ -151,7 +151,7 @@ namespace GPMS.APPLICATION.Services
                             Size = sizeName.Name,
                             Quantity = orderSize.Quantity,
                             Color = orderSize.Color,
-                            PartOrderSizeStatusId = PartOrderSizeStatus_Constants.Reviewing_ID
+                            PartOrderSizeStatusId = PartOrderSizeStatus_Constants.ToDo_ID
                         });
                     }
                 }
@@ -786,6 +786,32 @@ namespace GPMS.APPLICATION.Services
 
             return resolvedLimit;
         }
+
+
+        // Mục đích: trả về danh sách production work log của một production và hỗ trợ filter theo worker.
+        public async Task<IEnumerable<ProductionPartWorkLog>> GetProductionWorkLogs(int productionId, int? workerId)
+        {
+            _ = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
+            var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var partOrderSizeIds = new HashSet<int>();
+            foreach (var partId in partIds)
+            {
+                var partOrderSizes = await _partOrderSizeRepo.GetAll(partId);
+                foreach (var partOrderSize in partOrderSizes)
+                {
+                    partOrderSizeIds.Add(partOrderSize.Id);
+                }
+            }
+
+            var logs = (await _workLogRepo.GetAll(null))
+                .Where(x => partOrderSizeIds.Contains(x.PartOrderSizeId));
+            if (workerId.HasValue)
+            {
+                logs = logs.Where(x => x.UserId == workerId.Value);
+            }
+            return logs.OrderByDescending(x => x.CreateDate).ToList();
+        }
+
 
 
     }
