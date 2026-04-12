@@ -37,7 +37,9 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<User, ProductionDetailPMDTO>();
-            CreateMap<Order, ProductionDetailOrderDTO>();
+            CreateMap<Order, ProductionDetailOrderDTO>()
+                .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.Template))
+                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.Material));
 
 
 

@@ -377,8 +377,8 @@ namespace GMPS.API.Controllers
                     Image = order.Image,
                     Note = order.Note,
                     Status = order.StatusName,
-                    Templates = order.Templates,
-                    Materials = order.Materials
+                    Templates = order.Template,
+                    Materials = order.Material
                 };
 
                 _logger.LogInformation(CustomLogEvents.OrderController_Get,

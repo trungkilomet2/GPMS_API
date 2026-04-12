@@ -46,8 +46,11 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.NAME))
                 .ReverseMap();
 
-            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OTemplate>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OT_ID));
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_TEMPLATE, GPMS.DOMAIN.Entities.OrderTemplate>()
+                .ForMember(dest => dest.TemplateName, opt => opt.MapFrom(src => src.NAME))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.TYPE))
+                .ForMember(dest => dest.File, opt => opt.MapFrom(src => src.FILE))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER_SIZE, GPMS.DOMAIN.Entities.OrderSize>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
@@ -66,6 +69,14 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.ORDER_ID, opt => opt.MapFrom(src => src.OrderId))
                 .ForMember(dest => dest.COLOR, opt => opt.MapFrom(src => src.Color))
                 .ForMember(dest => dest.UOM, opt => opt.MapFrom(src => src.Uom));
+
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_MATERIAL, GPMS.DOMAIN.Entities.OrderMaterial>()
+                .ForMember(dest => dest.MaterialName, opt => opt.MapFrom(src => src.NAME))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
+                .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.IMAGE))
+                .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.VALUE))
+                .ForMember(dest => dest.Uom, opt => opt.MapFrom(src => src.UOM))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_HISTORY_UPDATE, GPMS.DOMAIN.Entities.OHistoryUpdate>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OHU_ID))
@@ -88,8 +99,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.OS_ID))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.OS != null ? src.OS.NAME : null))
-                .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.O_TEMPLATE))
-                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.O_MATERIAL))
+                .ForMember(dest => dest.Template, opt => opt.MapFrom(src => src.O_TEMPLATE))
+                .ForMember(dest => dest.Material, opt => opt.MapFrom(src => src.O_MATERIAL))
                 .ForMember(dest => dest.Histories, opt => opt.MapFrom(src => src.O_HISTORY_UPDATE))
                 .ReverseMap();
 
