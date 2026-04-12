@@ -288,6 +288,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
                 .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
                 .ForMember(dest => dest.PartOrderSizeStatusId, opt => opt.MapFrom(src => src.PPOSS_ID))
+                //      .ForMember(dest => dest.AssigneeIds, opt => opt.MapFrom(src => src.USER.Select(u=>u.USER_ID).ToList()))
                 .ReverseMap()
                 .ForMember(dest => dest.PPOS_ID, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.PP_ID, opt => opt.MapFrom(src => src.ProductionPartId))
@@ -295,6 +296,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.QUANTITY, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.COLOR, opt => opt.MapFrom(src => src.Color))
                 .ForMember(dest => dest.PPOSS_ID, opt => opt.MapFrom(src => src.PartOrderSizeStatusId));
+            //    .ForMember(dest => dest.USER.Select(u => u.USER_ID).ToList(), opt => opt.MapFrom(src => src.AssigneeIds));
 
 
         }

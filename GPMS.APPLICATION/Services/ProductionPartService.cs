@@ -379,8 +379,6 @@ namespace GPMS.APPLICATION.Services
         {
             var productionPart = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
 
-            var productionPartOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId) ?? throw new ValidationException("Production part order size không tồn tại");
-
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
 
             if (quantity <= 0) throw new ValidationException("Số lượng phải > 0");
@@ -395,6 +393,16 @@ namespace GPMS.APPLICATION.Services
                 if (part.StatusId > ProductionPart_Constrants.OnGoing_ID)
                 {
                     throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
+                }
+                var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId); 
+                
+                if (partOrderSize is null)
+                 {
+                      throw new ValidationException("Production part size không tồn tại trong hệ thống");
+                }
+                if(partOrderSize.ProductionPartId != partId)
+                {
+                    throw new ValidationException("Production part order size không khớp production part này");
                 }
                 // lấy thông tin production
                 var production = await _productionRepo.GetById(part.ProductionId);

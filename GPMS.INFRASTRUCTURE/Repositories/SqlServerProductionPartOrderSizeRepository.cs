@@ -49,7 +49,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             // Lấy tất cả danh sách worklog theo partId danh sách theo partID
             if (obj is int partid)
             {
-                var data = await _context.P_PART_ORDER_SIZE.Where(x => x.PP_ID == partid).ToListAsync();
+                var data = await _context.P_PART_ORDER_SIZE.Include(pos=> pos.USER).Where(x => x.PP_ID == partid).ToListAsync();
                 return _mapper.Map<IEnumerable<ProductionPartOrderSize>>(data);
             }
             return null;
@@ -59,7 +59,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         {
             if (id is int partOrderSizeId)
             {
-                var data = await _context.P_PART_ORDER_SIZE.FirstOrDefaultAsync(x => x.PPOS_ID == (int)id);
+                var data = await _context.P_PART_ORDER_SIZE.Include(pos => pos.USER).FirstOrDefaultAsync(x => x.PPOS_ID == (int)id);
                 return _mapper.Map<ProductionPartOrderSize>(data);
             }
             return null;
