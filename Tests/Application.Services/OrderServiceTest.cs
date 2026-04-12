@@ -43,8 +43,8 @@ public class OrderServiceTest
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(5)),
             Status = 1,
             StatusName = statusName,
-            Templates = new List<OTemplate>(),
-            Materials = new List<OMaterial>(),
+            Template = new List<OrderTemplate>(),
+            Material = new List<OrderMaterial>(),
             Histories = new List<OHistoryUpdate>(),
             Size = new List<OrderSize>()
         };

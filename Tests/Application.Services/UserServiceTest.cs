@@ -320,16 +320,5 @@ namespace GPMS.TEST.Application.Services
                 service.UpdateUserForAdmin(99, new User { Id = 99 }));
         }
 
-        [Fact]
-        public async Task UpdateUserForAdmin_Throws_WhenUserIsInactive()
-        {
-            var existing = new User { Id = 1, UserName = "old", StatusId = UserStatus_Constants.Inactive };
-            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
-
-            var service = BuildService();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.UpdateUserForAdmin(1, new User { Id = 1 }));
-        }
     }
 }

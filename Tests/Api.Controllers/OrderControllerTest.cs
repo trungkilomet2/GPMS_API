@@ -74,8 +74,8 @@ public class OrderControllerTest
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             StatusName = statusName,
-            Templates = new List<OTemplate>(),
-            Materials = new List<OMaterial>(),
+            Template = new List<OrderTemplate>(),
+            Material = new List<OrderMaterial>(),
             Histories = new List<OHistoryUpdate>()
         };
 
