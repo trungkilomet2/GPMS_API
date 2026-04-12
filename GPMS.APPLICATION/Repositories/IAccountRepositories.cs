@@ -12,5 +12,6 @@ namespace GPMS.APPLICATION.Repositories
     {
         Task<LoginDTO> Login(string UserName, string password);
         Task<RegisterDTO> Register(User user);
+        Task ChangePassword(int userId, string currentPassword, string newPassword);
     }
 }

@@ -150,5 +150,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _context.USER.Update(user);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<User> GetUserById(int id)
+        {
+            var data = await _context.USER.FindAsync(id);
+            return _mapper.Map<User>(data);
+        }
+
+        public async Task UpdatePasswordById(int userId, string newPasswordHash)
+        {
+            var user = await _context.USER.FindAsync(userId);
+            if (user == null)
+                throw new KeyNotFoundException($"User with id '{userId}' not found.");
+            user.PASSWORDHASH = newPasswordHash;
+            _context.USER.Update(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }
