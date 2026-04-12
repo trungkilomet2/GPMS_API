@@ -151,7 +151,7 @@ namespace GPMS.APPLICATION.Services
                             Size = sizeName.Name,
                             Quantity = orderSize.Quantity,
                             Color = orderSize.Color,
-                            PartOrderSizeStatusId = PartOrderSizeStatus_Constants.Reviewing_ID
+                            PartOrderSizeStatusId = PartOrderSizeStatus_Constants.ToDo_ID
                         });
                     }
                 }

@@ -51,7 +51,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 var data = await _context.P_PART_ORDER_SIZE.Include(pos=> pos.USER).Where(x => x.PP_ID == partid).ToListAsync();
 
-                return _mapper.Map<IEnumerable<ProductionPartOrderSize>>(data);
+                return data.Select(ToDomain).ToList();
             }
             return null;
         }
