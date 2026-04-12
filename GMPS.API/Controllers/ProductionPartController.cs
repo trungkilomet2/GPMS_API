@@ -124,7 +124,6 @@ namespace GMPS.API.Controllers
                 });
             }
         }
-
         // GET : Tạo ra part của production đấy, có thể tạo nhiều part cùng lúc, trả về thông tin chi tiết của các part vừa được tạo ra
         // Truyền vào một IEnumerable danh sách cùng một lúc
         [HttpPost("production/create-parts/{productionId:int}")]
