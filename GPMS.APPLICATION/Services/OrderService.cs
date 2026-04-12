@@ -57,7 +57,7 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if(order.StartDate < DateOnly.FromDateTime(DateTime.Now))
                 throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
-            foreach (var size in order.Size)
+            foreach (var size in order.Size ?? Enumerable.Empty<OrderSize>())
             {
                 var existingSize = await _sizeRepo.GetById(size.SizeId);
                 if (existingSize == null)
@@ -74,7 +74,7 @@ namespace GPMS.APPLICATION.Services
                 throw new Exception("Ngày kết thúc phải lớn hơn ngày bắt đầu.");
             if (order.StartDate < DateOnly.FromDateTime(DateTime.Now))
                 throw new Exception("Ngày bắt đầu phải lớn hơn ngày hiện tại.");
-            foreach (var size in order.Size)
+            foreach (var size in order.Size ?? Enumerable.Empty<OrderSize>())
             {
                 var existingSize = await _sizeRepo.GetById(size.SizeId);
                 if (existingSize == null)

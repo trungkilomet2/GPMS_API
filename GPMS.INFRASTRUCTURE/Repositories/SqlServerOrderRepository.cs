@@ -29,12 +29,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             {
                 var filtered = await _context.ORDER
                     .Include(o => o.OS)
+                    .Include(o => o.ORDER_SIZE)
                     .Where(o => o.USER_ID == userId)
                     .ToListAsync();
                 return _mapper.Map<IEnumerable<Order>>(filtered);
             }
 
-            var data = await _context.ORDER.Include(o => o.OS).ToListAsync();
+            var data = await _context.ORDER
+                .Include(o => o.OS)
+                .Include(o => o.ORDER_SIZE)
+                .ToListAsync();
             return _mapper.Map<IEnumerable<Order>>(data);
         }
 
