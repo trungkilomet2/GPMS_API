@@ -1,4 +1,5 @@
 ﻿using GMPS.API.DTOs;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
@@ -27,14 +28,16 @@ namespace GMPS.API.Controllers
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IEmailRepositories _emailRepo;
         private readonly IUserRepositories _userRepo;
+        private readonly IBaseRepositories<Guest> _guestRepo;
 
-        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger, ICloudinaryService cloudinaryService, IEmailRepositories emailRepo, IUserRepositories userRepo)
+        public OrderController(IOrderRepositories orderRepo, ILogger<OrderController> logger, ICloudinaryService cloudinaryService, IEmailRepositories emailRepo, IUserRepositories userRepo, IBaseRepositories<Guest> guestRepo)
         {
             _orderRepo = orderRepo ?? throw new ArgumentNullException(nameof(orderRepo));
             _logger = logger;
             _cloudinaryService = cloudinaryService;
             _emailRepo = emailRepo;
             _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
+            _guestRepo = guestRepo ?? throw new ArgumentNullException(nameof(guestRepo));
         }
 
         private ActionResult? ValidateOrderQuery(OrderRequestDTO input)
@@ -359,17 +362,20 @@ namespace GMPS.API.Controllers
                         });
                 }
 
-                var orderUser = order.UserId.HasValue
+                User? orderUser = order.UserId.HasValue
                     ? await _userRepo.GetUserById(order.UserId)
+                    : null;
+                Guest? orderGuest = (!order.UserId.HasValue && order.GuestId.HasValue)
+                    ? await _guestRepo.GetById(order.GuestId.Value)
                     : null;
 
                 var data = new OrderDetailDTO
                 {
                     Id = order.Id,
                     UserId = order.UserId,
-                    UserFullName = orderUser?.FullName,
-                    UserPhone = orderUser?.PhoneNumber,
-                    UserLocation = orderUser?.Location,
+                    UserFullName = orderUser?.FullName ?? orderGuest?.FullName,
+                    UserPhone = orderUser?.PhoneNumber ?? orderGuest?.PhoneNumber,
+                    UserLocation = orderUser?.Location ?? orderGuest?.Address,
                     OrderName = order.OrderName,
                     Size = order.Size,
                     Quantity = order.Quantity,
