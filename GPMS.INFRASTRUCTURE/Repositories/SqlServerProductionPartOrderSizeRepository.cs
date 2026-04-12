@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.SqlServer.Server;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,14 +27,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<ProductionPartOrderSize> Create(ProductionPartOrderSize entity)
         {
-            var data = await _context.P_PART_ORDER_SIZE.AddAsync(_mapper.Map<P_PART_ORDER_SIZE>(entity));
-            return _mapper.Map<ProductionPartOrderSize>(data);
+            P_PART_ORDER_SIZE convert = _mapper.Map<P_PART_ORDER_SIZE>(entity);
+            var data = await _context.P_PART_ORDER_SIZE.AddAsync(convert);
+            return entity;
         }
 
 
-        public Task Delete(object id)
+        public async Task Delete(object id)
         {
-            throw new NotImplementedException();
+            var deleteData = await _context.P_PART_ORDER_SIZE.Where(u => u.PPOS_ID == (int)id).FirstOrDefaultAsync();
+            if(deleteData is null)
+            {
+                throw new ValidationException("Không tồn tại dữ liệu trong hệ thống");
+            }
+            _context.P_PART_ORDER_SIZE.Remove(deleteData);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<ProductionPartOrderSize>> GetAll(object? obj)
