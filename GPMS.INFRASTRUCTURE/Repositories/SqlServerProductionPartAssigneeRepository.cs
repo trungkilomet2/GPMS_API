@@ -49,7 +49,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             }
 
             await _context.SaveChangesAsync();
-            return await GetById(partOrderSizeId);
+            return await GetById(dbEntity.PP_ID);
         }
 
         public async Task<ProductionPartWorkLog> CreateWorkLog(ProductionPartWorkLog entity)

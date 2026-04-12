@@ -19,7 +19,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<AssignWorkerViewDTO>> ListAssignWorker(int pm_id, DateTime fromDate, DateTime toDate);
 
         // Worker Log Work ========> Worker Log Work
-        Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId);
+        Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId, int partOrderSizeId);
         Task<ProductionPartWorkLog> CreateWorkLog(int partId,int partOrderSizeId, int userId, int quantity);
         Task<ProductionPartWorkLog> UpdateWorkLog(int partId,int partOrderSizeId, int workLogId, int quantity);
         // TrungNT 29-03-2026
