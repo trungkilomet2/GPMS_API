@@ -43,7 +43,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             var reply = completion?.Choices?.FirstOrDefault()?.Message?.Content?.Trim()
                         ?? "Xin lỗi, tôi không thể trả lời lúc này.";
 
-            return new ChatResponseDTO { Reply = reply };
+            return new ChatResponseDTO { Reply = reply.Replace("\n", "") };
         }
 
         private string GetDocxContext()
@@ -103,21 +103,34 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         private static string BuildUnifiedSystemPrompt(string additionalContext) => $"""
             Bạn là trợ lý ảo chuyên nghiệp của hệ thống GPMS (Garment Production Management System).
             
-            NHIỆM VỤ:
+            ### NHIỆM VỤ:
             Hỗ trợ khách hàng giải đáp các thắc mắc về dịch vụ, đơn hàng và quy trình của xưởng may.
 
-            KIẾN THỨC BỔ SUNG (Dựa trên tài liệu hệ thống):
+            ### KIẾN THỨC BỔ SUNG (Dựa trên tài liệu hệ thống):
             ---
             {additionalContext}
             ---
 
-            QUY TẮC PHẢN HỒI:
+            ### QUY TẮC PHẢN HỒI:
             1. Sử dụng kiến thức bổ sung ở trên để trả lời chính xác nhất.
             2. Nếu không tìm thấy thông tin trong tài liệu, hãy trả lời dựa trên kiến thức chung về hệ thống GPMS nhưng phải giữ tính chuyên nghiệp.
             3. KHÔNG tiết lộ các thông tin nhạy cảm về nhân sự hoặc tài chính nội bộ trừ khi nó có trong tài liệu công khai.
             4. Luôn thân thiện, lịch sự và sử dụng tiếng Việt.
             5. Nếu câu hỏi hoàn toàn không liên quan đến xưởng may hoặc GPMS, hãy khéo léo từ chối.
             6. Nếu khách hàng hỏi về quy trình thực hiện, thì chỉ cần trả lời quy trình thực hiện, không cần giải thích thêm về các khía cạnh khác của hệ thống GPMS.
+            7. Khi trả lời thì hãy trả về dạng html sử dụng <br> để xuống dòng và không dùng \n, không trả về một đoạn văn bản dài, hãy chia nhỏ câu trả lời thành nhiều đoạn nếu cần thiết để dễ đọc hơn.
+            8.Câu hỏi: Quy trình tạo đơn hàng
+            ### VÍ DỤ TRẢ LỜI ĐÚNG:
+            Bước 1: Tiếp nhận yêu cầu từ khách hàng<br>
+            Bước 2: Tạo đơn hàng trên hệ thống<br>
+            Bước 3: Phân bổ sản xuất<br>
+            Bước 4: Theo dõi tiến độ<br>
+            ### VÍ DỤ TRẢ LỜI SAI:
+            Bước 1: Tiếp nhận yêu cầu từ khách hàng<br>\n
+            Bước 2: Tạo đơn hàng trên hệ thống<br>\n
+            Bước 3: Phân bổ sản xuất<br>\n
+            Bước 4: Theo dõi tiến độ<br>\n
+
             """;
 
         private sealed class OpenRouterRequest
