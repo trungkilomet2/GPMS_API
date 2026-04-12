@@ -22,6 +22,8 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<LeaveRequest> _leaveRequestRepo;
         private readonly IBaseRepositories<ProductionPartWorkLog> _workLogRepo;
         private readonly IBaseRepositories<Order> _orderRepo;
+        private readonly IBaseRepositories<OrderSize> _orderSizeRepo;
+        private readonly IBaseRepositories<Size> _sizeRepo;
         private readonly IBaseRepositories<ProductionPartOrderSize> _partOrderSizeRepo;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -35,7 +37,9 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<LeaveRequest> leaveRequestRepo,
             IBaseRepositories<ProductionPartWorkLog> workLogRepo,
             IBaseRepositories<Order> orderRepo,
-            IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo
+            IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo,
+            IBaseRepositories<OrderSize> orderSizeRepo,
+            IBaseRepositories<Size> sizeRepo
             )
         {
             _partRepo = partRepo;
@@ -48,6 +52,8 @@ namespace GPMS.APPLICATION.Services
             _workLogRepo = workLogRepo;
             _orderRepo = orderRepo;
             _partOrderSizeRepo = partOrderSizeRepo;
+            _orderSizeRepo = orderSizeRepo;
+            _sizeRepo = sizeRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -76,25 +82,43 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> CreateParts(int productionId, IEnumerable<ProductionPart> parts)
         {
-            await EnsureProductionExists(productionId);
+            if (productionId <= 0)
+            {
+                throw new ValidationException("Production id phải > 0");
+            }
+
+            var production = await _productionRepo.GetById(productionId);
+            if (production is null)
+            {
+                throw new ValidationException("Production không tồn tại trong hệ thống");
+            }
+
+            if (production.StatusId == ProductionStatus_Constants.Pending_ID ||
+                production.StatusId == ProductionStatus_Constants.Reject_ID ||
+                production.StatusId == ProductionStatus_Constants.PendingPlan_ID ||
+                production.StatusId == ProductionStatus_Constants.Producting_ID ||
+                production.StatusId == ProductionStatus_Constants.Done_ID
+                )
+            {
+                throw new ValidationException("Production không được phép tạo kế hoạch");
+            }
 
             var validatedParts = (parts ?? Enumerable.Empty<ProductionPart>()).ToList();
-
-            //if (!validatedParts.Any())
-            //{
-            //    throw new ValidationException("Danh sách production part không được rỗng");
-            //}
 
             foreach (var part in validatedParts)
             {
                 await ValidatePartInput(productionId, part);
             }
+
+            var listOrderSizeByCustomer = await _orderSizeRepo.GetAll(production.OrderId);
+
             List<ProductionPart> check_parts = new List<ProductionPart>();
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
 
                 // TRUNGNT FIX: Khi PM cập nhật lại kế hoạch part bằng danh sách mới,
                 // hệ thống cần đồng bộ theo danh sách mới để tránh part cũ còn tồn tại và ghi đè dữ liệu.
+                // Xóa luôn toàn bộ production part size cũ đi
                 var existingParts = (await _partRepo.GetAll(productionId)).ToList();
                 foreach (var existingPart in existingParts)
                 {
@@ -103,12 +127,33 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
                     }
+                    // Xóa luôn toàn bộ danh sách partOrderSize cũ đi tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
+                    var existingPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);
+                    foreach (var partOrderSize in existingPartOrderSizes)
+                    {
+                        await _partOrderSizeRepo.Delete(partOrderSize.Id);
+                    }
                     await _partRepo.Delete(existingPart.Id);
                 }
 
                 foreach (var part in validatedParts)
                 {
-                    check_parts.Add(await _partRepo.Create(part));
+                    // Thêm mới danh sách production part mới vào hệ thống theo danh sách mới PM gửi lên
+                    var newPart = await _partRepo.Create(part);
+                    check_parts.Add(newPart);
+                    // Lấy danh sách order size theo part đó để tạo mới danh sách part order size tương ứng tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
+                    foreach (var orderSize in listOrderSizeByCustomer)
+                    {
+                        var sizeName = await _sizeRepo.GetById(orderSize.SizeId);
+                        await _partOrderSizeRepo.Create(new ProductionPartOrderSize
+                        {
+                            ProductionPartId = newPart.Id,
+                            Size = sizeName.Name,
+                            Quantity = orderSize.Quantity,
+                            Color = orderSize.Color,
+                            PartOrderSizeStatusId = PartOrderSizeStatus_Constants.Reviewing_ID
+                        });
+                    }
                 }
 
                 // Chuyển trạng thái thành Chờ Xét Duyệt Của Chủ Xưởng
@@ -149,7 +194,7 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-        public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId, IEnumerable<int> workerIds)
+        public async Task<ProductionPartDetailViewDTO> AssignWorkers(int partId,int partOrderSizeId, IEnumerable<int> workerIds)
         {
             if (partId <= 0)
             {
@@ -175,6 +220,17 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Production part không tồn tại trong hệ thống");
             }
+
+            var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId);
+            if(partOrderSize is null)
+            {
+                throw new ValidationException("Production part size không tồn tại trong hệ thống");
+            }
+            if (partOrderSize.ProductionPartId != partId)
+            {
+                throw new ValidationException("Production part order size không khớp production part này");
+            }
+
             var production = await _productionRepo.GetById(part.ProductionId);
             if (production is null)
             {
@@ -185,7 +241,7 @@ namespace GPMS.APPLICATION.Services
                 throw new ValidationException("Chỉ có thể phân công công đoạn khi production đang ở trạng thái Đang Sản Xuất");
             }
             //     var updated = new ProductionPartDetailViewDTO();
-            var updated = await _partAssignRepo.AssignWorkers(partId, workers);
+            var updated = await _partAssignRepo.AssignWorkers(partOrderSizeId, workers);
             //   return null;
             return (await BuildViews(new[] { updated })).First();
         }
@@ -322,7 +378,7 @@ namespace GPMS.APPLICATION.Services
         public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int partOrderSizeId, int userId, int quantity)
         {
             var productionPart = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
-            
+
             var productionPartOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId) ?? throw new ValidationException("Production part order size không tồn tại");
 
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
@@ -394,7 +450,7 @@ namespace GPMS.APPLICATION.Services
             return returnData;
         }
 
-        public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId,int partOrderSizeId, int workLogId, int quantity)
+        public async Task<ProductionPartWorkLog> UpdateWorkLog(int partId, int partOrderSizeId, int workLogId, int quantity)
         {
             if (quantity < 0) throw new ValidationException("Số lượng phải >= 0");
             // Workflow: 
@@ -487,11 +543,11 @@ namespace GPMS.APPLICATION.Services
             // Lấy tất cả các báo cáo thông qua part id đấy
             var allQuantityInAPart = await _workLogRepo.GetAll(partId);
             // Tổng hợp số lượng
-            foreach(var worklog in allQuantityInAPart)
+            foreach (var worklog in allQuantityInAPart)
             {
                 totalQuantityWorkLog += worklog.Quantity;
             }
-            if(totalQuantityWorkLog != order.Quantity)
+            if (totalQuantityWorkLog != order.Quantity)
             {
                 throw new ValidationException("Số lượng hoàn thành không khớp với số lượng trong Order");
             }
@@ -519,7 +575,7 @@ namespace GPMS.APPLICATION.Services
             return workers;
         }
 
-        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId,int partOrderSizeId, IEnumerable<int> workLogIds)
+        public async Task<PartPaymentCompletionViewDTO> CompletePartPayment(int partId, int partOrderSizeId, IEnumerable<int> workLogIds)
         {
             var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
             var selectedLogIds = (workLogIds ?? Enumerable.Empty<int>()).Where(x => x > 0).Distinct().ToList();
@@ -664,6 +720,6 @@ namespace GPMS.APPLICATION.Services
             return scores.OrderByDescending(x => x.ProductivityScore);
         }
 
-       
+
     }
 }

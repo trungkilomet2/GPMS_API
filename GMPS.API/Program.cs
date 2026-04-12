@@ -165,6 +165,7 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 
 
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
+
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
 builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartAssigneeRepository>();
@@ -176,6 +177,7 @@ builder.Services.AddScoped<IBaseRepositories<TemplateDefinition>, SqlServerTempl
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingNotebookRepository>();
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
 builder.Services.AddScoped<IBaseRepositories<ProductionPartOrderSize>, SqlServerProductionPartOrderSizeRepository>();
+builder.Services.AddScoped<IBaseRepositories<OrderSize>, SqlServerOrderSizeReporsitory>();
 
 
 builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
