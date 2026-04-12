@@ -19,7 +19,8 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         [
             "gemini-2.0-flash",
             "gemini-2.0-flash-lite",
-            "gemini-2.5-pro-preview-03-25"
+            "gemini-2.5-pro",
+            "gemini-2.5-flash-lite",
         ];
 
         public ChatService(IConfiguration config)
@@ -62,7 +63,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
                         config: new GenerateContentConfig
                         {
                             Temperature = 0.7f,
-                            MaxOutputTokens = 1200
+                            MaxOutputTokens = 1000
                         }
                     );
 
