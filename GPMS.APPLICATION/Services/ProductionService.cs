@@ -26,6 +26,10 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<ProductionPartWorkLog> _productionPartWorkLogRepo;
         private readonly IBaseRepositories<CuttingNotebook> _cuttingNotebookRepo;
         private readonly IBaseRepositories<CuttingNotebookLog> _cuttingNotebookLogRepo;
+        
+        private readonly IBaseRepositories<ProductionPartOrderSize> _partOrderSizeRepo;
+
+
 
         public ProductionService(
             IBaseRepositories<Production> productionRepo,
@@ -40,7 +44,8 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<ProductionPartWorkLog> productionPartWorkLogRepo,
             IBaseRepositories<CuttingNotebook> cuttingNotebookRepo,
             IBaseRepositories<CuttingNotebookLog> cuttingNotebookLogRepo,
-            IBaseWorkerRepository workerRepo
+            IBaseWorkerRepository workerRepo,
+            IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo
             )
         {
             _unitOfWork = unitOfWork;
@@ -56,6 +61,7 @@ namespace GPMS.APPLICATION.Services
             _cuttingNotebookRepo = cuttingNotebookRepo;
             _cuttingNotebookLogRepo = cuttingNotebookLogRepo;
             _workerRepo = workerRepo;
+            _partOrderSizeRepo = partOrderSizeRepo;
         }
 
         public async Task<Production> CreateProduction(Production production)
@@ -282,8 +288,7 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<ProductionIssueLog> CreateProductionIssue(ProductionIssueLog issue)
         {
-            var part = await _productionPartRepo.GetById(issue.PartOrderSizeId) ?? throw new ValidationException("Công đoạn không tồn tại");
-            _ = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+            var partOrderSize = await _partOrderSizeRepo.GetById(issue.PartOrderSizeId) ?? throw new ValidationException("Công đoạn không tồn tại");
             _ = await _userRepositories.GetById(issue.CreatedBy) ?? throw new ValidationException("Người báo lỗi không tồn tại");
             
             if (issue.AssignedTo.HasValue)
@@ -295,11 +300,6 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("Số lượng lỗi phải lớn hơn 0");
             }
-            
-            var production = await _prdRepo.GetById(part.ProductionId) ?? throw new ValidationException("Không tồn tại Production");
-                
-            var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Không tồn tại Order");
-
 
             issue.AssignedTo ??= issue.CreatedBy;
             issue.CreatedAt ??= VietnamTime.Now();
