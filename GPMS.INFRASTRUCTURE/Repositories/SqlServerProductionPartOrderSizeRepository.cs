@@ -66,9 +66,18 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return null;
         }
 
-        public Task<ProductionPartOrderSize> Update(ProductionPartOrderSize entity)
+        public async Task<ProductionPartOrderSize> Update(ProductionPartOrderSize entity)
         {
-            throw new NotImplementedException();
+            var db = await _context.P_PART_ORDER_SIZE.FirstOrDefaultAsync(x => x.PPOS_ID == entity.Id);
+            if (db is null)
+            {
+                throw new ValidationException("Không tồn tại dữ liệu trong hệ thống");
+            }
+
+            db.QUANTITY = entity.Quantity;
+            db.PPOSS_ID = entity.PartOrderSizeStatusId;
+            await _context.SaveChangesAsync();
+            return _mapper.Map<ProductionPartOrderSize>(db);
         }
 
 

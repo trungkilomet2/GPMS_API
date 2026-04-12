@@ -53,11 +53,14 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.NOTE));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.ORDER_SIZE, GPMS.DOMAIN.Entities.OrderSize>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OD_ID))
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.ORDER_ID))
                 .ForMember(dest => dest.SizeId, opt => opt.MapFrom(src => src.SIZE_ID))
                 .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.COLOR))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
-                .ForMember(dest => dest.OrderSizeStatusId, opt => opt.MapFrom(src => src.OSS_ID)).ReverseMap();
+                .ForMember(dest => dest.OrderSizeStatusId, opt => opt.MapFrom(src => src.OSS_ID))
+                .ReverseMap()
+                .ForMember(dest => dest.OD_ID, opt => opt.MapFrom(src => src.Id));
 
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.O_MATERIAL, GPMS.DOMAIN.Entities.OMaterial>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OM_ID))
@@ -256,6 +259,22 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.IS_ID, opt => opt.MapFrom(src => src.StatusId))
                 .ForMember(dest => dest.IMAGE, opt => opt.MapFrom(src => src.ImageUrl))
                 .ForMember(dest => dest.CREATED_AT, opt => opt.MapFrom(src => src.CreatedAt));
+
+            // DELIVERY
+            CreateMap<GPMS.INFRASTRUCTURE.DataContext.DELIVERY, GPMS.DOMAIN.Entities.Delivery>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.DELIVERY_ID))
+                .ForMember(dest => dest.OrderSizeId, opt => opt.MapFrom(src => src.ORDER_SIZE_ID))
+                .ForMember(dest => dest.DeliverQuantity, opt => opt.MapFrom(src => src.DELIVER_QUANTITY))
+                .ForMember(dest => dest.DeliveredAt, opt => opt.MapFrom(src => src.SHIPPED_DATE))
+                .ForMember(dest => dest.ReceivedDate, opt => opt.MapFrom(src => src.RECEIVED_DATE))
+                .ForMember(dest => dest.DeliverStatusId, opt => opt.MapFrom(src => src.DS_ID))
+                .ReverseMap()
+                .ForMember(dest => dest.DELIVERY_ID, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ORDER_SIZE_ID, opt => opt.MapFrom(src => src.OrderSizeId))
+                .ForMember(dest => dest.DELIVER_QUANTITY, opt => opt.MapFrom(src => src.DeliverQuantity))
+                .ForMember(dest => dest.SHIPPED_DATE, opt => opt.MapFrom(src => src.DeliveredAt))
+                .ForMember(dest => dest.RECEIVED_DATE, opt => opt.MapFrom(src => src.ReceivedDate))
+                .ForMember(dest => dest.DS_ID, opt => opt.MapFrom(src => src.DeliverStatusId));
           
             // CUTTING NOTE BOOK
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.CUTTING_NOTEBOOK, GPMS.DOMAIN.Entities.CuttingNotebook>()
