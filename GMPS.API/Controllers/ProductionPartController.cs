@@ -434,6 +434,31 @@ namespace GMPS.API.Controllers
             }
         }
 
+        // Mục đích: PM nghiệm thu sản lượng do worker submit, cho phép nhập lại số lượng duyệt và khóa log (IsReadOnly = true).
+        [HttpPatch("parts/approve-work-log/{partId:int}/{partOrderSizeId:int}/{workLogId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionPartWorkLogResponseDTO>>> ApproveWorkLog(
+            [Range(1, int.MaxValue)] int partId,
+            [Range(1, int.MaxValue)] int partOrderSizeId,
+            [Range(1, int.MaxValue)] int workLogId,
+            [FromBody] ApproveWorkLogRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.ApproveWorkLog(partId, partOrderSizeId, workLogId, dto.ApprovedQuantity);
+                return Ok(new RestDTO<ProductionPartWorkLogResponseDTO> { Data = _mapper.Map<ProductionPartWorkLogResponseDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Approve work log failed for workLogId {WorkLogId}", workLogId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
         [HttpPost("parts/issues/create/{partOrderSizeId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> CreatePartIssue(
@@ -531,6 +556,82 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Get issue list failed for production {ProductionId}", productionId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // Mục đích: cập nhật trạng thái issue theo workflow.
+        [HttpPatch("parts/issues/update-status/{issueId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> UpdateIssueStatus(
+            [Range(1, int.MaxValue)] int issueId,
+            [FromBody] UpdateIssueStatusRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var issue = await _productionPartService.UpdateIssueStatus(issueId, dto.StatusId);
+                return Ok(new RestDTO<ProductionIssueListItemDTO>
+                {
+                    Data = new ProductionIssueListItemDTO
+                    {
+                        IssueId = issue.Id,
+                        PartOrderSizeId = issue.PartOrderSizeId,
+                        Title = issue.Title,
+                        Description = issue.Description,
+                        Priority = issue.Priority,
+                        Quantity = issue.Quantity,
+                        CreatedBy = issue.CreatedBy,
+                        AssignedTo = issue.AssignedTo,
+                        ImageUrl = issue.ImageUrl,
+                        CreatedAt = issue.CreatedAt
+                    }
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update issue status failed for issueId {IssueId}", issueId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // Mục đích: PM xác nhận issue không thể sửa, chốt số lượng lỗi và đồng bộ trừ sản lượng.
+        [HttpPatch("parts/issues/confirm-unfixable/{issueId:int}")]
+        public async Task<ActionResult<RestDTO<ProductionIssueListItemDTO>>> ConfirmUnfixableIssue(
+            [Range(1, int.MaxValue)] int issueId,
+            [FromBody] ConfirmUnfixableIssueRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var issue = await _productionPartService.ConfirmUnfixableIssue(issueId, dto.ConfirmedQuantity);
+                return Ok(new RestDTO<ProductionIssueListItemDTO>
+                {
+                    Data = new ProductionIssueListItemDTO
+                    {
+                        IssueId = issue.Id,
+                        PartOrderSizeId = issue.PartOrderSizeId,
+                        Title = issue.Title,
+                        Description = issue.Description,
+                        Priority = issue.Priority,
+                        Quantity = issue.Quantity,
+                        CreatedBy = issue.CreatedBy,
+                        AssignedTo = issue.AssignedTo,
+                        ImageUrl = issue.ImageUrl,
+                        CreatedAt = issue.CreatedAt
+                    }
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Confirm unfixable issue failed for issueId {IssueId}", issueId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
@@ -728,7 +829,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        // Mục đích: xóa work log nếu bản ghi chưa khóa (IsReadOnly = false).
+        // TRUNGNT: xóa work log nếu bản ghi chưa khóa (IsReadOnly = false).
         [HttpDelete("production/work-logs/{workLogId:int}")]
         public async Task<ActionResult> DeleteProductionWorkLog(
             [Range(1, int.MaxValue)] int workLogId)
@@ -746,6 +847,59 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Delete work log failed for workLogId {WorkLogId}", workLogId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // Mục đích: lấy danh sách delivery của một order.
+        [HttpGet("delivery/order/{orderId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<DeliveryResponseDTO>>>> GetDeliveriesByOrder([Range(1, int.MaxValue)] int orderId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.GetDeliveriesByOrder(orderId);
+                return Ok(new RestDTO<IEnumerable<DeliveryResponseDTO>> { Data = _mapper.Map<IEnumerable<DeliveryResponseDTO>>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get deliveries failed for orderId {OrderId}", orderId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // Mục đích: tạo nhiều phiếu delivery cho một order từ danh sách đầu vào.
+        [HttpPost("delivery/order/{orderId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<DeliveryResponseDTO>>>> CreateDeliveries(
+            [Range(1, int.MaxValue)] int orderId,
+            [FromBody] CreateDeliveryBatchRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var payload = dto.Deliveries.Select(x => new Delivery
+                {
+                    OrderSizeId = x.OrderSizeId,
+                    DeliverQuantity = x.DeliverQuantity,
+                    DeliverStatusId = x.DeliverStatusId
+                });
+                var data = await _productionPartService.CreateDeliveries(orderId, payload);
+                return StatusCode(StatusCodes.Status201Created, new RestDTO<IEnumerable<DeliveryResponseDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<DeliveryResponseDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Create deliveries failed for orderId {OrderId}", orderId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }

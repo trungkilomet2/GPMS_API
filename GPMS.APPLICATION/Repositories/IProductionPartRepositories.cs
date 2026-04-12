@@ -38,5 +38,20 @@ namespace GPMS.APPLICATION.Repositories
 
         Task DeleteWorkLog(int workLogId);
 
+        // PM xác nhận sản lượng (ghi đè số lượng được duyệt) và khóa log.
+        Task<ProductionPartWorkLog> ApproveWorkLog(int partId, int partOrderSizeId, int workLogId, int approvedQuantity);
+
+        // Cập nhật trạng thái issue theo workflow.
+        Task<ProductionIssueLog> UpdateIssueStatus(int issueId, int statusId);
+
+        // PM xác nhận issue không thể sửa, khóa issue và trừ số lượng sản phẩm liên quan.
+        Task<ProductionIssueLog> ConfirmUnfixableIssue(int issueId, int confirmedQuantity);
+
+        // Danh sách delivery đã gửi theo user đặt đơn.
+        Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId);
+
+        // Tạo nhiều delivery cho một order theo danh sách đầu vào.
+        Task<IEnumerable<Delivery>> CreateDeliveries(int orderId, IEnumerable<Delivery> deliveries);
+
     }
 }

@@ -178,6 +178,7 @@ builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingN
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
 builder.Services.AddScoped<IBaseRepositories<ProductionPartOrderSize>, SqlServerProductionPartOrderSizeRepository>();
 builder.Services.AddScoped<IBaseRepositories<OrderSize>, SqlServerOrderSizeReporsitory>();
+builder.Services.AddScoped<IBaseRepositories<Delivery>, SqlServerDeliveryRepository>();
 
 
 builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();

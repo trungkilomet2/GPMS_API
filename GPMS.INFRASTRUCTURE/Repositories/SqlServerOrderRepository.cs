@@ -264,9 +264,21 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<Order>(existing);
         }
 
-        public Task<Order> Update(Order entity)
+        public async Task<Order> Update(Order entity)
         {
-            throw new NotImplementedException();
+            var existing = await _context.ORDER.FirstOrDefaultAsync(x => x.ORDER_ID == entity.Id);
+            if (existing is null) throw new KeyNotFoundException($"Order '{entity.Id}' not exist");
+
+            existing.ORDER_NAME = entity.OrderName;
+            existing.START_DATE = entity.StartDate;
+            existing.END_DATE = entity.EndDate;
+            existing.TOTAL_QUANTITY = entity.Quantity;
+            existing.CPU = entity.Cpu ?? 0;
+            existing.NOTE = entity.Note;
+            existing.OS_ID = entity.Status;
+            existing.IMAGE = entity.Image;
+            await _context.SaveChangesAsync();
+            return _mapper.Map<Order>(existing);
         }
         public Task Delete(object id) => throw new NotImplementedException();
 

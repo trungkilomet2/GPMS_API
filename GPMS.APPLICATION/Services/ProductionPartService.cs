@@ -26,6 +26,8 @@ namespace GPMS.APPLICATION.Services
         private readonly IBaseRepositories<Size> _sizeRepo;
         private readonly IBaseRepositories<ProductionPartOrderSize> _partOrderSizeRepo;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IBaseRepositories<ProductionIssueLog> _issueRepo;
+        private readonly IBaseRepositories<Delivery> _deliveryRepo;
 
         public ProductionPartService(
             IBaseRepositories<ProductionPart> partRepo,
@@ -39,7 +41,9 @@ namespace GPMS.APPLICATION.Services
             IBaseRepositories<Order> orderRepo,
             IBaseRepositories<ProductionPartOrderSize> partOrderSizeRepo,
             IBaseRepositories<OrderSize> orderSizeRepo,
-            IBaseRepositories<Size> sizeRepo
+            IBaseRepositories<Size> sizeRepo,
+            IBaseRepositories<ProductionIssueLog> issueRepo,
+            IBaseRepositories<Delivery> deliveryRepo
             )
         {
             _partRepo = partRepo;
@@ -54,6 +58,8 @@ namespace GPMS.APPLICATION.Services
             _partOrderSizeRepo = partOrderSizeRepo;
             _orderSizeRepo = orderSizeRepo;
             _sizeRepo = sizeRepo;
+            _issueRepo = issueRepo;
+            _deliveryRepo = deliveryRepo;
         }
 
         public async Task<IEnumerable<ProductionPartDetailViewDTO>> GetPartsByProductionId(int productionId)
@@ -831,6 +837,220 @@ namespace GPMS.APPLICATION.Services
             var part = await _partRepo.GetById(partOrderSize.ProductionPartId)
                 ?? throw new ValidationException("Production part không tồn tại");
             await _workLogRepo.Delete(workLogId);
+        }
+
+        // Mục đích: PM duyệt lại số lượng thực tế của work log và khóa bản ghi để tránh sửa lại.
+        public async Task<ProductionPartWorkLog> ApproveWorkLog(int partId, int partOrderSizeId, int workLogId, int approvedQuantity)
+        {
+            if (approvedQuantity < 0) throw new ValidationException("Số lượng nghiệm thu phải >= 0");
+            ProductionPartWorkLog approvedLog = null!;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
+                var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId) ?? throw new ValidationException("Production part size không tồn tại");
+                if (partOrderSize.ProductionPartId != partId) throw new ValidationException("Production part order size không khớp production part này");
+
+                var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
+                if (log.PartOrderSizeId != partOrderSizeId) throw new ValidationException("Work log không thuộc production part size này");
+                if (log.IsPayment) throw new ValidationException("Work log đã thanh toán, không thể nghiệm thu lại");
+                if (log.IsReadOnly) throw new ValidationException("Work log đã khóa, không thể nghiệm thu lại");
+                if (approvedQuantity > log.Quantity) throw new ValidationException("Số lượng nghiệm thu không thể lớn hơn số lượng đã submit");
+
+                var production = await _productionRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+                var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại");
+                var orderSizeLimit = await ResolveOrderSizeLimitAsync(order.Id, partOrderSize);
+
+                var allLogs = (await _workLogRepo.GetAll(partOrderSizeId)).ToList();
+                var totalWithoutCurrent = allLogs.Where(x => x.Id != workLogId).Sum(x => x.Quantity);
+                var approvedTotal = totalWithoutCurrent + approvedQuantity;
+                if (approvedTotal > orderSizeLimit)
+                {
+                    throw new ValidationException("Số lượng nghiệm thu vượt quá số lượng order size");
+                }
+
+                log.Quantity = approvedQuantity;
+                log.IsReadOnly = true;
+                approvedLog = await _workLogRepo.Update(log);
+
+                part.StatusId = approvedTotal == orderSizeLimit
+                    ? ProductionPart_Constrants.Reviewing_ID
+                    : ProductionPart_Constrants.OnGoing_ID;
+                await _partRepo.Update(part);
+            });
+
+            return approvedLog;
+        }
+
+        // Mục đích: đổi trạng thái issue theo workflow ToDo -> Processing -> Fixed hoặc ToDo -> Error.
+        public async Task<ProductionIssueLog> UpdateIssueStatus(int issueId, int statusId)
+        {
+            var issue = await _issueRepo.GetById(issueId) ?? throw new ValidationException("Issue không tồn tại");
+
+            var isValidTransition =
+                (issue.StatusId == IssueStatus_Constrants.ToDo_ID && (statusId == IssueStatus_Constrants.Processing_ID || statusId == IssueStatus_Constrants.Error_ID)) ||
+                (issue.StatusId == IssueStatus_Constrants.Processing_ID && statusId == IssueStatus_Constrants.Fixed_ID) ||
+                issue.StatusId == statusId;
+
+            if (!isValidTransition)
+            {
+                throw new ValidationException("Trạng thái issue không hợp lệ theo workflow");
+            }
+
+            issue.StatusId = statusId;
+            return await _issueRepo.Update(issue);
+        }
+
+        // Mục đích: xác nhận issue không thể sửa và đồng bộ trừ sản lượng của part size + order tổng.
+
+        // Mục đích: xác nhận issue không thể sửa và đồng bộ trừ sản lượng của part size + order tổng.
+        public async Task<ProductionIssueLog> ConfirmUnfixableIssue(int issueId, int confirmedQuantity)
+        {
+            if (confirmedQuantity <= 0) throw new ValidationException("Số lượng lỗi xác nhận phải > 0");
+            ProductionIssueLog updatedIssue = null!;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var issue = await _issueRepo.GetById(issueId) ?? throw new ValidationException("Issue không tồn tại");
+                var partOrderSize = await _partOrderSizeRepo.GetById(issue.PartOrderSizeId) ?? throw new ValidationException("Production part size không tồn tại");
+                var part = await _partRepo.GetById(partOrderSize.ProductionPartId) ?? throw new ValidationException("Production part không tồn tại");
+                var production = await _productionRepo.GetById(part.ProductionId) ?? throw new ValidationException("Production không tồn tại");
+                var order = await _orderRepo.GetById(production.OrderId) ?? throw new ValidationException("Order không tồn tại");
+
+                if (issue.StatusId != IssueStatus_Constrants.Error_ID)
+                {
+                    throw new ValidationException("Lỗi phải ở trạng thái 'Không thể sửa' trước khi xác nhận");
+                }
+
+                if (confirmedQuantity > issue.Quantity)
+                {
+                    throw new ValidationException("Số lượng xác nhận không thể lớn hơn số lượng lỗi đã báo");
+                }
+
+                var relatedPartSizes = new List<ProductionPartOrderSize>();
+                var allParts = await _partRepo.GetAll(production.Id);
+                foreach (var productionPart in allParts)
+                {
+                    var sizes = await _partOrderSizeRepo.GetAll(productionPart.Id);
+                    relatedPartSizes.AddRange(sizes.Where(x =>
+                        string.Equals(x.Color?.Trim(), partOrderSize.Color?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(x.Size?.Trim(), partOrderSize.Size?.Trim(), StringComparison.OrdinalIgnoreCase)));
+                }
+
+                foreach (var relatedPartSize in relatedPartSizes)
+                {
+                    if (relatedPartSize.Quantity < confirmedQuantity)
+                    {
+                        throw new ValidationException("Số lượng công đoạn hiện tại không đủ để trừ theo issue");
+                    }
+                    relatedPartSize.Quantity -= confirmedQuantity;
+                    await _partOrderSizeRepo.Update(relatedPartSize);
+                }
+
+                // Khóa toàn bộ work log của partOrderSize lỗi để tránh phát sinh thêm sau khi đã chốt "không thể sửa".
+                var relatedWorkLogs = await _workLogRepo.GetAll(issue.PartOrderSizeId);
+                foreach (var workLog in relatedWorkLogs)
+                {
+                    workLog.IsReadOnly = true;
+                    await _workLogRepo.Update(workLog);
+                }
+
+                // Trừ số lượng ORDER_SIZE liên quan (cùng màu + size với partOrderSize của issue).
+                // Vì một đơn có thể có nhiều dòng ORDER_SIZE cùng màu/size, hệ thống sẽ phân bổ trừ lần lượt.
+                var orderSizes = (await _orderSizeRepo.GetAll(order.Id)).ToList();
+
+                // Do OrderSize domain chỉ có SizeId, cần map size-name từ bảng Size để so khớp với partOrderSize.Size.
+                var matchedOrderSizes = new List<OrderSize>();
+                foreach (var orderSize in orderSizes)
+                {
+                    var size = await _sizeRepo.GetById(orderSize.SizeId);
+                    var isMatchedColor = string.Equals(orderSize.Color?.Trim(), partOrderSize.Color?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    var isMatchedSize = string.Equals(size?.Name?.Trim(), partOrderSize.Size?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    if (isMatchedColor && isMatchedSize)
+                    {
+                        matchedOrderSizes.Add(orderSize);
+                    }
+                }
+
+                if (!matchedOrderSizes.Any())
+                {
+                    throw new ValidationException("Không tìm thấy lỗi liên quan để trừ theo issue");
+                }
+
+                var remainToDeduct = confirmedQuantity;
+                foreach (var matchedOrderSize in matchedOrderSizes.OrderBy(x => x.Id))
+                {
+                    if (remainToDeduct <= 0) break;
+                    var deduct = Math.Min(matchedOrderSize.Quantity, remainToDeduct);
+                    matchedOrderSize.Quantity -= deduct;
+                    remainToDeduct -= deduct;
+                    await _orderSizeRepo.Update(matchedOrderSize);
+                }
+
+                if (remainToDeduct > 0)
+                {
+                    throw new ValidationException("Tổng số lượng trong đơn hàng liên quan không đủ để trừ theo lỗi");
+                }
+
+                order.Quantity -= confirmedQuantity;
+                if (order.Quantity < 0) throw new ValidationException("Tổng số lượng order không hợp lệ sau khi trừ issue");
+                await _orderRepo.Update(order);
+
+                issue.Quantity = confirmedQuantity;
+                issue.StatusId = IssueStatus_Constrants.Error_ID;
+                updatedIssue = await _issueRepo.Update(issue);
+            });
+
+            return updatedIssue;
+        }
+
+        // Mục đích: lấy danh sách delivery theo user để hiển thị lịch sử gửi hàng.
+        public async Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId)
+        {
+            _ = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
+            var orderSizeIds = (await _orderSizeRepo.GetAll(orderId)).Select(x => x.Id).ToHashSet();
+            var deliveries = await _deliveryRepo.GetAll(null);
+            return deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId));
+        }
+
+        // Mục đích: tạo nhiều delivery cho một order theo danh sách order_size được chọn.
+        public async Task<IEnumerable<Delivery>> CreateDeliveries(int orderId, IEnumerable<Delivery> deliveries)
+        {
+            var order = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
+            var payload = (deliveries ?? Enumerable.Empty<Delivery>()).ToList();
+            if (payload.Count == 0) throw new ValidationException("Danh sách delivery không hợp lệ");
+
+            var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
+            var created = new List<Delivery>();
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                foreach (var delivery in payload)
+                {
+                    var matchedOrderSize = orderSizes.FirstOrDefault(x => x.Id == delivery.OrderSizeId);
+                    if (matchedOrderSize is null)
+                    {
+                        throw new ValidationException($"OrderSizeId = {delivery.OrderSizeId} không thuộc OrderId = {orderId}");
+                    }
+
+                    if (delivery.DeliverQuantity <= 0)
+                    {
+                        throw new ValidationException("Số lượng giao phải > 0");
+                    }
+
+                    var createdDelivery = await _deliveryRepo.Create(new Delivery
+                    {
+                        OrderSizeId = delivery.OrderSizeId,
+                        DeliverQuantity = delivery.DeliverQuantity,
+                        DeliveredAt = VietnamTime.Now(),
+                        DeliverStatusId = DeliveryStatus_Constrants.ToDo_ID,
+                        ReceivedDate = null
+                    });
+                    created.Add(createdDelivery);
+                }
+            });
+
+            return created;
         }
 
 
