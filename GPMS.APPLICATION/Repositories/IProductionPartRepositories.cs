@@ -36,5 +36,7 @@ namespace GPMS.APPLICATION.Repositories
         // TrungNT 13-04-26
         Task<IEnumerable<ProductionPartWorkLog>> GetProductionWorkLogs(int productionId, int? workerId);
 
+        Task DeleteWorkLog(int workLogId);
+
     }
 }

@@ -788,7 +788,7 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-        // Mục đích: trả về danh sách production work log của một production và hỗ trợ filter theo worker.
+        //TrungNT: trả về danh sách production work log của một production và hỗ trợ filter theo worker.
         public async Task<IEnumerable<ProductionPartWorkLog>> GetProductionWorkLogs(int productionId, int? workerId)
         {
             _ = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
@@ -810,6 +810,27 @@ namespace GPMS.APPLICATION.Services
                 logs = logs.Where(x => x.UserId == workerId.Value);
             }
             return logs.OrderByDescending(x => x.CreateDate).ToList();
+        }
+
+
+        //TrungNT: xóa work log khi bản ghi chưa bị khóa (IsReadOnly = false) và chưa thanh toán.
+        public async Task DeleteWorkLog(int workLogId)
+        {
+            var workLog = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
+
+            if (workLog.IsReadOnly)
+            {
+                throw new ValidationException("Work log đã khóa, không thể xóa");
+            }
+            if (workLog.IsPayment)
+            {
+                throw new ValidationException("Work log đã thanh toán, không thể xóa");
+            }
+            var partOrderSize = await _partOrderSizeRepo.GetById(workLog.PartOrderSizeId)
+                ?? throw new ValidationException("Production part size không tồn tại");
+            var part = await _partRepo.GetById(partOrderSize.ProductionPartId)
+                ?? throw new ValidationException("Production part không tồn tại");
+            await _workLogRepo.Delete(workLogId);
         }
 
 

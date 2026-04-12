@@ -697,7 +697,7 @@ namespace GMPS.API.Controllers
         }
 
 
-        // Mục đích: lấy danh sách work log của cả production và filter theo worker nếu truyền lên.
+        // TRUNGNT: lấy danh sách work log của cả production và filter theo worker nếu truyền lên.
         [HttpGet("production/work-logs/{productionId:int}")]
         public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartWorkLog>>>> GetProductionWorkLogs(
             [Range(1, int.MaxValue)] int productionId,
@@ -724,6 +724,28 @@ namespace GMPS.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Get production work logs failed for production {ProductionId}", productionId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+        // Mục đích: xóa work log nếu bản ghi chưa khóa (IsReadOnly = false).
+        [HttpDelete("production/work-logs/{workLogId:int}")]
+        public async Task<ActionResult> DeleteProductionWorkLog(
+            [Range(1, int.MaxValue)] int workLogId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                await _productionPartService.DeleteWorkLog(workLogId);
+                return Ok();
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Delete work log failed for workLogId {WorkLogId}", workLogId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
