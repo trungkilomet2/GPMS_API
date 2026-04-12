@@ -895,6 +895,7 @@ namespace GMPS.API.Controllers
                     StartDate = input.StartDate,
                     EndDate = input.EndDate,
                     Quantity = input.Quantity,
+                    Cpu = input.Cpu,
                     Image = input.Image,
                     Note = input.Note,
                     Sizes = input.Sizes?.Select(s => new OrderSize
