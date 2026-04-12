@@ -27,7 +27,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<ProductionPart>> GetAll(object? obj)
         {
-            IQueryable<P_PART> query = _context.P_PART.Include(x => x.PPS);
+            IQueryable<P_PART> query = _context.P_PART.Include(x=>x.P_PART_ORDER_SIZE).ThenInclude(x=>x.USER).Include(x => x.PPS);
             if (obj is int productionId)
             {
                 query = query.Where(x => x.PRODUCTION_ID == productionId);

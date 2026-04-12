@@ -124,7 +124,6 @@ namespace GMPS.API.Controllers
                 });
             }
         }
-
         // GET : Tạo ra part của production đấy, có thể tạo nhiều part cùng lúc, trả về thông tin chi tiết của các part vừa được tạo ra
         // Truyền vào một IEnumerable danh sách cùng một lúc
         [HttpPost("production/create-parts/{productionId:int}")]
@@ -379,13 +378,13 @@ namespace GMPS.API.Controllers
 
         //------------------------- LOG WORK API------------------------------- CHECK1
 
-        [HttpGet("parts/get-work-logs/{partId:int}")]
-        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartWorkLog>>>> GetWorkLogs([Range(1, int.MaxValue)] int partId)
+        [HttpGet("parts/get-work-logs/{partId:int}/{partOrderSizeId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartWorkLog>>>> GetWorkLogs([Range(1, int.MaxValue)] int partId, [Range(1, int.MaxValue)] int partOrderSizeId)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var data = await _productionPartService.GetWorkLogs(partId);
+                var data = await _productionPartService.GetWorkLogs(partId,partOrderSizeId);
                 return Ok(new RestDTO<IEnumerable<ProductionPartWorkLog>> { Data = data });
             }
             catch (ValidationException ex)
@@ -394,7 +393,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPost("parts/create-work-logs/{partId:int}")]
+        [HttpPost("parts/create-work-logs/{partId:int}/{partOrderSizeId}")]
         public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> CreateWorkLog(
             [Range(1, int.MaxValue)] int partId, 
             [Range(1, int.MaxValue)] int partOrderSizeId,
@@ -416,7 +415,7 @@ namespace GMPS.API.Controllers
             }
         }
 
-        [HttpPut("parts/update-work-logs/{partId:int}/{workLogId:int}")]
+        [HttpPut("parts/update-work-logs/{partId:int}/{partOrderSizeId:int}/{workLogId:int}")]
         public async Task<ActionResult<RestDTO<ProductionPartWorkLog>>> UpdateWorkLog(
             [Range(1, int.MaxValue)] int partId,
             [Range(1, int.MaxValue)] int partOrderSizeId,

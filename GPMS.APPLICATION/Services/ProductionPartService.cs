@@ -361,10 +361,16 @@ namespace GPMS.APPLICATION.Services
         }
 
 
-        public async Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId)
+        public async Task<IEnumerable<ProductionPartWorkLog>> GetWorkLogs(int partId,int partOrderSizeId)
         {
             _ = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
-            var logs = await _workLogRepo.GetAll(partId);
+            var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId)
+               ?? throw new ValidationException("Production part size không tồn tại trong hệ thống");
+            if (partOrderSize.ProductionPartId != partId)
+            {
+                throw new ValidationException("Production part order size không khớp production part này");
+            }
+            var logs = await _workLogRepo.GetAll(partOrderSizeId);
             var now = VietnamTime.Now();
             var normalized = new List<ProductionPartWorkLog>();
             foreach (var log in logs)
@@ -378,8 +384,6 @@ namespace GPMS.APPLICATION.Services
         public async Task<ProductionPartWorkLog> CreateWorkLog(int partId, int partOrderSizeId, int userId, int quantity)
         {
             var productionPart = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại");
-
-            var productionPartOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId) ?? throw new ValidationException("Production part order size không tồn tại");
 
             var user = await _userRepo.GetById(userId) ?? throw new ValidationException("Worker không tồn tại");
 
@@ -396,6 +400,19 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new ValidationException("Không thể cập nhật công đoạn trong trạng thái này");
                 }
+                var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId); 
+                if (partOrderSize is null)
+                {
+                      throw new ValidationException("Production part size không tồn tại trong hệ thống");
+                }
+                if(partOrderSize.ProductionPartId != partId)
+                {
+                    throw new ValidationException("Production part order size không khớp production part này");
+                }
+                if(!partOrderSize.AssigneeIds.Contains(userId))
+                {
+                    throw new ValidationException("Người này không được phân công để làm việc này");
+                }
                 // lấy thông tin production
                 var production = await _productionRepo.GetById(part.ProductionId);
                 // TRUNGNT FIX: Không cho phép ghi log work khi production đã hoàn thành
@@ -406,13 +423,12 @@ namespace GPMS.APPLICATION.Services
                 }
                 // lấy thông tin đơn hàng
                 var getOrder = await _orderRepo.GetById(production.OrderId);
-                // Nếu như số lượng ở trong đơn hàng vượt quá số lượng đơn hàng giao cho => Không thể cập nhật số lượng
-                if (quantity > getOrder.Quantity)
-                {
-                    throw new ValidationException("Số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
-                }
-                // Lấy lịch sử submit sản lượng ở trong production part đấy
-                var allWorkLogsInAPart = await _workLogRepo.GetAll(partId);
+
+                // FIX nghiệp vụ ghi nhận sản lượng:
+                // Số lượng log phải được khống chế theo ORDER_SIZE tương ứng (màu + size) của partOrderSize hiện tại.
+                var orderSizeLimit = await ResolveOrderSizeLimitAsync(getOrder.Id, partOrderSize);
+                // Lấy lịch sử submit sản lượng theo đúng partOrderSize hiện tại.
+                var allWorkLogsInAPart = await _workLogRepo.GetAll(partOrderSizeId);
 
                 int historyQuantitySubmits = 0;
                 foreach (var logpart in allWorkLogsInAPart)
@@ -421,15 +437,15 @@ namespace GPMS.APPLICATION.Services
                 }
                 int nowQuantitySubmit = historyQuantitySubmits + quantity;
                 // Nếu như đơn hàng chưa hoàn thành thì cập nhật trạng thái thành đang sản xuất
-                if (nowQuantitySubmit > 0 && nowQuantitySubmit < getOrder.Quantity)
+                if (nowQuantitySubmit > 0 && nowQuantitySubmit < orderSizeLimit)
                 {
                     productionPart.StatusId = ProductionPart_Constrants.OnGoing_ID;
                 }
-                if (nowQuantitySubmit > getOrder.Quantity)
+                if (nowQuantitySubmit > orderSizeLimit)
                 {
                     throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
                 }
-                if (nowQuantitySubmit == getOrder.Quantity)
+                if (nowQuantitySubmit == orderSizeLimit)
                 {
                     productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
                 }
@@ -480,12 +496,29 @@ namespace GPMS.APPLICATION.Services
                 // lấy thông tin đơn hàng
                 var getOrder = await _orderRepo.GetById(production.OrderId);
                 // Lấy thông tin tất cả các worklog của công đoạn đó bao gồm cả trong lịch sử:
-                var historyWorkLogs = await _workLogRepo.GetAll(partId);
+                // FIX nghiệp vụ cập nhật sản lượng:
+                // Chỉ tổng hợp lịch sử theo đúng PartOrderSize để giới hạn theo ORDER_SIZE (size + màu).
+                var historyWorkLogs = await _workLogRepo.GetAll(partOrderSizeId);
                 // Tạo data sản lượng đầu ra của các worklog được submit
                 int quantityHistoryWorkLog = 0;
                 // Lấy thông tin ghi chép của công nhân hiện tại
                 var log = await _workLogRepo.GetById(workLogId) ?? throw new ValidationException("Work log không tồn tại");
                 if (log.PartOrderSizeId != partOrderSizeId) throw new ValidationException("Work log không thuộc công đoạn này");
+
+                // FIX nghiệp vụ màn hình cập nhật sản lượng:
+                // Không cho phép cập nhật khi log đã khóa hoặc đã thanh toán.
+                if (log.IsReadOnly)
+                {
+                    throw new ValidationException("Work log đã bị khóa, không thể cập nhật");
+                }
+                if (log.IsPayment)
+                {
+                    throw new ValidationException("Work log đã được thanh toán, không thể cập nhật");
+                }
+                var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId)
+                    ?? throw new ValidationException("Production part size không tồn tại trong hệ thống");
+                var orderSizeLimit = await ResolveOrderSizeLimitAsync(getOrder.Id, partOrderSize);
+
 
                 foreach (var worklog in historyWorkLogs)
                 {
@@ -495,17 +528,17 @@ namespace GPMS.APPLICATION.Services
                     }
                 }
                 int nowQuantitySubmit = quantityHistoryWorkLog + quantity;
-                if (nowQuantitySubmit < getOrder.Quantity)
+                if (nowQuantitySubmit < orderSizeLimit)
                 {
                     part.StatusId = ProductionPart_Constrants.OnGoing_ID;
                     log.Quantity = quantity;
                 }
-                if (nowQuantitySubmit == getOrder.Quantity)
+                if (nowQuantitySubmit == orderSizeLimit)
                 {
                     part.StatusId = ProductionPart_Constrants.Reviewing_ID;
                     log.Quantity = quantity;
                 }
-                if (nowQuantitySubmit > getOrder.Quantity)
+                if (nowQuantitySubmit > orderSizeLimit)
                 {
                     throw new ValidationException("Không thể cập nhật số lượng vượt quá số lượng đơn hàng đặt ra.");
                 }
@@ -718,6 +751,40 @@ namespace GPMS.APPLICATION.Services
             }
 
             return scores.OrderByDescending(x => x.ProductivityScore);
+        }
+
+
+        // Hàm dùng chung để lấy ngưỡng số lượng tối đa từ ORDER_SIZE theo đúng cặp (Color + Size)
+        // phục vụ validate cho màn hình ghi nhận/cập nhật sản lượng.
+        private async Task<int> ResolveOrderSizeLimitAsync(int orderId, ProductionPartOrderSize partOrderSize)
+        {
+            var orderSizes = await _orderSizeRepo.GetAll(orderId);
+            // FIX nghiệp vụ đối chiếu ORDER_SIZE:
+            // Tìm tất cả bản ghi ORDER_SIZE trùng (màu + size) và cộng tổng số lượng để làm ngưỡng tối đa.
+            int resolvedLimit = 0;
+            foreach (var orderSize in orderSizes)
+            {
+                var size = await _sizeRepo.GetById(orderSize.SizeId);
+                if (size is null)
+                {
+                    continue;
+                }
+
+                var isMatchedColor = string.Equals(orderSize.Color?.Trim(), partOrderSize.Color?.Trim(), StringComparison.OrdinalIgnoreCase);
+                var isMatchedSize = string.Equals(size.Name?.Trim(), partOrderSize.Size?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                if (isMatchedColor && isMatchedSize)
+                {
+                    resolvedLimit += orderSize.Quantity;
+                }
+            }
+
+            if (resolvedLimit <= 0)
+            {
+                throw new ValidationException("Không tìm thấy ORDER_SIZE tương ứng với màu/size của công đoạn");
+            }
+
+            return resolvedLimit;
         }
 
 
