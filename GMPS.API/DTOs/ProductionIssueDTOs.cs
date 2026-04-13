@@ -17,6 +17,8 @@ namespace GMPS.API.DTOs
         public int? AssignedTo { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public int StatusId { get; set; }
+
     }
 
     public class ProductionIssueSummaryDTO
@@ -50,7 +52,6 @@ namespace GMPS.API.DTOs
         public int Quantity { get; set; }
 
         public DateTime? OccurredAt { get; set; }
-
 
         [FromForm]
         public IFormFile? Image { get; set; }

@@ -19,5 +19,6 @@ namespace GPMS.DOMAIN.Entities
         public int StatusId { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
+
     }
 }
