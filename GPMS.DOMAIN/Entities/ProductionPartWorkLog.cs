@@ -20,5 +20,7 @@ namespace GPMS.DOMAIN.Entities
         public bool IsReadOnly { get; set; }
         public bool IsPayment { get; set; }
         public string? Note { get; set; }
+        public string? PartName { get; set; }
+        public string? WorkerName { get; set; }
     }
 }

@@ -801,24 +801,40 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<ProductionPartWorkLog>> GetProductionWorkLogs(int productionId, int? workerId)
         {
             _ = await _productionRepo.GetById(productionId) ?? throw new ValidationException("Production không tồn tại");
-            var partIds = (await _partRepo.GetAll(productionId)).Select(x => x.Id).ToHashSet();
+            var parts = (await _partRepo.GetAll(productionId)).ToList();
+            var partIds = parts.Select(x => x.Id).ToHashSet();
             var partOrderSizeIds = new HashSet<int>();
+            var partOrderSizeToPartName = new Dictionary<int, string>();
             foreach (var partId in partIds)
             {
+                var partName = parts.FirstOrDefault(x => x.Id == partId)?.PartName;
                 var partOrderSizes = await _partOrderSizeRepo.GetAll(partId);
                 foreach (var partOrderSize in partOrderSizes)
                 {
                     partOrderSizeIds.Add(partOrderSize.Id);
+                    partOrderSizeToPartName[partOrderSize.Id] = partName ?? string.Empty;
                 }
             }
 
             var logs = (await _workLogRepo.GetAll(null))
-                .Where(x => partOrderSizeIds.Contains(x.PartOrderSizeId));
+                .Where(x => partOrderSizeIds.Contains(x.PartOrderSizeId))
+                .ToList();
+            var users = (await _userRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.FullName);
+
             if (workerId.HasValue)
             {
-                logs = logs.Where(x => x.UserId == workerId.Value);
+                logs = logs.Where(x => x.UserId == workerId.Value).ToList();
             }
-            return logs.OrderByDescending(x => x.CreateDate).ToList();
+
+            return logs
+                .OrderByDescending(x => x.CreateDate)
+                .Select(x =>
+                {
+                    x.PartName = partOrderSizeToPartName.TryGetValue(x.PartOrderSizeId, out var partName) ? partName : null;
+                    x.WorkerName = users.TryGetValue(x.UserId, out var workerName) ? workerName : null;
+                    return x;
+                })
+                .ToList();
         }
 
 
