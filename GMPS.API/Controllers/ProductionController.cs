@@ -430,6 +430,7 @@ namespace GMPS.API.Controllers
                     Description = x.Description,
                     Priority = x.Priority,
                     Quantity = x.Quantity,
+                    StatusId = x.StatusId,
                     ImageUrl = x.ImageUrl,
                     CreatedAt = x.CreatedAt
                 });

@@ -504,6 +504,7 @@ namespace GMPS.API.Controllers
                         Quantity = issue.Quantity,
                         CreatedBy = issue.CreatedBy,
                         AssignedTo = issue.AssignedTo,
+                        StatusId = issue.StatusId,
                         ImageUrl = issue.ImageUrl,
                         CreatedAt = issue.CreatedAt
                     }
@@ -543,6 +544,7 @@ namespace GMPS.API.Controllers
                     Quantity = x.Quantity,
                     CreatedBy = x.CreatedBy,
                     AssignedTo = x.AssignedTo,
+                    StatusId = x.StatusId,
                     ImageUrl = x.ImageUrl,
                     CreatedAt = x.CreatedAt
                 });
@@ -582,6 +584,7 @@ namespace GMPS.API.Controllers
                         Quantity = issue.Quantity,
                         CreatedBy = issue.CreatedBy,
                         AssignedTo = issue.AssignedTo,
+                        StatusId = issue.StatusId,
                         ImageUrl = issue.ImageUrl,
                         CreatedAt = issue.CreatedAt
                     }
@@ -620,6 +623,7 @@ namespace GMPS.API.Controllers
                         Quantity = issue.Quantity,
                         CreatedBy = issue.CreatedBy,
                         AssignedTo = issue.AssignedTo,
+                        StatusId = issue.StatusId,
                         ImageUrl = issue.ImageUrl,
                         CreatedAt = issue.CreatedAt
                     }
