@@ -1,13 +1,9 @@
-﻿using GPMS.APPLICATION.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.Net.Mail;
+using GPMS.APPLICATION.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Memory;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace GPMS.INFRASTRUCTURE.EmailAPI
 {
@@ -15,6 +11,7 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
     {
         private readonly IConfiguration _config;
         private readonly IMemoryCache _memoryCache;
+
         public EmailService(IConfiguration config, IMemoryCache memoryCache)
         {
             _config = config;
@@ -28,16 +25,6 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
 
         public async Task SendEmailAsync(string toEmail, string subject, string body, EmailType emailType)
         {
-            var smtpClient = new SmtpClient(_config["Email:Smtp"])
-            {
-                Port = int.Parse(_config["Email:Port"]),
-                Credentials = new NetworkCredential(
-                    _config["Email:Username"],
-                    _config["Email:Password"]
-                ),
-                EnableSsl = true
-            };
-
             var normalizedEmail = toEmail.Trim().ToLower();
             string? generatedOtp = null;
             string? cacheKey = null;
@@ -71,23 +58,27 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                     break;
             }
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(_config["Email:From"]),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
+            var message = new MimeMessage();
+            message.From.Add(MailboxAddress.Parse(_config["Email:From"]));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+            message.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
 
-            mail.To.Add(toEmail);
-
-            await smtpClient.SendMailAsync(mail);
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync(
+                _config["Email:Smtp"],
+                int.Parse(_config["Email:Port"]!),
+                SecureSocketOptions.StartTls
+            );
+            await smtp.AuthenticateAsync(_config["Email:Username"], _config["Email:Password"]);
+            await smtp.SendAsync(message);
+            await smtp.DisconnectAsync(true);
 
             if (generatedOtp != null && cacheKey != null)
             {
                 _memoryCache.Set(cacheKey, generatedOtp, TimeSpan.FromMinutes(5));
             }
         }
-
     }
 }
+
