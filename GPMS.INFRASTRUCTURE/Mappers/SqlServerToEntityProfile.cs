@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using GPMS.APPLICATION.DTOs;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
