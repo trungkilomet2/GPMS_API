@@ -31,9 +31,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<Size>> GetAll(object? obj)
+        public async Task<IEnumerable<Size>> GetAll(object? obj)
         {
-            throw new NotImplementedException();
+            var data = await _context.SIZE.ToListAsync();
+            return _mapper.Map<IEnumerable<Size>>(data);
         }
 
         public async Task<Size> GetById(object id)

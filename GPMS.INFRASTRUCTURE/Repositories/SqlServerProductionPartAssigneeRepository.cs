@@ -63,7 +63,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<ProductionPartWorkLog> GetWorkLogById(int workLogId)
         {
-            var data = await _context.PART_WORK_LOG.FirstOrDefaultAsync(x => x.WL_ID == workLogId);
+            var data = await _context.PART_WORK_LOG.Include(x => x.PPOS).FirstOrDefaultAsync(x => x.WL_ID == workLogId);
             return data is null ? null : _mapper.Map<ProductionPartWorkLog>(data);
         }
 
@@ -92,7 +92,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             log.IS_PAYMENT = true;
             await _context.SaveChangesAsync();
-            return _mapper.Map<ProductionPartWorkLog>(log);
+            return await GetWorkLogById(workLogId);
         }
 
         // Lấy danh sách GetByID của production part order size

@@ -638,12 +638,15 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
                     }
+                    if(log.IsReadOnly == false)
+                    {
+                        continue;
+                    }
                     if (log.IsPayment == true)
                     {
                         continue;
                     }
                     log.IsPayment = true;
-                    log.IsReadOnly = true;
                     await _workLogRepo.Update(log);
                     updatedCount++;
                 }
@@ -1008,9 +1011,22 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId)
         {
             _ = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
-            var orderSizeIds = (await _orderSizeRepo.GetAll(orderId)).Select(x => x.Id).ToHashSet();
+            var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
+            var orderSizeIds = orderSizes.Select(x => x.Id).ToHashSet();
+            var sizeLookup = (await _sizeRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.Name);
+
             var deliveries = await _deliveryRepo.GetAll(null);
-            return deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId));
+            var matchedDeliveries = deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId)).ToList();
+
+            var orderSizeLookup = orderSizes.ToDictionary(x => x.Id);
+            foreach (var delivery in matchedDeliveries)
+            {
+                if (!orderSizeLookup.TryGetValue(delivery.OrderSizeId, out var orderSize)) continue;
+                delivery.Color = orderSize.Color;
+                delivery.SizeName = sizeLookup.TryGetValue(orderSize.SizeId, out var sizeName) ? sizeName : null;
+            }
+
+            return matchedDeliveries;
         }
 
         // Mục đích: tạo nhiều delivery cho một order theo danh sách order_size được chọn.
@@ -1051,6 +1067,44 @@ namespace GPMS.APPLICATION.Services
             });
 
             return created;
+        }
+
+
+        // Mục đích: customer xác nhận đã nhận/chưa nhận delivery theo cơ chế xác thực 2 bước Yes/No; Guest auto nhận hàng.
+        public async Task<Delivery> ConfirmDeliveryReceipt(int deliveryId, string confirmationText)
+        {
+            if (deliveryId <= 0) throw new ValidationException("DeliveryId không hợp lệ");
+            if (string.IsNullOrWhiteSpace(confirmationText)) throw new ValidationException("Thiếu thông tin xác nhận delivery");
+
+            var normalized = confirmationText.Trim();
+            if (!normalized.Equals("Yes", StringComparison.OrdinalIgnoreCase) &&
+                !normalized.Equals("No", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Giá trị xác nhận chỉ chấp nhận Yes hoặc No");
+            }
+
+            var delivery = await _deliveryRepo.GetById(deliveryId) ?? throw new ValidationException("Delivery không tồn tại");
+            var orderSize = await _orderSizeRepo.GetById(delivery.OrderSizeId) ?? throw new ValidationException("Order size không tồn tại");
+            var order = await _orderRepo.GetById(orderSize.OrderId) ?? throw new ValidationException("Order không tồn tại");
+
+            if(delivery.DeliverStatusId != DeliveryStatus_Constrants.ToDo_ID)
+            {
+                throw new ValidationException("Đơn hàng đã được xem xét bởi khách hàng");
+            }
+
+            // Guest order: tự động xác nhận đã nhận hàng.
+            if (order.GuestId.HasValue)
+            {
+                delivery.DeliverStatusId = DeliveryStatus_Constrants.Done_ID;
+                delivery.ReceivedDate = VietnamTime.Now();
+                return await _deliveryRepo.Update(delivery);
+            }
+
+            delivery.DeliverStatusId = normalized.Equals("Yes", StringComparison.OrdinalIgnoreCase)
+                ? DeliveryStatus_Constrants.Done_ID
+                : DeliveryStatus_Constrants.NotYet_ID;
+            delivery.ReceivedDate = VietnamTime.Now();
+            return await _deliveryRepo.Update(delivery);
         }
 
 

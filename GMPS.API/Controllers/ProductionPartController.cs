@@ -905,5 +905,30 @@ namespace GMPS.API.Controllers
         }
 
 
+        // Mục đích: customer xác nhận đã nhận/chưa nhận hàng theo cơ chế nhập lại "Yes/No" để chốt trạng thái delivery.
+        [HttpPatch("delivery/confirm/{deliveryId:int}")]
+        public async Task<ActionResult<RestDTO<DeliveryResponseDTO>>> ConfirmDeliveryReceipt(
+            [Range(1, int.MaxValue)] int deliveryId,
+            [FromBody] ConfirmDeliveryReceiptRequestDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.ConfirmDeliveryReceipt(deliveryId, dto.ConfirmationText);
+                return Ok(new RestDTO<DeliveryResponseDTO> { Data = _mapper.Map<DeliveryResponseDTO>(data) });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Confirm delivery failed for deliveryId {DeliveryId}", deliveryId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+
     }
 }
