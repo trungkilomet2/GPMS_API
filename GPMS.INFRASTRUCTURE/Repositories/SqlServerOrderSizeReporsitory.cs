@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
@@ -45,14 +46,25 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return null;
         }
 
-        public Task<OrderSize> GetById(object id)
+        public async Task<OrderSize> GetById(object id)
         {
-            throw new NotImplementedException();
+            if (id is not int orderSizeId) return null!;
+            var data = await _context.ORDER_SIZE.FirstOrDefaultAsync(x => x.OD_ID == orderSizeId);
+            return data is null ? null! : _mapper.Map<OrderSize>(data);
         }
 
-        public Task<OrderSize> Update(OrderSize entity)
+        public async Task<OrderSize> Update(OrderSize entity)
         {
-            throw new NotImplementedException();
+            var data = await _context.ORDER_SIZE.FirstOrDefaultAsync(x => x.OD_ID == entity.Id);
+            if (data is null) throw new KeyNotFoundException("OrderSize not found");
+
+            data.SIZE_ID = entity.SizeId;
+            data.COLOR = entity.Color;
+            data.QUANTITY = entity.Quantity;
+            data.OSS_ID = entity.OrderSizeStatusId;
+
+            await _context.SaveChangesAsync();
+            return _mapper.Map<OrderSize>(data);
         }
     }
 }

@@ -1054,6 +1054,44 @@ namespace GPMS.APPLICATION.Services
         }
 
 
+        // Mục đích: customer xác nhận đã nhận/chưa nhận delivery theo cơ chế xác thực 2 bước Yes/No; Guest auto nhận hàng.
+        public async Task<Delivery> ConfirmDeliveryReceipt(int deliveryId, string confirmationText)
+        {
+            if (deliveryId <= 0) throw new ValidationException("DeliveryId không hợp lệ");
+            if (string.IsNullOrWhiteSpace(confirmationText)) throw new ValidationException("Thiếu thông tin xác nhận delivery");
+
+            var normalized = confirmationText.Trim();
+            if (!normalized.Equals("Yes", StringComparison.OrdinalIgnoreCase) &&
+                !normalized.Equals("No", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Giá trị xác nhận chỉ chấp nhận Yes hoặc No");
+            }
+
+            var delivery = await _deliveryRepo.GetById(deliveryId) ?? throw new ValidationException("Delivery không tồn tại");
+            var orderSize = await _orderSizeRepo.GetById(delivery.OrderSizeId) ?? throw new ValidationException("Order size không tồn tại");
+            var order = await _orderRepo.GetById(orderSize.OrderId) ?? throw new ValidationException("Order không tồn tại");
+
+            if(delivery.DeliverStatusId != DeliveryStatus_Constrants.ToDo_ID)
+            {
+                throw new ValidationException("Đơn hàng đã được xem xét bởi khách hàng");
+            }
+
+            // Guest order: tự động xác nhận đã nhận hàng.
+            if (order.GuestId.HasValue)
+            {
+                delivery.DeliverStatusId = DeliveryStatus_Constrants.Done_ID;
+                delivery.ReceivedDate = VietnamTime.Now();
+                return await _deliveryRepo.Update(delivery);
+            }
+
+            delivery.DeliverStatusId = normalized.Equals("Yes", StringComparison.OrdinalIgnoreCase)
+                ? DeliveryStatus_Constrants.Done_ID
+                : DeliveryStatus_Constrants.NotYet_ID;
+            delivery.ReceivedDate = VietnamTime.Now();
+            return await _deliveryRepo.Update(delivery);
+        }
+
+
 
     }
 }

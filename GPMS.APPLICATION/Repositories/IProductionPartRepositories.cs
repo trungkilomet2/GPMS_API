@@ -52,6 +52,7 @@ namespace GPMS.APPLICATION.Repositories
 
         // Tạo nhiều delivery cho một order theo danh sách đầu vào.
         Task<IEnumerable<Delivery>> CreateDeliveries(int orderId, IEnumerable<Delivery> deliveries);
+        Task<Delivery> ConfirmDeliveryReceipt(int deliveryId, string confirmationText);
 
     }
 }
