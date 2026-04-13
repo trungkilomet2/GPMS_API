@@ -31,7 +31,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                 catch(Exception ex)
                 {
                     await transaction.RollbackAsync(cts);
-                    throw new Exception(ex.Message);
+                    throw ;
                 }
             }
         }

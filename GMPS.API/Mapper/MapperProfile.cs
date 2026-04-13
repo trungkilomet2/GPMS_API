@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using GMPS.API.DTOs;
 using GPMS.APPLICATION.DTOs;
+using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using static GMPS.API.DTOs.ProductionOutputDTO;
 
@@ -14,7 +15,6 @@ namespace GMPS.API.Mapper
             //CreateMap<ListProductionDTO, ProductionDetailViewDTO>()
             //    .ForMember(dest => dest.Production.Id, opt => opt.MapFrom(src => src.Id))
             //    .ReverseMap();
-
 
             CreateMap<ProductionDetailViewDTO, ListProductionDTO>()
                 .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Production.Id))
@@ -37,9 +37,16 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Production.StatusId))
                 .ForMember(dest => dest.Order, opt => opt.MapFrom(src => src.Order));
             CreateMap<User, ProductionDetailPMDTO>();
-            CreateMap<Order, ProductionDetailOrderDTO>();
-
-
+            CreateMap<Order, ProductionDetailOrderDTO>()
+                .ForMember(dest => dest.OrderSizes, opt => opt.MapFrom(src => src.Size))
+                .ForMember(dest => dest.Templates, opt => opt.MapFrom(src => src.Template))
+                .ForMember(dest => dest.Materials, opt => opt.MapFrom(src => src.Material));
+            CreateMap<OrderSize, ProductionDetailOrderSizeDTO>()
+                .ForMember(dest => dest.OrderSizeStatusName, 
+                opt => opt.MapFrom(src => src.OrderSizeStatusId == OrderSizeStatus_Constants.Pending_Id ? OrderSizeStatus_Constants.Pending :
+                src.OrderSizeStatusId == OrderSizeStatus_Constants.InProgress_Id ? OrderSizeStatus_Constants.InProgress :
+                src.OrderSizeStatusId == OrderSizeStatus_Constants.Completed_Id ? OrderSizeStatus_Constants.Completed : "Không Xác Định"
+                ));
 
 
 
@@ -49,18 +56,10 @@ namespace GMPS.API.Mapper
              .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Part.Id))
              .ForMember(dest => dest.ProductionId, opt => opt.MapFrom(src => src.Part.ProductionId))
              .ForMember(dest => dest.PartName, opt => opt.MapFrom(src => src.Part.PartName))
-             .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Part.StartDate))
-             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Part.EndDate))
              .ForMember(dest => dest.Cpu, opt => opt.MapFrom(src => src.Part.Cpu))
              .ForMember(dest => dest.StatusId, opt => opt.MapFrom(src => src.Part.StatusId))
              .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Part.StatusName))
-             .ForMember(dest => dest.Assignees, opt => opt.MapFrom(src => src.Assignees));
-
-            CreateMap<User, ProductionPartUserDTO>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
-                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+             .ForMember(dest => dest.ListPartOrderSizes, opt => opt.MapFrom(src => src.ListPartOrderSize));
 
 
             //----------------------------------------------------------------------------------------------------//
@@ -106,6 +105,15 @@ namespace GMPS.API.Mapper
             CreateMap<ProductionWorkerProgressChartViewDTO, ProductionWorkerProgressChartDTO>();
             CreateMap<WorkerProductivityScoreViewDTO, WorkerProductivityScoreDTO>();
 
+            //Mapp User For Log work
+            CreateMap<User, ProductionPartUserDTO>()
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+               .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+               .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+               .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
+
+            CreateMap<ProductionPartWorkLog, ProductionPartWorkLogResponseDTO>();
+            CreateMap<Delivery, DeliveryResponseDTO>();
         }
 
     }

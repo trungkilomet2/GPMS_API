@@ -28,9 +28,7 @@ namespace GMPS.API.DTOs
         public int UserId { get; set; }
         public string? Image { get; set; }
         public string OrderName { get; set; }
-        public string Type { get; set; }
-        public string? Size { get; set; }
-        public string Color { get; set; }
+        public IEnumerable<ProductionDetailOrderSizeDTO> OrderSizes { get; set; } = new List<ProductionDetailOrderSizeDTO>();
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public int Quantity { get; set; }
@@ -38,8 +36,18 @@ namespace GMPS.API.DTOs
         public string? Note { get; set; }
         public int Status { get; set; }
         public string? StatusName { get; set; }
-        public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
-        public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
+        public List<OrderTemplate>? Templates { get; set; }
+        public List<OrderMaterial>? Materials { get; set; }
+
+    }
+
+    public class ProductionDetailOrderSizeDTO
+    {
+        public int SizeId { get; set; }
+        public string Color { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public int OrderSizeStatusId { get; set; }
+        public string OrderSizeStatusName { get; set; }
 
     }
 

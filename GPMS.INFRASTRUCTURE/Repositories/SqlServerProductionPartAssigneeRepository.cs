@@ -25,12 +25,12 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             _mapper = mapper;
         }
 
-
-        public async Task<ProductionPart> AssignWorkers(int partId, IEnumerable<int> workerIds)
+        // Assign worker cho production part size
+        public async Task<ProductionPart> AssignWorkers(int partOrderSizeId, IEnumerable<int> workerIds)
         {
-            var dbEntity = await _context.P_PART
+            var dbEntity = await _context.P_PART_ORDER_SIZE
                 .Include(x => x.USER)
-                .FirstOrDefaultAsync(x => x.PP_ID == partId);
+                .FirstOrDefaultAsync(x => x.PPOS_ID == partOrderSizeId);
 
             if (dbEntity is null)
             {
@@ -49,7 +49,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             }
 
             await _context.SaveChangesAsync();
-            return await GetById(partId);
+            return await GetById(dbEntity.PP_ID);
         }
 
         public async Task<ProductionPartWorkLog> CreateWorkLog(ProductionPartWorkLog entity)
@@ -63,7 +63,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<ProductionPartWorkLog> GetWorkLogById(int workLogId)
         {
-            var data = await _context.PART_WORK_LOG.FirstOrDefaultAsync(x => x.WL_ID == workLogId);
+            var data = await _context.PART_WORK_LOG.Include(x => x.PPOS).FirstOrDefaultAsync(x => x.WL_ID == workLogId);
             return data is null ? null : _mapper.Map<ProductionPartWorkLog>(data);
         }
 
@@ -92,9 +92,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             log.IS_PAYMENT = true;
             await _context.SaveChangesAsync();
-            return _mapper.Map<ProductionPartWorkLog>(log);
+            return await GetWorkLogById(workLogId);
         }
 
+        // Lấy danh sách GetByID của production part order size
         public async Task<ProductionPart> GetById(object id)
         {
             if (id is not int partId)
@@ -103,8 +104,6 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             }
 
             var data = await _context.P_PART
-                .Include(x => x.PPS)
-                .Include(x => x.USER)
                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
             return data is null ? null : ToDomain(data);
@@ -113,12 +112,11 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         private ProductionPart ToDomain(P_PART source)
         {
             var part = _mapper.Map<ProductionPart>(source);
-            part.AssigneeIds = source.USER.Select(x => x.USER_ID).ToList();
             return part;
         }
         public async Task<ProductionPart> RemoveWorker(int partId, int workerId)
         {
-            var dbEntity = await _context.P_PART
+            var dbEntity = await _context.P_PART_ORDER_SIZE
                 .Include(x => x.USER)
                 .FirstOrDefaultAsync(x => x.PP_ID == partId);
 
@@ -157,5 +155,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             return _mapper.Map<IEnumerable<User>>(workers);
         }
+
+        
     }
 }

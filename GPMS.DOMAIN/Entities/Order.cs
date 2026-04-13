@@ -11,12 +11,10 @@ namespace GPMS.DOMAIN.Entities
     public class Order
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
+        public int? GuestId { get; set; }
         public string? Image { get; set; }
         public string OrderName { get; set; }
-        public string Type { get; set; }
-        public string? Size { get; set; }
-        public string Color { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public int Quantity { get; set; }
@@ -25,10 +23,9 @@ namespace GPMS.DOMAIN.Entities
         public int Status { get; set; }
         public DateTime? CreateTime { get; set; }
         public string? StatusName { get; set; }
-        public IEnumerable<OTemplate> Templates { get; set; } = new List<OTemplate>();
-        public IEnumerable<OMaterial> Materials { get; set; } = new List<OMaterial>();
         public IEnumerable<OHistoryUpdate> Histories { get; set; } = new List<OHistoryUpdate>();
         public List<OrderMaterial>? Material { get; set; }
         public List<OrderTemplate>? Template { get; set; }
+        public IEnumerable<OrderSize>? Size { get; set; }
     }
 }

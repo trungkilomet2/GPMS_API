@@ -184,10 +184,10 @@ namespace GPMS.TEST.Application.Services
 
             var service = BuildService();
 
-            var ex = await Assert.ThrowsAsync<Exception>(() =>
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.CreateNewUser(user, new List<int> { 99 }));
 
-            Assert.Equal("Role with ID 99 not found.", ex.Message);
+            Assert.Equal("Không tìm thấy vai trò với ID 99.", ex.Message);
         }
 
         // ─── DisableAnUser ────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ namespace GPMS.TEST.Application.Services
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 service.AssignRoles(1, new List<int> { 99 }));
 
-            Assert.Equal("Role with ID 99 not found.", ex.Message);
+            Assert.Equal("Không tìm thấy vai trò với ID 99.", ex.Message);
         }
 
         // ─── UpdateUserForAdmin ───────────────────────────────────────────────────
@@ -320,16 +320,5 @@ namespace GPMS.TEST.Application.Services
                 service.UpdateUserForAdmin(99, new User { Id = 99 }));
         }
 
-        [Fact]
-        public async Task UpdateUserForAdmin_Throws_WhenUserIsInactive()
-        {
-            var existing = new User { Id = 1, UserName = "old", StatusId = UserStatus_Constants.Inactive };
-            _userRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
-
-            var service = BuildService();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.UpdateUserForAdmin(1, new User { Id = 1 }));
-        }
     }
 }

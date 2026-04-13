@@ -8,5 +8,6 @@ namespace GPMS.APPLICATION.ContextRepo
     {
         Task<Order> UpdateOrder(int orderId, Order updatedOrder, List<OHistoryUpdate> histories);
         Task<Order> ChangeStatus (int orderId, int newStatus);
+        Task<Order> CreateManualOrder (Order order);
     }
 }

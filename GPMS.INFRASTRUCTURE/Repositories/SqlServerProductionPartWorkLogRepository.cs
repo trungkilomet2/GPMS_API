@@ -22,7 +22,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             var db = _mapper.Map<PART_WORK_LOG>(entity);
             await _context.PART_WORK_LOG.AddAsync(db);
             await _context.SaveChangesAsync();
-            return _mapper.Map<ProductionPartWorkLog>(db);
+            return await GetById(db.WL_ID);
         }
 
         public async Task Delete(object id)
@@ -36,10 +36,10 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
         public async Task<IEnumerable<ProductionPartWorkLog>> GetAll(object? obj)
         {
-            IQueryable<PART_WORK_LOG> query = _context.PART_WORK_LOG;
-            if (obj is int partId)
+            IQueryable<PART_WORK_LOG> query = _context.PART_WORK_LOG.Include(x => x.PPOS);
+            if (obj is int partWorkLogId)
             {
-                query = query.Where(x => x.PP_ID == partId);
+                query = query.Where(x => x.PPOS_ID == partWorkLogId);
             }
             return _mapper.Map<IEnumerable<ProductionPartWorkLog>>(await query.OrderByDescending(x => x.CREATE_DATE).ToListAsync());
         }
@@ -47,7 +47,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<ProductionPartWorkLog> GetById(object id)
         {
             if (id is not int logId) return null;
-            var data = await _context.PART_WORK_LOG.FirstOrDefaultAsync(x => x.WL_ID == logId);
+            var data = await _context.PART_WORK_LOG.Include(x => x.PPOS).FirstOrDefaultAsync(x => x.WL_ID == logId);
             return data is null ? null : _mapper.Map<ProductionPartWorkLog>(data);
         }
 
@@ -59,7 +59,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             db.IS_READ_ONLY = entity.IsReadOnly;
             db.IS_PAYMENT = entity.IsPayment;
             await _context.SaveChangesAsync();
-            return _mapper.Map<ProductionPartWorkLog>(db);
+            return await GetById(db.WL_ID);
         }
 
     }

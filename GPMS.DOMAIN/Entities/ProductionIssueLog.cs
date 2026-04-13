@@ -9,7 +9,7 @@ namespace GPMS.DOMAIN.Entities
     public class ProductionIssueLog
     {
         public int Id { get; set; }
-        public int PartId { get; set; }
+        public int PartOrderSizeId { get; set; }
         public int CreatedBy { get; set; }
         public int? AssignedTo { get; set; }
         public int Quantity { get; set; }
@@ -19,5 +19,6 @@ namespace GPMS.DOMAIN.Entities
         public int StatusId { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
+
     }
 }

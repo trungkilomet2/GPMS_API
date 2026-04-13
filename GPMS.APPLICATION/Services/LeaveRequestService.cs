@@ -35,7 +35,7 @@ namespace GPMS.APPLICATION.Services
             if (toDate.Date < today)
                 throw new InvalidOperationException("Ngày kết thúc không được để quá khứ.");
 
-            if (toDate.Date < fromDate.Date)
+            if (toDate.Date <= fromDate.Date)
                 throw new InvalidOperationException("Ngày kết thúc không được trước ngày bắt đầu.");
 
             var leaveRequest = new LeaveRequest
@@ -58,10 +58,10 @@ namespace GPMS.APPLICATION.Services
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
             if (leaveRequest is null)
-                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+                throw new KeyNotFoundException($"Không tìm thấy yêu cầu nghỉ phép với id '{id}'.");
 
             if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
-                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be denied.");
+                throw new InvalidOperationException($"Chỉ có thể từ chối yêu cầu nghỉ phép ở trạng thái '{LeaveRequestStatus_Constants.Pending}'.");
 
             leaveRequest.DenyContent = denyContent;
             leaveRequest.StatusId = LeaveRequestStatus_Constants.Denied_ID;
@@ -76,10 +76,10 @@ namespace GPMS.APPLICATION.Services
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
             if (leaveRequest is null)
-                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+                throw new KeyNotFoundException($"Không tìm thấy yêu cầu nghỉ phép với mã '{id}'.");
 
             if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
-                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be approved.");
+                throw new InvalidOperationException($"Chỉ có thể phê duyệt yêu cầu nghỉ phép ở trạng thái '{LeaveRequestStatus_Constants.Pending}'.");
 
             leaveRequest.StatusId = LeaveRequestStatus_Constants.Approved_ID;
             leaveRequest.ApprovedBy = approverId;
@@ -93,13 +93,13 @@ namespace GPMS.APPLICATION.Services
             var leaveRequest = await _leaveRequestBaseRepo.GetById(id);
 
             if (leaveRequest is null)
-                throw new KeyNotFoundException($"Leave request with id '{id}' not found.");
+                throw new KeyNotFoundException($"Không tìm thấy yêu cầu nghỉ phép với id '{id}'.");
 
             if (leaveRequest.UserId != userId)
-                throw new UnauthorizedAccessException("You don't have permission to cancel this leave request.");
+                throw new UnauthorizedAccessException("Bạn không có quyền hủy yêu cầu nghỉ phép này.");
 
             if (leaveRequest.StatusName != LeaveRequestStatus_Constants.Pending)
-                throw new InvalidOperationException($"Only leave requests with status '{LeaveRequestStatus_Constants.Pending}' can be cancelled.");
+                throw new InvalidOperationException($"Chỉ có thể hủy yêu cầu nghỉ phép ở trạng thái '{LeaveRequestStatus_Constants.Pending}'.");
 
             leaveRequest.StatusId = LeaveRequestStatus_Constants.Cancelled_ID;
             leaveRequest.DateReply = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTimeZone);

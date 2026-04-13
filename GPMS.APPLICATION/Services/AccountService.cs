@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -80,6 +81,19 @@ namespace GPMS.APPLICATION.Services
                 registerDTO.Status = Enum.RegisterStatus.Failed;
             }
             return registerDTO;
+        }
+
+        public async Task ChangePassword(int userId, string currentPassword, string newPassword)
+        {
+            var user = await _accountBaseRepo.GetUserById(userId)
+                ?? throw new ValidationException("Không tìm thấy tài khoản");
+
+            var verifyResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+            if (verifyResult == PasswordVerificationResult.Failed)
+                throw new ValidationException("Mật khẩu hiện tại không đúng");
+
+            var newHashedPassword = new PasswordHasher<User>().HashPassword(user, newPassword);
+            await _accountBaseRepo.UpdatePasswordById(userId, newHashedPassword);
         }
 
         private bool ValidateUserName(string username)

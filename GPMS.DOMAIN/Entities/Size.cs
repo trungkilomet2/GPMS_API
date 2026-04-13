@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.Exceptions
+namespace GPMS.DOMAIN.Entities
 {
-    internal class Blank
+    public class Size
     {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

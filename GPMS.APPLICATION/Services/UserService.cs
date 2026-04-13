@@ -36,6 +36,10 @@ namespace GPMS.APPLICATION.Services
 
         public async Task<User> CreateNewUser(User user, List<int> roleIds)
         {
+            var emailExists = await _accRepo.GetUserByMail(user.Email?.Trim().ToLower() ?? string.Empty);
+            if (emailExists != null)
+                throw new InvalidOperationException("Email đã được sử dụng bởi tài khoản khác.");
+
             var hashedPassword = new PasswordHasher<User>().HashPassword(user, user.PasswordHash);
             user.PasswordHash = hashedPassword;
 
@@ -119,7 +123,7 @@ namespace GPMS.APPLICATION.Services
             return data;
         }
 
-        public async Task<User> GetUserById(int id)
+        public async Task<User> GetUserById(int? id)
         {
             var data = await _userBaseRepo.GetById(id);
             if(data == null)
@@ -134,8 +138,12 @@ namespace GPMS.APPLICATION.Services
             var result = await _userBaseRepo.GetById(userId);
             if (result == null)
                 throw new KeyNotFoundException("Không tìm thấy người dùng");
-            if (result.StatusId == UserStatus_Constants.Inactive)
-                throw new InvalidOperationException("Không thể cập nhật người dùng đã bị vô hiệu hóa.");
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                var emailOwner = await _accRepo.GetUserByMail(user.Email.Trim().ToLower());
+                if (emailOwner != null && emailOwner.Id != userId)
+                    throw new InvalidOperationException("Email đã được sử dụng bởi tài khoản khác.");
+            }
             user.StatusId = result.StatusId;
             var data = await _userBaseRepo.Update(user);
             return data;

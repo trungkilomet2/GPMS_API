@@ -5,6 +5,7 @@ using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.EmailAPI;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
@@ -50,6 +51,11 @@ namespace GPMS.TEST.Api.Controllers
             {
                 HttpContext = httpContext
             };
+
+            var mockUrl = new Mock<IUrlHelper>();
+            mockUrl.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
+                   .Returns("http://localhost/api/order-reject");
+            _controller.Url = mockUrl.Object;
         }
 
 
@@ -149,6 +155,30 @@ namespace GPMS.TEST.Api.Controllers
 
             var obj = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, obj.StatusCode);
+        }
+
+        // ─── GetOrderRejectById ───────────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetOrderRejectById_Returns404_WhenNotFound()
+        {
+            _mockRejectRepo.Setup(x => x.GetReasonById(99)).ReturnsAsync((OrderRejectReason)null);
+
+            var result = await _controller.GetOrderRejectById(99);
+
+            var objectResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal(StatusCodes.Status404NotFound, objectResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetOrderRejectById_Returns500_OnException()
+        {
+            _mockRejectRepo.Setup(x => x.GetReasonById(1)).ThrowsAsync(new Exception("db error"));
+
+            var result = await _controller.GetOrderRejectById(1);
+
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status500InternalServerError, objectResult.StatusCode);
         }
     }
 }

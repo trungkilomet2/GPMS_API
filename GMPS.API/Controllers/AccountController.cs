@@ -1,14 +1,17 @@
 ﻿using Azure.Messaging;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.EmailAPI;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,16 +24,22 @@ namespace GMPS.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountRepositories _accountRepo;
+        private readonly IBaseAccountRepositories _accountBaseRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AccountController> _logger;
         private readonly IEmailRepositories _emailRepo;
-        public AccountController(IAccountRepositories accountRepo, IConfiguration configuration, ILogger<AccountController> logger,
-            IEmailRepositories emailRepo)
+        private readonly IMemoryCache _memoryCache;
+
+        public AccountController(IAccountRepositories accountRepo, IBaseAccountRepositories accountBaseRepo,
+            IConfiguration configuration, ILogger<AccountController> logger,
+            IEmailRepositories emailRepo, IMemoryCache memoryCache)
         {
             _accountRepo = accountRepo ?? throw new ArgumentNullException(nameof(accountRepo));
+            _accountBaseRepo = accountBaseRepo ?? throw new ArgumentNullException(nameof(accountBaseRepo));
             _configuration = configuration;
             _logger = logger;
-            _emailRepo = emailRepo;
+            _emailRepo = emailRepo ?? throw new ArgumentNullException(nameof(emailRepo));
+            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
         //Information
         // Warning
@@ -174,6 +183,173 @@ namespace GMPS.API.Controllers
 
         }
 
+        [HttpPost("forgot-password")]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordDTO input)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var details = new ValidationProblemDetails(ModelState)
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return new BadRequestObjectResult(details);
+                }
+
+                var email = input.Email.Trim().ToLower();
+                var user = await _accountBaseRepo.GetUserByMail(email);
+                if (user != null)
+                {
+                    await _emailRepo.SendEmailAsync(email, string.Empty, string.Empty, EmailType.PasswordReset);
+                    _logger.LogInformation(CustomLogEvents.AccountController_Post, "Đã gửi OTP đặt lại mật khẩu tới email: {Email}", email);
+                }
+
+                return Ok(new { Message = "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi. Có hiệu lực 5 phút." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.AccountController_Post, ex, "Lỗi khi xử lý yêu cầu quên mật khẩu");
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDTO input)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ValidationProblemDetails(ModelState)
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (!input.NewPassword.Equals(input.ConfirmPassword))
+                {
+                    var details = new ValidationProblemDetails
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    details.Errors.Add("ConfirmPassword", new[] { "Mật khẩu xác nhận không khớp" });
+                    return new BadRequestObjectResult(details);
+                }
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdClaim, out var userId))
+                    return Unauthorized(new { Message = "Token không hợp lệ" });
+
+                await _accountRepo.ChangePassword(userId, input.CurrentPassword, input.NewPassword);
+
+                _logger.LogInformation(CustomLogEvents.AccountController_Post, "Người dùng ID={UserId} đã đổi mật khẩu thành công", userId);
+
+                return Ok(new { Message = "Đổi mật khẩu thành công" });
+            }
+            catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+            {
+                var details = new ValidationProblemDetails
+                {
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = ex.Message
+                };
+                return new BadRequestObjectResult(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.AccountController_Post, ex, "Lỗi khi đổi mật khẩu");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        [ResponseCache(CacheProfileName = "NoCache")]
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDTO input)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var details = new ValidationProblemDetails(ModelState)
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    return new BadRequestObjectResult(details);
+                }
+
+                if (!input.NewPassword.Equals(input.ConfirmPassword))
+                {
+                    var details = new ValidationProblemDetails
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    details.Errors.Add("ConfirmPassword", new[] { "Mật khẩu xác nhận không khớp" });
+                    return new BadRequestObjectResult(details);
+                }
+
+                var email = input.Email.Trim().ToLower();
+                var cacheKey = email + "_reset_otp";
+
+                if (!_memoryCache.TryGetValue(cacheKey, out string? cachedOtp) || cachedOtp != input.Otp)
+                {
+                    _memoryCache.Remove(cacheKey);
+                    var details = new ValidationProblemDetails
+                    {
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        Status = StatusCodes.Status400BadRequest
+                    };
+                    details.Errors.Add("Otp", new[] { "Mã OTP không hợp lệ hoặc đã hết hạn" });
+                    return new BadRequestObjectResult(details);
+                }
+
+                var user = await _accountBaseRepo.GetUserByMail(email);
+                if (user == null)
+                {
+                    _memoryCache.Remove(cacheKey);
+                    return NotFound(new { Message = "Không tìm thấy tài khoản với email này" });
+                }
+
+                var hashedPassword = new PasswordHasher<GPMS.DOMAIN.Entities.User>().HashPassword(user, input.NewPassword);
+                await _accountBaseRepo.UpdatePassword(email, hashedPassword);
+
+                _memoryCache.Remove(cacheKey);
+                _logger.LogInformation(CustomLogEvents.AccountController_Post, "Đặt lại mật khẩu thành công cho email: {Email}", email);
+
+                return Ok(new { Message = "Đặt lại mật khẩu thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(CustomLogEvents.AccountController_Post, ex, "Lỗi khi đặt lại mật khẩu");
+                var exceptionDetails = new ProblemDetails
+                {
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, exceptionDetails);
+            }
+        }
     }
 
 }

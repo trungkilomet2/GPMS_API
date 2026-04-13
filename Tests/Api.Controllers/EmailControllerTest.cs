@@ -142,5 +142,69 @@ namespace GPMS.TEST.Api.Controllers
             var obj = Assert.IsType<ObjectResult>(result);
             Assert.Equal(StatusCodes.Status409Conflict, obj.StatusCode);
         }
+
+        [Fact]
+        public async Task VerifyEmail_Returns200_WhenOtpCorrect()
+        {
+            var controller = BuildController();
+            var email = "test@gmail.com";
+            var otp = "123456";
+
+            object cacheOtp = otp;
+            object? cacheVerified = null;
+            _cache.Setup(x => x.TryGetValue($"{email}_otp", out cacheOtp)).Returns(true);
+            _cache.Setup(x => x.TryGetValue($"{email}_verified", out cacheVerified)).Returns(false);
+
+            var cacheEntry = new Mock<ICacheEntry>();
+            cacheEntry.SetupAllProperties();
+            _cache.Setup(x => x.CreateEntry(It.IsAny<object>())).Returns(cacheEntry.Object);
+
+            var result = await controller.VerifyEmail(new VerifyOtpDTO { Email = email, Otp = otp });
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status200OK, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task VerifyEmail_Returns400_WhenOtpWrong()
+        {
+            var controller = BuildController();
+            var email = "test@gmail.com";
+
+            object cacheOtp = "654321";
+            _cache.Setup(x => x.TryGetValue($"{email}_otp", out cacheOtp)).Returns(true);
+
+            var result = await controller.VerifyEmail(new VerifyOtpDTO { Email = email, Otp = "123456" });
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResendOTPEmail_Returns200_WhenEmailValid()
+        {
+            var controller = BuildController();
+            _userRepo.Setup(x => x.IsEmailExists(It.IsAny<string>())).ReturnsAsync(false);
+
+            var input = new VerifyEmailDTO { Email = "test@gmail.com" };
+            var result = await controller.ResendOTPEmail(input);
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status200OK, obj.StatusCode);
+            _emailRepo.Verify(x => x.SendEmailAsync(input.Email, null, null, EmailType.ResendOTP), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResendOTPEmail_Returns409_WhenEmailExists()
+        {
+            var controller = BuildController();
+            _userRepo.Setup(x => x.IsEmailExists(It.IsAny<string>())).ReturnsAsync(true);
+
+            var input = new VerifyEmailDTO { Email = "test@gmail.com" };
+            var result = await controller.ResendOTPEmail(input);
+
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status409Conflict, obj.StatusCode);
+        }
     }
 }

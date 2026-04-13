@@ -1,10 +1,12 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using GMPS.API.Mapper;
+using GMPS.API.Hubs;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.Repositories;
 using GPMS.APPLICATION.Services;
 using GPMS.DOMAIN.Entities;
 using GPMS.DOMAIN.Entities.GPMS.DOMAIN.Entities;
+using GPMS.INFRASTRUCTURE.ChatAPI;
 using GPMS.INFRASTRUCTURE.CloudinaryAPI;
 using GPMS.INFRASTRUCTURE.DataContext;
 using GPMS.INFRASTRUCTURE.EmailAPI;
@@ -23,6 +25,7 @@ using System.Text;
 Console.OutputEncoding = Encoding.UTF8;
 
 var builder = WebApplication.CreateBuilder(args);
+const string signalRCorsPolicy = "SignalR";
 
 builder.Logging.ClearProviders();
 //--------------------------- Controller Config ---------------------------
@@ -38,6 +41,7 @@ builder.Services.AddControllers(
     });
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 //--------------------------- Bearer Token for Swagger ---------------------------
 builder.Services.AddSwaggerGen(
    options =>
@@ -133,6 +137,8 @@ builder.Services.AddScoped<IWorkerRoleRepositories, WorkerRoleService>();
 
 builder.Services.AddScoped<IBaseOrderRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<Order>, SqlServerOrderRepository>();
+builder.Services.AddScoped<IBaseRepositories<Size>, SqlServerSizeRepository>();
+builder.Services.AddScoped<IBaseRepositories<Guest>, SqlGuestRepository>();
 builder.Services.AddScoped<IOrderRepositories, OrderService>();
 builder.Services.AddScoped<IBaseOrderStatusRepositories, SqlServerOrderRepository>();
 builder.Services.AddScoped<IBaseRepositories<OrderRejectReason>, SqlServerOrderRejectRepository>();
@@ -159,9 +165,10 @@ builder.Services.AddScoped<IProductionRepositories, ProductionService>();
 
 
 builder.Services.AddScoped<IBaseRepositories<ProductionPart>, SqlServerProductionPartRepository>();
+
 builder.Services.AddScoped<IProductionPartRepositories, ProductionPartService>();
 
-builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartRepository>();
+builder.Services.AddScoped<IBaseProductionPartAssignRepositories, SqlServerProductionPartAssigneeRepository>();
 
 builder.Services.AddScoped<IBaseRepositories<ProductionRejectReason>, SqlServerProductionRejectRepository>();
 builder.Services.AddScoped<IBaseRepositories<ProductionIssueLog>, SqlServerProductionIssueRepository>();
@@ -169,12 +176,20 @@ builder.Services.AddScoped<IBaseRepositories<ProductionPartWorkLog>, SqlServerPr
 builder.Services.AddScoped<IBaseRepositories<TemplateDefinition>, SqlServerTemplateRepository>();
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebook>, SqlServerCuttingNotebookRepository>();
 builder.Services.AddScoped<IBaseRepositories<CuttingNotebookLog>, SqlServerCuttingNotebookLogRepository>();
+builder.Services.AddScoped<IBaseRepositories<ProductionPartOrderSize>, SqlServerProductionPartOrderSizeRepository>();
+builder.Services.AddScoped<IBaseRepositories<OrderSize>, SqlServerOrderSizeReporsitory>();
+builder.Services.AddScoped<IBaseRepositories<Delivery>, SqlServerDeliveryRepository>();
+
 
 builder.Services.AddScoped<ICuttingNotebookRepositories, CuttingNotebookService>();
 builder.Services.AddScoped<ITemplateRepositories, TemplateService>();
 
 builder.Services.AddScoped<IBaseRepositories<LogEvent>, SqlServerLogEventRepository>();
 builder.Services.AddScoped<ILogEventRepositories, LogEventService>();
+
+//--------------------------- Gemini ChatBox ---------------------------
+builder.Services.AddScoped<IChatRepositories, ChatService>();
+builder.Services.AddHttpClient();
 
 //----------------------Identity-----------------------------
 //builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<GPMS_SYSTEMContext>();
@@ -198,6 +213,22 @@ builder.Services.AddCors(options =>
             cfg.AllowAnyHeader();
             cfg.AllowAnyMethod();
         });
+    options.AddPolicy(name: signalRCorsPolicy,
+        cfg =>
+{
+    if (builder.Configuration["AllowedOrigins"].Length > 0)
+    {
+        cfg.WithOrigins(builder.Configuration["AllowedOrigins"]);
+    }
+    else
+    {
+        cfg.SetIsOriginAllowed(_ => true);
+        cfg.AllowAnyHeader();
+        cfg.AllowAnyMethod();
+        cfg.AllowCredentials();
+    }
+});
+
 });
 
 //-------------------------------------------------------
@@ -228,6 +259,23 @@ builder.Services.AddAuthentication(
                 System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
             )
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrWhiteSpace(accessToken) &&
+                (path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/hubs/comments")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+
     }); ;
 
 builder.Services.AddAuthorization();
@@ -251,5 +299,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/hubs/chat").RequireCors(signalRCorsPolicy);
+
+app.MapHub<CommentHub>("/hubs/comments").RequireCors(signalRCorsPolicy);
+
 
 app.Run();

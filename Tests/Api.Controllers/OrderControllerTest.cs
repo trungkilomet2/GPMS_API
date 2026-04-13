@@ -1,5 +1,6 @@
 using GMPS.API.Controllers;
 using GMPS.API.DTOs;
+using GPMS.APPLICATION.ContextRepo;
 using GPMS.APPLICATION.DTOs;
 using GPMS.APPLICATION.Repositories;
 using GPMS.DOMAIN.Constants;
@@ -21,6 +22,7 @@ public class OrderControllerTest
     private readonly Mock<ICloudinaryService> _cloudinary = new();
     private readonly Mock<IEmailRepositories> _emailRepo = new();
     private readonly Mock<IUserRepositories> _userRepo = new();
+    private readonly Mock<IBaseRepositories<Guest>> _guestRepo = new();
 
     private OrderController BuildController(int userId = 1)
     {
@@ -29,7 +31,8 @@ public class OrderControllerTest
             _logger.Object,
             _cloudinary.Object,
             _emailRepo.Object,
-            _userRepo.Object
+            _userRepo.Object,
+            _guestRepo.Object
         );
 
         ControllerTestHelper.AttachHttpContext(
@@ -47,7 +50,8 @@ public class OrderControllerTest
             _logger.Object,
             _cloudinary.Object,
             _emailRepo.Object,
-            _userRepo.Object
+            _userRepo.Object,
+            _guestRepo.Object
         );
 
         var identity = new ClaimsIdentity(new[]
@@ -69,16 +73,13 @@ public class OrderControllerTest
             Id = id,
             UserId = userId,
             OrderName = "Test Order",
-            Type = "Clothes",
-            Size = "L",
-            Color = "Red",
             Quantity = 10,
             Cpu = 100,
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             StatusName = statusName,
-            Templates = new List<OTemplate>(),
-            Materials = new List<OMaterial>(),
+            Template = new List<OrderTemplate>(),
+            Material = new List<OrderMaterial>(),
             Histories = new List<OHistoryUpdate>()
         };
 
@@ -395,8 +396,6 @@ public class OrderControllerTest
         {
             UserId = 1,
             OrderName = "New Order",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 10
@@ -439,8 +438,6 @@ public class OrderControllerTest
         {
             UserId = 1,
             OrderName = "New Order",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 10
@@ -509,8 +506,6 @@ public class OrderControllerTest
         DateOnly? endDate = null) => new UpdateOrderDTO
         {
             OrderName = "Updated",
-            Type = "Shirt",
-            Color = "Blue",
             StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
             Quantity = 5
@@ -731,6 +726,73 @@ public class OrderControllerTest
             .ThrowsAsync(new Exception("db error"));
 
         var result = await BuildController().ApproveOrder(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── RequestOrderModification ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task RequestOrderModification_Returns200_WhenSuccessful()
+    {
+        var order = BuildFakeOrder(userId: 5, statusName: OrderStatus_Constants.Pending);
+        var user = new User { Id = 5, Email = "customer@mail.com" };
+
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ReturnsAsync(order);
+        _userRepo.Setup(x => x.GetUserById(5)).ReturnsAsync(user);
+        _emailRepo.Setup(x => x.SendEmailAsync(user.Email, It.IsAny<string>(), It.IsAny<string>(), EmailType.OrderNotification))
+            .Returns(Task.CompletedTask);
+
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(200, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns400_WhenIdInvalid()
+    {
+        var result = await BuildController().RequestOrderModification(0);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns404_WhenOrderNotFound()
+    {
+        _orderRepo.Setup(x => x.GetOrderDetail(99)).ReturnsAsync((Order)null);
+
+        var result = await BuildController().RequestOrderModification(99);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(404, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns403_WhenStatusNotPending()
+    {
+        var order = BuildFakeOrder(statusName: OrderStatus_Constants.Approved);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+
+        var result = await BuildController().RequestOrderModification(1);
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(403, obj.StatusCode);
+    }
+
+    [Fact]
+    public async Task RequestOrderModification_Returns500_OnException()
+    {
+        var order = BuildFakeOrder(statusName: OrderStatus_Constants.Pending);
+        _orderRepo.Setup(x => x.GetOrderDetail(1)).ReturnsAsync(order);
+        _orderRepo.Setup(x => x.RequestOrderModification(1, It.IsAny<Order>(), It.IsAny<List<OHistoryUpdate>>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var result = await BuildController().RequestOrderModification(1);
 
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, obj.StatusCode);

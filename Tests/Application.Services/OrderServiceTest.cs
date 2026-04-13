@@ -14,13 +14,19 @@ public class OrderServiceTest
     private readonly Mock<IBaseRepositories<OMaterial>> _materialBaseRepo = new();
     private readonly Mock<IBaseRepositories<User>> _userBaseRepo = new();
     private readonly Mock<IBaseOrderStatusRepositories> _orderStatusRepo = new();
+    private readonly Mock<IBaseRepositories<Size>> _sizeRepo = new();
+    private readonly Mock<IBaseRepositories<Guest>> _guestRepo = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private OrderService BuildService()
         => new OrderService(
             _orderBaseRepo.Object,
             _materialBaseRepo.Object,
             _userBaseRepo.Object,
-            _orderStatusRepo.Object);
+            _orderStatusRepo.Object,
+            _sizeRepo.Object,
+            _guestRepo.Object,
+            _unitOfWork.Object);
 
     private static Order BuildFakeOrder(
         int id = 1,
@@ -31,18 +37,16 @@ public class OrderServiceTest
             Id = id,
             UserId = userId,
             OrderName = "Test Order",
-            Type = "Clothes",
-            Size = "L",
-            Color = "Red",
             Quantity = 10,
             Cpu = 100,
             StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
             EndDate = DateOnly.FromDateTime(DateTime.Now.AddDays(5)),
             Status = 1,
             StatusName = statusName,
-            Templates = new List<OTemplate>(),
-            Materials = new List<OMaterial>(),
-            Histories = new List<OHistoryUpdate>()
+            Template = new List<OrderTemplate>(),
+            Material = new List<OrderMaterial>(),
+            Histories = new List<OHistoryUpdate>(),
+            Size = new List<OrderSize>()
         };
 
 
@@ -125,7 +129,7 @@ public class OrderServiceTest
         var created = BuildFakeOrder(id: 10);
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         _orderBaseRepo.Setup(x => x.Create(order))
             .ReturnsAsync(created);
@@ -158,13 +162,13 @@ public class OrderServiceTest
         order.EndDate = order.StartDate.AddDays(-1);
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
 
-        Assert.Equal("End date must be greater than start date.", ex.Message);
+        Assert.Equal("Ngày kết thúc phải lớn hơn ngày bắt đầu.", ex.Message);
     }
 
     [Fact]
@@ -174,13 +178,30 @@ public class OrderServiceTest
         order.StartDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
 
         _userBaseRepo.Setup(x => x.GetById(order.UserId))
-            .ReturnsAsync(new User { Id = order.UserId });
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
 
         var service = BuildService();
 
         var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
 
-        Assert.Equal("Start date must be greater than current date.", ex.Message);
+        Assert.Equal("Ngày bắt đầu phải lớn hơn ngày hiện tại.", ex.Message);
+    }
+
+    [Fact]
+    public async Task CreateOrder_ThrowsException_WhenSizeNotFound()
+    {
+        var order = BuildFakeOrder();
+        order.Size = new List<OrderSize> { new OrderSize { SizeId = 999, Color = "Red", Quantity = 5 } };
+
+        _userBaseRepo.Setup(x => x.GetById(order.UserId))
+            .ReturnsAsync(new User { Id = order.UserId ?? 0 });
+        _sizeRepo.Setup(x => x.GetById(999)).ReturnsAsync((Size)null);
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => service.CreateOrder(order));
+
+        Assert.Equal("Kích thước không tồn tại.", ex.Message);
     }
 
 
@@ -195,8 +216,6 @@ public class OrderServiceTest
         return new UpdateOrderInput
         {
             OrderName = orderName,
-            Type = "Shirt",
-            Color = "Blue",
             Quantity = 5,
             StartDate = start,
             EndDate = end
@@ -241,10 +260,24 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
             service.UpdateOrder(1, 1, input));
 
-        Assert.Equal("End date must be greater than start date.", ex.Message);
+        Assert.Equal("Ngày kết thúc phải lớn hơn ngày bắt đầu.", ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenStartDateInPast()
+    {
+        var pastDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+        var input = BuildFakeInput(startDate: pastDate, endDate: pastDate.AddDays(5));
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.UpdateOrder(1, 1, input));
+
+        Assert.Equal("Ngày bắt đầu phải lớn hơn ngày hiện tại.", ex.Message);
     }
 
     [Fact]
@@ -271,6 +304,24 @@ public class OrderServiceTest
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             service.UpdateOrder(1, 1, BuildFakeInput()));
+    }
+
+    [Fact]
+    public async Task UpdateOrder_Throws_WhenSizeNotFound()
+    {
+        var existing = BuildFakeOrder(userId: 1, statusName: OrderStatus_Constants.Modification);
+        _orderBaseRepo.Setup(x => x.GetById(1)).ReturnsAsync(existing);
+        _sizeRepo.Setup(x => x.GetById(999)).ReturnsAsync((Size)null);
+
+        var input = BuildFakeInput();
+        input.Sizes = new List<OrderSize> { new OrderSize { SizeId = 999, Color = "Red", Quantity = 5 } };
+
+        var service = BuildService();
+
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.UpdateOrder(1, 1, input));
+
+        Assert.Equal("Kích thước với Id '999' không tồn tại.", ex.Message);
     }
 
     [Fact]
@@ -318,7 +369,7 @@ public class OrderServiceTest
         var material = new OMaterial { Name = "Cotton", Value = 5, Uom = "m" };
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(99, material));
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => service.AddMaterial(99, material));
 
         Assert.Equal("Order with id '99' not found.", ex.Message);
     }
@@ -344,7 +395,7 @@ public class OrderServiceTest
         var material = new OMaterial { Name = "Cotton", Value = 0, Uom = "m" };
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => service.AddMaterial(1, material));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddMaterial(1, material));
 
         Assert.Equal("Quantity must be greater than zero.", ex.Message);
     }
@@ -358,7 +409,7 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.RequestOrderModification(99, updated, new()));
 
         Assert.Equal("Order with id '99' not exist in system.", ex.Message);
@@ -394,7 +445,7 @@ public class OrderServiceTest
 
         var service = BuildService();
 
-        var ex = await Assert.ThrowsAsync<Exception>(() =>
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.RequestOrderModification(1, updated, new()));
 
         Assert.Equal("Only modify order with status Chờ Xét Duyệt.", ex.Message);
