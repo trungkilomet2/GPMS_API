@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using GPMS.DOMAIN.Constants;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
 namespace GMPS.API.DTOs
@@ -18,6 +19,15 @@ namespace GMPS.API.DTOs
         public string? ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
         public int StatusId { get; set; }
+
+        public string Status => StatusId switch
+        {
+            IssueStatus_Constrants.ToDo_ID => IssueStatus_Constrants.ToDo,
+            IssueStatus_Constrants.Processing_ID => IssueStatus_Constrants.Processing,
+            IssueStatus_Constrants.Fixed_ID => IssueStatus_Constrants.Fixed,
+            IssueStatus_Constrants.Error_ID => IssueStatus_Constrants.Error,
+            _ => "Không Xác Định"
+        };
 
     }
 
