@@ -26,7 +26,8 @@ namespace GMPS.API.DTOs
 
     public class ProductionPartWorkLogResponseDTO
     {
-        public int Id { get; set; }
+        public int WorkLogId { get; set; }
+        public int PartId { get; set; }
         public int PartOrderSizeId { get; set; }
         public string Size { get; set; } = string.Empty;
         public string Color { get; set; } = string.Empty;

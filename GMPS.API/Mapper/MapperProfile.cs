@@ -112,7 +112,9 @@ namespace GMPS.API.Mapper
                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
 
-            CreateMap<ProductionPartWorkLog, ProductionPartWorkLogResponseDTO>();
+            CreateMap<ProductionPartWorkLog, ProductionPartWorkLogResponseDTO>()
+                .ForMember(dest => dest.WorkLogId, opt => opt.MapFrom(src => src.Id));
+            
             CreateMap<Delivery, DeliveryResponseDTO>();
         }
 
