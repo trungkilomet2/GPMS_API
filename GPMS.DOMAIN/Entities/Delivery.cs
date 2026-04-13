@@ -10,6 +10,10 @@ namespace GPMS.DOMAIN.Entities
     {
         public int Id { get; set; }
         public int OrderSizeId { get; set; }
+
+        public string? Color { get; set; }
+        public string? SizeName { get; set; }
+
         public int DeliverQuantity { get; set; }
         public DateTime? DeliveredAt { get; set; }
         public DateTime? ReceivedDate { get; set; }

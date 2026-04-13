@@ -204,6 +204,8 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PART_WORK_LOG, GPMS.DOMAIN.Entities.ProductionPartWorkLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WL_ID))
                 .ForMember(dest => dest.PartOrderSizeId, opt => opt.MapFrom(src => src.PPOS_ID))
+                .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.PPOS != null ? src.PPOS.SIZE : string.Empty))
+                .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.PPOS != null ? src.PPOS.COLOR : string.Empty))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.USER_ID))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.QUANTITY))
                 .ForMember(dest => dest.CreateDate, opt => opt.MapFrom(src => src.CREATE_DATE))

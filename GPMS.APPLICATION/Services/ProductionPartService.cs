@@ -638,12 +638,15 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
                     }
+                    if(log.IsReadOnly == false)
+                    {
+                        continue;
+                    }
                     if (log.IsPayment == true)
                     {
                         continue;
                     }
                     log.IsPayment = true;
-                    log.IsReadOnly = true;
                     await _workLogRepo.Update(log);
                     updatedCount++;
                 }
@@ -1008,9 +1011,22 @@ namespace GPMS.APPLICATION.Services
         public async Task<IEnumerable<Delivery>> GetDeliveriesByOrder(int orderId)
         {
             _ = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
-            var orderSizeIds = (await _orderSizeRepo.GetAll(orderId)).Select(x => x.Id).ToHashSet();
+            var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
+            var orderSizeIds = orderSizes.Select(x => x.Id).ToHashSet();
+            var sizeLookup = (await _sizeRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.Name);
+
             var deliveries = await _deliveryRepo.GetAll(null);
-            return deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId));
+            var matchedDeliveries = deliveries.Where(x => orderSizeIds.Contains(x.OrderSizeId)).ToList();
+
+            var orderSizeLookup = orderSizes.ToDictionary(x => x.Id);
+            foreach (var delivery in matchedDeliveries)
+            {
+                if (!orderSizeLookup.TryGetValue(delivery.OrderSizeId, out var orderSize)) continue;
+                delivery.Color = orderSize.Color;
+                delivery.SizeName = sizeLookup.TryGetValue(orderSize.SizeId, out var sizeName) ? sizeName : null;
+            }
+
+            return matchedDeliveries;
         }
 
         // Mục đích: tạo nhiều delivery cho một order theo danh sách order_size được chọn.

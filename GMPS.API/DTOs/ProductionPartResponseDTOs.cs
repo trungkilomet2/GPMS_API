@@ -28,6 +28,9 @@ namespace GMPS.API.DTOs
     {
         public int Id { get; set; }
         public int PartOrderSizeId { get; set; }
+        public string Size { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+
         public int UserId { get; set; }
         public int Quantity { get; set; }
         public DateTime CreateDate { get; set; }
@@ -43,6 +46,9 @@ namespace GMPS.API.DTOs
         public DateTime? DeliveredAt { get; set; }
         public DateTime? ReceivedDate { get; set; }
         public int DeliverStatusId { get; set; }
+        public string? Color { get; set; }
+        public string? SizeName { get; set; }
+
     }
 
 }
