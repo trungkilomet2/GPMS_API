@@ -1,8 +1,11 @@
-using GPMS.APPLICATION.Repositories;
-using Microsoft.Extensions.Configuration;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Gmail.v1;
+using Google.Apis.Gmail.v1.Data;
+using Google.Apis.Services;
 using Microsoft.Extensions.Caching.Memory;
-using MailKit.Net.Smtp;
-using MailKit.Security;
+using Microsoft.Extensions.Configuration;
 using MimeKit;
 
 namespace GPMS.INFRASTRUCTURE.EmailAPI
@@ -51,29 +54,56 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                     body = $"Mã OTP đặt lại mật khẩu của bạn là: <b>{generatedOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.OrderNotification:
-                    subject = "Order Notification";
+                    subject = string.IsNullOrEmpty(subject) ? "Order Notification" : subject;
                     break;
                 default:
-                    subject = "General Notification";
+                    subject = string.IsNullOrEmpty(subject) ? "General Notification" : subject;
                     break;
             }
 
-            var message = new MimeMessage();
-            message.From.Add(MailboxAddress.Parse(_config["Email:From"]));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            message.Subject = subject;
-            message.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
+            var mimeMessage = new MimeMessage();
+            mimeMessage.From.Add(MailboxAddress.Parse(_config["Gmail:FromEmail"]));
+            mimeMessage.To.Add(MailboxAddress.Parse(toEmail));
+            mimeMessage.Subject = subject;
+            mimeMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
 
-            using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(
-                _config["Email:Smtp"],
-                int.Parse(_config["Email:Port"]!),
-                SecureSocketOptions.StartTls
+            using var memStream = new MemoryStream();
+            await mimeMessage.WriteToAsync(memStream);
+            var rawMessage = Convert.ToBase64String(memStream.ToArray())
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .Replace("=", "");
+
+            var credential = new UserCredential(
+                new GoogleAuthorizationCodeFlow(
+                    new GoogleAuthorizationCodeFlow.Initializer
+                    {
+                        ClientSecrets = new ClientSecrets
+                        {
+                            ClientId = _config["Gmail:ClientId"],
+                            ClientSecret = _config["Gmail:ClientSecret"]
+                        },
+                        Scopes = new[] { GmailService.Scope.GmailSend }
+                    }),
+                "user",
+                new TokenResponse
+                {
+                    RefreshToken = _config["Gmail:RefreshToken"]
+                }
             );
-            await smtp.AuthenticateAsync(_config["Email:Username"], _config["Email:Password"]);
-            await smtp.SendAsync(message);
-            await smtp.DisconnectAsync(true);
 
+            // Tạo Gmail API service
+            var gmailService = new GmailService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "GPMS"
+            });
+
+            // Gửi email
+            var gmailMessage = new Message { Raw = rawMessage };
+            await gmailService.Users.Messages.Send(gmailMessage, "me").ExecuteAsync();
+
+            // Lưu OTP vào cache nếu có
             if (generatedOtp != null && cacheKey != null)
             {
                 _memoryCache.Set(cacheKey, generatedOtp, TimeSpan.FromMinutes(5));
@@ -81,4 +111,3 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
         }
     }
 }
-
