@@ -76,6 +76,8 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
             db.QUANTITY = entity.Quantity;
             db.PPOSS_ID = entity.PartOrderSizeStatusId;
+
+            _context.Update(db);
             await _context.SaveChangesAsync();
             return _mapper.Map<ProductionPartOrderSize>(db);
         }

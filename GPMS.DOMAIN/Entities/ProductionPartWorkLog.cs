@@ -9,6 +9,7 @@ namespace GPMS.DOMAIN.Entities
     public class ProductionPartWorkLog
     {
         public int Id { get; set; }
+        public int PartId { get; set; }
         public int PartOrderSizeId { get; set; }
 
         public string Size { get; set; } = string.Empty;
@@ -20,5 +21,7 @@ namespace GPMS.DOMAIN.Entities
         public bool IsReadOnly { get; set; }
         public bool IsPayment { get; set; }
         public string? Note { get; set; }
+        public string? PartName { get; set; }
+        public string? WorkerName { get; set; }
     }
 }
