@@ -155,7 +155,8 @@ builder.Services.AddScoped<ILeaveRequestRepositories, LeaveRequestService>();
 builder.Services.AddScoped<IUnitOfWork, DbContextUnitOfWork>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-builder.Services.AddScoped<IPermissionRepositories, SqlServerPermissionRepository>();
+builder.Services.AddScoped<IBasePermissionRepositories, SqlServerPermissionRepository>();
+builder.Services.AddScoped<IPermissionRepositories, PermissionService>();
 
 builder.Services.AddScoped<IBaseRepositories<Production>, SqlServerProductionRepository>();
 
@@ -295,6 +296,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AnyOrigin");
 
 app.UseAuthentication();
+
+app.UseMiddleware<GMPS.API.Middlewares.DynamicPermissionMiddleware>();
 
 app.UseAuthorization();
 

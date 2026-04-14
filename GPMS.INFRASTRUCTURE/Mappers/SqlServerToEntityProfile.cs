@@ -319,6 +319,14 @@ namespace GPMS.INFRASTRUCTURE.Mappers
                 .ForMember(dest => dest.IS_READ_ONLY, opt => opt.MapFrom(src => src.IsReadOnly))
                 .ForMember(dest => dest.IS_PAYMENT, opt => opt.MapFrom(src => src.IsPayment));
 
+            // PERMISSION
+            CreateMap<USER_AUTHORIZE, PermissionEntry>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ID))
+                .ForMember(dest => dest.Controller, opt => opt.MapFrom(src => src.CONTROLLER))
+                .ForMember(dest => dest.Method, opt => opt.MapFrom(src => src.METHOD))
+                .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.ACTION))
+                .ForMember(dest => dest.RoleIds, opt => opt.MapFrom(src => src.ROLE_AUTHORIZE ?? string.Empty));
+
             CreateMap<LOG_EVENTS, LogEvent>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ID))
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.MESSAGE))

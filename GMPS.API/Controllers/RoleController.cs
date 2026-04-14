@@ -8,7 +8,7 @@ namespace GMPS.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class RoleController : ControllerBase
     {
         private readonly IPermissionRepositories _permissionRepo;
@@ -25,7 +25,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.RoleController_Get, "Getting all roles");
+                _logger.LogInformation(CustomLogEvents.RoleController_Get, "Đang lấy danh sách vai trò");
 
                 var roles = await _permissionRepo.GetAllRoles();
                 var data = roles.Select(r => new RoleDTO
@@ -34,7 +34,7 @@ namespace GMPS.API.Controllers
                     Name = r.Name
                 }).ToList();
 
-                _logger.LogInformation(CustomLogEvents.RoleController_Get, "Returned {Count} roles", data.Count);
+                _logger.LogInformation(CustomLogEvents.RoleController_Get, "Lấy danh sách vai trò thành công, tổng {Count} mục", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<RoleDTO>>
                 {
@@ -48,7 +48,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.RoleController_Get, ex, "Error occurred while getting roles");
+                _logger.LogError(CustomLogEvents.RoleController_Get, ex, "Lỗi xảy ra khi lấy danh sách vai trò");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {

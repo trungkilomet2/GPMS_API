@@ -36,7 +36,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("production/create")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<Production>>> CreateProduction([FromBody] CreateProductionDTO dto)
         {
             try
@@ -93,7 +93,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("production/list")]
-        //  [Authorize(Roles = "Admin,Owner")]
+        //  [Authorize]
         public async Task<ActionResult<IEnumerable<ListProductionDTO>>> GetList([FromQuery] RequestDTO<Production> input)
         {
             try

@@ -33,7 +33,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("order-reject-by-id/{orderId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> GetOrderRejectById(int orderId)
         {
             try
@@ -106,7 +106,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("order-reject")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> CreateOrderReject([FromBody] CreateOrderRejectDTO? input)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);

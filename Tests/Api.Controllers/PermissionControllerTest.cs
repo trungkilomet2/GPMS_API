@@ -24,8 +24,8 @@ public class PermissionControllerTest
 
     private static IEnumerable<PermissionEntry> BuildFakePermissions() =>
     [
-        new PermissionEntry(1, "User",  "GET", "GetUser",   "1,2"),
-        new PermissionEntry(2, "Order", "GET", "GetOrders", "2")
+        new PermissionEntry { Id = 1, Controller = "User",  Method = "GET", Action = "GetUser",   RoleIds = "1,2" },
+        new PermissionEntry { Id = 2, Controller = "Order", Method = "GET", Action = "GetOrders", RoleIds = "2"   }
     ];
 
     private static Dictionary<string, string> BuildFakeRoleMap() => new()
@@ -81,23 +81,23 @@ public class PermissionControllerTest
     [Fact]
     public async Task UpdatePermission_Returns200_WhenSuccessful()
     {
-        _permissionRepo.Setup(x => x.GetById(1)).ReturnsAsync(new PermissionEntry(1, "User", "GET", "GetUser", "1"));
+        _permissionRepo.Setup(x => x.GetById(1)).ReturnsAsync(new PermissionEntry { Id = 1, Controller = "User", Method = "GET", Action = "GetUser", RoleIds = "1" });
         _permissionRepo.Setup(x => x.UpdateRoleAuthorize(1, It.IsAny<string?>())).ReturnsAsync(true);
 
         var result = await BuildController().UpdatePermission(1, new UpdatePermissionDTO { RoleIds = new List<int> { 1, 2 } });
 
-        Assert.IsType<OkResult>(result);
+        Assert.IsType<OkObjectResult>(result);
     }
 
     [Fact]
     public async Task UpdatePermission_Returns200_WhenRoleIdsIsEmpty()
     {
-        _permissionRepo.Setup(x => x.GetById(1)).ReturnsAsync(new PermissionEntry(1, "User", "GET", "GetUser", "1"));
+        _permissionRepo.Setup(x => x.GetById(1)).ReturnsAsync(new PermissionEntry { Id = 1, Controller = "User", Method = "GET", Action = "GetUser", RoleIds = "1" });
         _permissionRepo.Setup(x => x.UpdateRoleAuthorize(1, null)).ReturnsAsync(true);
 
         var result = await BuildController().UpdatePermission(1, new UpdatePermissionDTO { RoleIds = new List<int>() });
 
-        Assert.IsType<OkResult>(result);
+        Assert.IsType<OkObjectResult>(result);
     }
 
     [Fact]
@@ -137,6 +137,51 @@ public class PermissionControllerTest
         var result = await BuildController().UpdatePermission(1, new UpdatePermissionDTO { RoleIds = new List<int> { 1, 2 } });
 
         var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, obj.StatusCode);
+    }
+
+    // ─── GetPermissionAuditLogs ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetPermissionAuditLogs_Returns200_WhenSuccessful()
+    {
+        var fakeLogs = new List<LogEvent>
+        {
+            new LogEvent { Id = 1, Message = "PERMISSION_AUDIT PermissionId=1", Level = "Warning", TimeStemp = DateTime.UtcNow }
+        };
+        _logEventRepo.Setup(x => x.GetPermissionAuditLogs(null, null)).ReturnsAsync(fakeLogs);
+
+        var input = new RequestDTO<LogEventDTO>();
+        var result = await BuildController().GetPermissionAuditLogs(input, null, null);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<LogEventDTO>>>(obj.Value);
+        Assert.Equal(1, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetPermissionAuditLogs_Returns200_EmptyList_WhenNoLogs()
+    {
+        _logEventRepo.Setup(x => x.GetPermissionAuditLogs(null, null)).ReturnsAsync(new List<LogEvent>());
+
+        var input = new RequestDTO<LogEventDTO>();
+        var result = await BuildController().GetPermissionAuditLogs(input, null, null);
+
+        var obj = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<RestDTO<IEnumerable<LogEventDTO>>>(obj.Value);
+        Assert.Equal(0, dto.RecordCount);
+    }
+
+    [Fact]
+    public async Task GetPermissionAuditLogs_Returns500_OnException()
+    {
+        _logEventRepo.Setup(x => x.GetPermissionAuditLogs(It.IsAny<DateTime?>(), It.IsAny<DateTime?>()))
+            .ThrowsAsync(new Exception("db error"));
+
+        var input = new RequestDTO<LogEventDTO>();
+        var result = await BuildController().GetPermissionAuditLogs(input, null, null);
+
+        var obj = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, obj.StatusCode);
     }
 }

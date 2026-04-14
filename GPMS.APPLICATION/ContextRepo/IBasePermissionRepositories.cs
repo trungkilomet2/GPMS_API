@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using GPMS.DOMAIN.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace GPMS.APPLICATION.Repositories
+namespace GPMS.APPLICATION.ContextRepo
 {
-    public interface IPermissionRepositories
+    public interface IBasePermissionRepositories
     {
         Task<IEnumerable<PermissionEntry>> GetAll();
         Task<PermissionEntry?> GetById(int id);

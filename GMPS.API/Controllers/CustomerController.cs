@@ -24,7 +24,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-all-customer")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<CustomerDTO>>>> GetAllCustomer([FromQuery] RequestDTO<CustomerDTO>? input)
         {
             try
@@ -83,7 +83,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-order-by-customer/{CustomerId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrderByCustomer(int CustomerId, [FromQuery] RequestDTO<OrderListDTO>? input)
         {            
 

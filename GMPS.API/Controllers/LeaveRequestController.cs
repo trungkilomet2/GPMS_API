@@ -101,7 +101,7 @@ namespace GMPS.API.Controllers
 
         // GET api/leaverequest/leave-request-list
         [HttpGet("leave-request-list", Name = "Get all leave request list")]
-        [Authorize(Roles = "Owner,PM")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<LeaveRequestListDTO>>>> GetLeaveRequests([FromQuery] LeaveRequestRequestDTO input)
         {
             try
@@ -185,7 +185,7 @@ namespace GMPS.API.Controllers
 
         // GET api/leaverequest/my-leave-request-history
         [HttpGet("my-leave-request-history", Name = "Get my leave request history")]
-        [Authorize(Roles = "Owner,PM,Worker")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<LeaveRequestListDTO>>>> GetMyLeaveRequestHistory([FromQuery] LeaveRequestRequestDTO input)
         {
             try
@@ -274,7 +274,7 @@ namespace GMPS.API.Controllers
 
         // GET api/leaverequest/my-leave-request-history/{id}
         [HttpGet("my-leave-request-history/{id}", Name = "Get my leave request history detail")]
-        [Authorize(Roles = "Owner,PM,Worker")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> GetMyLeaveRequestHistoryDetail(int id)
         {
             try
@@ -389,7 +389,7 @@ namespace GMPS.API.Controllers
 
         // GET api/leaverequest/leave-request-detail/{id}
         [HttpGet("leave-request-detail/{id}", Name = "Get leave request detail by id")]
-        [Authorize(Roles = "Owner,PM")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> GetLeaveRequestDetail(int id)
         {
             try
@@ -478,7 +478,7 @@ namespace GMPS.API.Controllers
 
         // POST api/leaverequest/create
         [HttpPost("create")]
-        [Authorize(Roles = "Admin,Owner,PM,Worker")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<LeaveRequestDetailDTO>>> CreateLeaveRequest([FromBody] CreateLeaveRequestDTO? input)
         {
             try
@@ -589,7 +589,7 @@ namespace GMPS.API.Controllers
 
         // PUT api/leaverequest/{id}/deny
         [HttpPut("{id}/deny")]
-        [Authorize(Roles = "Owner,PM")]
+        [Authorize]
         public async Task<ActionResult> DenyLeaveRequest(int id, [FromBody] DenyLeaveRequestDTO? input)
         {
             try
@@ -710,7 +710,7 @@ namespace GMPS.API.Controllers
 
         // PUT api/leaverequest/{id}/cancel
         [HttpPut("{id}/cancel")]
-        [Authorize(Roles = "Owner,PM,Worker")]
+        [Authorize]
         public async Task<ActionResult> CancelLeaveRequest(int id)
         {
             try
@@ -801,7 +801,7 @@ namespace GMPS.API.Controllers
 
         // PUT api/leaverequest/{id}/approve
         [HttpPut("{id}/approve")]
-        [Authorize(Roles = "Owner,PM")]
+        [Authorize]
         public async Task<ActionResult> ApproveLeaveRequest(int id)
         {
             try
