@@ -451,10 +451,7 @@ namespace GPMS.APPLICATION.Services
                 {
                     throw new ValidationException("Tổng số lượng làm không thể lớn hơn số lượng đơn hàng giao cho");
                 }
-                if (nowQuantitySubmit == orderSizeLimit)
-                {
-                    productionPart.StatusId = ProductionPart_Constrants.Reviewing_ID;
-                }
+
                 // Update số lượng sản phẩm đã làm vào production part đó
                 await _partRepo.Update(productionPart);
 
@@ -539,11 +536,7 @@ namespace GPMS.APPLICATION.Services
                     part.StatusId = ProductionPart_Constrants.OnGoing_ID;
                     log.Quantity = quantity;
                 }
-                if (nowQuantitySubmit == orderSizeLimit)
-                {
-                    part.StatusId = ProductionPart_Constrants.Reviewing_ID;
-                    log.Quantity = quantity;
-                }
+               
                 if (nowQuantitySubmit > orderSizeLimit)
                 {
                     throw new ValidationException("Không thể cập nhật số lượng vượt quá số lượng đơn hàng đặt ra.");
@@ -566,9 +559,9 @@ namespace GPMS.APPLICATION.Services
 
             var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
             // Kiểm tra part đấy đã về trạng thái chờ nghiệm thu chưa nếu như chưa thì không thể hoàn thành công đoạn đấy được
-            if (part.StatusId != ProductionPart_Constrants.Reviewing_ID)
+            if (part.StatusId != ProductionPart_Constrants.OnGoing_ID)
             {
-                throw new ValidationException("Chỉ có thể hoàn thành công đoạn đang ở trạng thái Chờ Nghiệm Thu");
+                throw new ValidationException("Chỉ có thể hoàn thành công đoạn đang ở trạng thái Đang Sản Xuất");
             }
             // Kiểm tra toàn bộ số lượng part log work của một part đấy nếu như nó chưa bằng sản lượng của production 
             // Thì không thể hoàn thành công đoạn đó được
@@ -893,11 +886,14 @@ namespace GPMS.APPLICATION.Services
                 approvedLog = await _workLogRepo.Update(log);
 
                 part.StatusId = approvedTotal == orderSizeLimit
-                    ? ProductionPart_Constrants.Reviewing_ID
+                    ? ProductionPart_Constrants.Done_ID
                     : ProductionPart_Constrants.OnGoing_ID;
-                await _partRepo.Update(part);
-            });
 
+                partOrderSize.PartOrderSizeStatusId = approvedTotal == orderSizeLimit ? PartOrderSizeStatus_Constants.Done_ID : PartOrderSizeStatus_Constants.OnGoing_ID;
+
+                await _partRepo.Update(part);
+                await _partOrderSizeRepo.Update(partOrderSize);
+            });
             return approvedLog;
         }
 
