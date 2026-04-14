@@ -13,5 +13,6 @@ namespace GPMS.DOMAIN.Constants
         public const string PM = "PM";
         public const string Worker = "Worker";
         public const string Customer = "Customer";
+        public const string OwnerUsername = "tungchuxuong";
     }
 }

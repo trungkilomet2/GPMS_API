@@ -15,11 +15,13 @@ namespace GMPS.API.Controllers
     public class WorkerController : ControllerBase
     {
         private readonly IWorkerRepositories _workerRepo;
+        private readonly IUserRepositories _userRepo;
         private readonly ILogger<AccountController> _logger;
 
-        public WorkerController(IWorkerRepositories workerRepo,ILogger<AccountController> logger)
+        public WorkerController(IWorkerRepositories workerRepo, IUserRepositories userRepo, ILogger<AccountController> logger)
         {
             _workerRepo = workerRepo ?? throw new ArgumentNullException(nameof(workerRepo));
+            _userRepo = userRepo ?? throw new ArgumentNullException(nameof(userRepo));
             _logger = logger;
         }
 
@@ -291,10 +293,11 @@ namespace GMPS.API.Controllers
                     }
 
                     int? managerId = input.ManagerId;
+                    var owner = await _userRepo.GetOwner();
 
                     if (input.RoleIds.Contains(RoleId_Constants.PM))
                     {
-                        managerId = 1;
+                        managerId = owner.Id;
                     }
 
                     if (input.RoleIds.Contains(RoleId_Constants.Worker))

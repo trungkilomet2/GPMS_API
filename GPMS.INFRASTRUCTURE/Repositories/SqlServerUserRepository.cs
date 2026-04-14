@@ -79,7 +79,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
         public async Task<User> GetOwner()
         {
             var data = await _context.USER.Include(u => u.ROLE).Include(u => u.US)
-                              .Include(u => u.WS).Where(u => u.ROLE.Any(r => r.NAME == Roles_Constants.Owner)).FirstOrDefaultAsync();
+                              .Include(u => u.WS).Where(u => u.USERNAME == Roles_Constants.OwnerUsername).FirstOrDefaultAsync();
             return _mapper.Map<User>(data);
         }
 

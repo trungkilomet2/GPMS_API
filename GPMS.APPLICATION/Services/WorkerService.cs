@@ -45,13 +45,13 @@ namespace GPMS.APPLICATION.Services
         {
             if (user == null)
                 throw new Exception("Lỗi khi tạo nhân viên.");
-
-            var status = await _userStatusRepo.GetById(user.StatusId);
-            if (status == null)
-                throw new KeyNotFoundException($"Trạng thái với Id: '{user.StatusId}' không tồn tại.");
-            var existManager = await _workerRepo.GetWorkerById(user.ManagerId);
-            if (existManager == null)
-                throw new KeyNotFoundException($"Người dùng với Id: '{user.ManagerId}' không tồn tại.");
+            var existOwner = await _accRepo.GetOwner();
+            if(user.ManagerId != existOwner.Id)
+            {
+                var existManager = await _workerRepo.GetPMById(user.ManagerId);
+                if (existManager == null)
+                    throw new KeyNotFoundException($"Quản lý với Id: '{user.ManagerId}' không tồn tại.");
+            }
             User createdUser = null;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
