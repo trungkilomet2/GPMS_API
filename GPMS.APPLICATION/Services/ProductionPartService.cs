@@ -885,7 +885,11 @@ namespace GPMS.APPLICATION.Services
                 log.IsReadOnly = true;
                 approvedLog = await _workLogRepo.Update(log);
 
-                part.StatusId = approvedTotal == orderSizeLimit
+                // Kiểm tra xem các lô hàng khác đang xong ở công đoạn đấy chưa
+                var getAllPartOrderSizes = await _partOrderSizeRepo.GetAll(part.Id);
+                bool checkOtherPartOrderSizeStatus = getAllPartOrderSizes.Any(x => x.Id != partOrderSizeId && x.PartOrderSizeStatusId != PartOrderSizeStatus_Constants.Done_ID);
+
+                part.StatusId = (approvedTotal == orderSizeLimit && !checkOtherPartOrderSizeStatus)
                     ? ProductionPart_Constrants.Done_ID
                     : ProductionPart_Constrants.OnGoing_ID;
 
