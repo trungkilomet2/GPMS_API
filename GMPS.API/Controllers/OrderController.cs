@@ -134,7 +134,7 @@ namespace GMPS.API.Controllers
 
         // api/order/order-list
         [HttpGet("order-list", Name = "Get all order list")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetOrders([FromQuery] OrderRequestDTO input)
         {
             try
@@ -218,7 +218,7 @@ namespace GMPS.API.Controllers
 
         // api/order/my-orders
         [HttpGet("my-orders", Name = "Get order list by customer")]
-        [Authorize(Roles = "Customer,Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<OrderListDTO>>>> GetMyOrders([FromQuery] OrderRequestDTO input)
         {
             try
@@ -307,7 +307,7 @@ namespace GMPS.API.Controllers
 
         // api/order/order-detail/{id}
         [HttpGet("order-detail/{id}", Name = "Get order detail by id")]
-        [Authorize(Roles = "Customer,Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<OrderDetailDTO>>> GetOrderDetail(int id)
         {
             try
@@ -419,7 +419,7 @@ namespace GMPS.API.Controllers
 
         // api/order/{id}/history
         [HttpGet("{id}/history", Name = "Get order update history by id")]
-        [Authorize(Roles = "Customer,Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<OHistoryUpdate>>>> GetOrderHistory(int id)
         {
             try
@@ -521,7 +521,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("create-order")]
-        [Authorize(Roles = "Customer,Owner")]
+        [Authorize]
         public async Task<ActionResult> CreateOrder([FromBody] CreateOrderDTO? input)
         {
             try
@@ -625,7 +625,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("create-manual-order")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> CreateManualOrder([FromBody] CreateManualOrderRequest? request)
         {
             try
@@ -734,7 +734,7 @@ namespace GMPS.API.Controllers
         // api/order/{orderId}/materials
         [HttpPost("{orderId}/materials", Name = "Add material to order")]
         [Consumes("multipart/form-data")]
-        [Authorize(Roles = "Customer")]
+        [Authorize]
         public async Task<ActionResult> AddMaterial(int orderId, [FromForm] CreateMaterialDTO? input, IFormFile? imageFile)
         {
             try
@@ -849,7 +849,7 @@ namespace GMPS.API.Controllers
 
         // api/order/{id}/update
         [HttpPut("{id}/update", Name = "Update order by customer")]
-        [Authorize(Roles = "Customer")]
+        [Authorize]
         public async Task<ActionResult> UpdateOrder(int id, [FromBody] UpdateOrderDTO? input)
         {
             try
@@ -991,7 +991,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("request-order-modification/{orderId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> RequestOrderModification(int orderId)
         {
             try
@@ -1095,7 +1095,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("deny-order/{orderId}")]
-        [Authorize(Roles = "Customer")]
+        [Authorize]
         public async Task<ActionResult> DenyOrder(int orderId)
         {
             try
@@ -1170,7 +1170,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("{orderId}/approve")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> ApproveOrder(int orderId)
         {
             try

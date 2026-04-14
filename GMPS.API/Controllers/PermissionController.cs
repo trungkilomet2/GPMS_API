@@ -9,7 +9,7 @@ namespace GMPS.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class PermissionController : ControllerBase
     {
         private readonly IPermissionRepositories _permissionRepo;
@@ -28,7 +28,7 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Getting all permissions");
+                _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Đang lấy danh sách phân quyền");
 
                 var roleMap = await _permissionRepo.GetRoleMap();
                 var permissions = await _permissionRepo.GetAll();
@@ -51,7 +51,7 @@ namespace GMPS.API.Controllers
                             .ToList()
                 }).ToList();
 
-                _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Returned {Count} permissions", data.Count);
+                _logger.LogInformation(CustomLogEvents.PermissionController_Get, "Lấy danh sách phân quyền thành công, tổng {Count} mục", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<PermissionResponseDTO>>
                 {
@@ -65,7 +65,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.PermissionController_Get, ex, "Error occurred while getting permissions");
+                _logger.LogError(CustomLogEvents.PermissionController_Get, ex, "Lỗi xảy ra khi lấy danh sách phân quyền");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -83,17 +83,18 @@ namespace GMPS.API.Controllers
             {
                 if (id <= 0)
                 {
+                    _logger.LogWarning(CustomLogEvents.PermissionController_Put, "ID phân quyền không hợp lệ: {Id}", id);
                     return StatusCode(StatusCodes.Status400BadRequest, new ValidationProblemDetails
                     {
                         Status = StatusCodes.Status400BadRequest,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                        Errors = { { "id", new[] { "Id must be a positive integer." } } }
+                        Errors = { { "id", new[] { "ID phải là số nguyên dương." } } }
                     });
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning(CustomLogEvents.PermissionController_Put, "Invalid model state when updating permission {Id}", id);
+                    _logger.LogWarning(CustomLogEvents.PermissionController_Put, "Lỗi dữ liệu đầu vào khi cập nhật phân quyền với ID {Id}", id);
                     return BadRequest(new ValidationProblemDetails(ModelState)
                     {
                         Status = StatusCodes.Status400BadRequest,
@@ -101,14 +102,15 @@ namespace GMPS.API.Controllers
                     });
                 }
 
-                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Updating permission {Id}", id);
+                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Đang cập nhật phân quyền với ID {Id}", id);
 
                 var existing = await _permissionRepo.GetById(id);
                 if (existing == null)
                 {
+                    _logger.LogWarning(CustomLogEvents.PermissionController_Put, "Không tìm thấy phân quyền với ID {Id}", id);
                     return StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
                     {
-                        Detail = $"Permission with id '{id}' not found.",
+                        Detail = $"Không tìm thấy phân quyền với ID '{id}'.",
                         Status = StatusCodes.Status404NotFound,
                         Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4"
                     });
@@ -122,17 +124,17 @@ namespace GMPS.API.Controllers
 
                 await _permissionRepo.UpdateRoleAuthorize(id, rolesAfter.Length > 0 ? rolesAfter : null);
 
-                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Updated permission {Id}", id);
+                _logger.LogInformation(CustomLogEvents.PermissionController_Put, "Cập nhật phân quyền thành công với ID {Id}", id);
 
-                _logger.LogInformation(CustomLogEvents.PermissionController_Audit,
+                _logger.LogWarning(CustomLogEvents.PermissionController_Audit,
                     "PERMISSION_AUDIT PermissionId={PermissionId} Controller={Controller} Action={Action} ChangedBy={ChangedBy} RolesBefore={RolesBefore} RolesAfter={RolesAfter}",
                     id, existing.Controller, existing.Action, changedByUserId, rolesBefore, rolesAfter);
 
-                return Ok();
+                return Ok($"Cập nhật phân quyền với ID {id} thành công.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.PermissionController_Put, ex, "Error occurred while updating permission {Id}", id);
+                _logger.LogError(CustomLogEvents.PermissionController_Put, ex, "Lỗi xảy ra khi cập nhật phân quyền với ID {Id}", id);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {
@@ -151,7 +153,17 @@ namespace GMPS.API.Controllers
         {
             try
             {
-                _logger.LogInformation(CustomLogEvents.PermissionController_Audit, "Getting permission audit logs");
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning(CustomLogEvents.PermissionController_Audit, "Lỗi dữ liệu đầu vào khi lấy lịch sử phân quyền");
+                    return BadRequest(new ValidationProblemDetails(ModelState)
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+                    });
+                }
+
+                _logger.LogInformation(CustomLogEvents.PermissionController_Audit, "Đang lấy lịch sử thay đổi phân quyền");
 
                 var result = await _logEventRepo.GetPermissionAuditLogs(fromTimestamp, toTimestamp);
 
@@ -179,7 +191,7 @@ namespace GMPS.API.Controllers
                     })
                     .ToList();
 
-                _logger.LogInformation(CustomLogEvents.PermissionController_Audit, "Returned {Count} permission audit logs", data.Count);
+                _logger.LogInformation(CustomLogEvents.PermissionController_Audit, "Lấy lịch sử phân quyền thành công, tổng {Count} mục", data.Count);
 
                 return Ok(new RestDTO<IEnumerable<LogEventDTO>>
                 {
@@ -195,7 +207,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(CustomLogEvents.PermissionController_Audit, ex, "Error occurred while getting permission audit logs");
+                _logger.LogError(CustomLogEvents.PermissionController_Audit, ex, "Lỗi xảy ra khi lấy lịch sử phân quyền");
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
                 {

@@ -21,7 +21,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-all-log-events")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<LogEventDTO>>>> GetLogs([FromQuery] RequestDTO<LogEventDTO> input, [FromQuery] DateTime? fromTimestamp,
     [FromQuery] DateTime? toTimestamp)
         {

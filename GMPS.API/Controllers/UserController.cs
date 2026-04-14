@@ -46,7 +46,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize]
         public async Task<RestDTO<IEnumerable<User>>> GetUser([FromQuery] RequestDTO<User> input)
         {
 
@@ -66,7 +66,7 @@ namespace GMPS.API.Controllers
 
 
         [HttpGet("user-detail/{userId}")]
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<UserDetailDTO>>> GetUserDetail(int userId)
         {
             try
@@ -162,7 +162,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("admin/user-list")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<UserListDTO>>>> GetUserListForAdmin([FromQuery] RequestDTO<UserListDTO> input)
         {
             _logger.LogInformation(CustomLogEvents.UserController_Get, "Admin đang yêu cầu danh sách người dùng");
@@ -210,7 +210,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("admin/create-user")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<UserListDTO>>> CreateUser([FromBody] CreateUserDTO input)
         {
             _logger.LogInformation(CustomLogEvents.UserController_Post, "Admin đang tạo người dùng mới với tên tài khoản: {UserName}", input.UserName);
@@ -285,7 +285,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("admin/disable/{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult> DisableUser(int id)
         {
             _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin đang thay đổi trạng thái người dùng với ID {UserId}", id);
@@ -321,7 +321,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("admin/assign-roles/{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult> AssignRoles(int id, [FromBody] AssignRoleDTO input)
         {
             _logger.LogInformation(CustomLogEvents.UserController_Put, "Admin đang phân quyền cho người dùng với ID {UserId}", id);
@@ -376,7 +376,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-user-for-admin/{userId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUserForAdmin(int userId, [FromForm] UpdatedUserDTO? user)
         {
@@ -478,7 +478,7 @@ namespace GMPS.API.Controllers
 
         [HttpGet("view-profile")]
         [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
-        [Authorize(Roles = "Admin,Customer,Owner,PM,Worker")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<ViewProfileDTO>>> ViewProfile()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -548,7 +548,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-profile")]
-        [Authorize(Roles = "Admin,Owner,Worker,PM,Customer")]
+        [Authorize]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<RestDTO<User>>> UpdateUser([FromForm] UpdatedUserDTO? user)
         {

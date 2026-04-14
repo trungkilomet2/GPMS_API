@@ -24,7 +24,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-all-employees")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployees([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             try
@@ -108,7 +108,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-all-employees-by-pm-id")]
-        [Authorize(Roles = "PM")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<EmployeeDTO>>>> GetEmployeesbyPMId([FromQuery] RequestDTO<EmployeeDTO> input)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -198,7 +198,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-employee-by-id/{userId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<EmployeeDTO>>> GetEmployeeById(int userId)
         {
             if(userId <= 0)
@@ -274,7 +274,7 @@ namespace GMPS.API.Controllers
 
         // api/worker
         [HttpPost("create-employee")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> CreateWorker([FromBody] CreateEmployeeDTO? input)
         {
             try
@@ -373,7 +373,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("update-employee/{userId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> UpdateWorker(int userId, [FromBody] UpdateEmployeeDTO input)
         {
             try
@@ -431,7 +431,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPut("assign-worker-skill/{userId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize]
         public async Task<ActionResult> AssignWorkerSkill(int userId, [FromBody] AssignWorkerRoleDTO input)
         {
             try

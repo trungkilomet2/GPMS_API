@@ -24,7 +24,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("get-all-worker-roles")]
-        [Authorize(Roles = "Admin,Owner,PM")]
+        [Authorize]
         public async Task<ActionResult<RestDTO<IEnumerable<WorkerSkill>>>> GetAllWorkerRoles([FromQuery] RequestDTO<WorkerSkill> input)
         {
             try
@@ -96,7 +96,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpPost("create-worker-roles")]
-        [Authorize(Roles = "Owner,Admin,PM")]
+        [Authorize]
         public async Task<ActionResult> CreateWorkerRole([FromBody] CreateWorkerRoleDTO? input)
         {
             try

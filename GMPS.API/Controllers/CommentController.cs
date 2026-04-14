@@ -17,7 +17,7 @@ namespace GMPS.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Customer,Owner")]
+    [Authorize]
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepositories _commentRepo;
