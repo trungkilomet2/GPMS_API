@@ -115,6 +115,9 @@ namespace GMPS.API.Mapper
                 .ForMember(dest => dest.WorkLogId, opt => opt.MapFrom(src => src.Id));
             
             CreateMap<Delivery, DeliveryResponseDTO>();
+
+            CreateMap<DeliveryPlanningItemViewDTO, DeliveryPlanningItemDTO>();
+
         }
 
     }

@@ -54,5 +54,7 @@ namespace GPMS.APPLICATION.Repositories
         Task<IEnumerable<Delivery>> CreateDeliveries(int orderId, IEnumerable<Delivery> deliveries);
         Task<Delivery> ConfirmDeliveryReceipt(int deliveryId, string confirmationText);
 
+        Task<IEnumerable<DeliveryPlanningItemViewDTO>> GetDeliveryPlanningByOrder(int orderId);
+
     }
 }

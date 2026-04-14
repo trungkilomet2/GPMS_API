@@ -1052,7 +1052,87 @@ namespace GPMS.APPLICATION.Services
             var payload = (deliveries ?? Enumerable.Empty<Delivery>()).ToList();
             if (payload.Count == 0) throw new ValidationException("Danh sách delivery không hợp lệ");
 
+            //Trung Fixx - 14-04-26
+
             var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
+            var sizeLookup = (await _sizeRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.Name);
+            var orderSizeLookup = orderSizes.ToDictionary(x => x.Id);
+            var orderSizeIds = orderSizes.Select(x => x.Id).ToHashSet();
+
+            // Tổng số lượng đã giao/đang giao theo (màu, size): chỉ lấy trạng thái ToDo + Done.
+            var existingDeliveries = (await _deliveryRepo.GetAll(null))
+                .Where(x => orderSizeIds.Contains(x.OrderSizeId) &&
+                            (x.DeliverStatusId == DeliveryStatus_Constrants.ToDo_ID ||
+                             x.DeliverStatusId == DeliveryStatus_Constrants.Done_ID))
+                .ToList();
+
+            var deliveredOrShippingByKey = existingDeliveries
+                .Where(x => orderSizeLookup.ContainsKey(x.OrderSizeId))
+                .GroupBy(x =>
+                {
+                    var os = orderSizeLookup[x.OrderSizeId];
+                    var sizeName = sizeLookup.TryGetValue(os.SizeId, out var mappedSize) ? mappedSize : string.Empty;
+                    return $"{os.Color?.Trim()?.ToLowerInvariant()}|{sizeName.Trim().ToLowerInvariant()}";
+                })
+                .ToDictionary(x => x.Key, x => x.Sum(y => y.DeliverQuantity));
+
+            // Số lượng đã hoàn thành theo (màu, size) từ work log đã nghiệm thu của công đoạn cuối.
+            var productions = (await _productionRepo.GetAll(null))
+                .Where(x => x.OrderId == orderId)
+                .ToList();
+            var completedByKey = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var production in productions)
+            {
+                var lastPart = (await _partRepo.GetAll(production.Id)).OrderByDescending(x => x.Id).FirstOrDefault();
+                if (lastPart is null) continue;
+
+                var finalPartOrderSizes = (await _partOrderSizeRepo.GetAll(lastPart.Id)).ToList();
+                foreach (var partOrderSize in finalPartOrderSizes)
+                {
+                    var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                    var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
+                        .Where(x => x.IsReadOnly)
+                        .Sum(x => Math.Max(0, x.Quantity));
+
+                    if (!completedByKey.ContainsKey(key))
+                    {
+                        completedByKey[key] = 0;
+                    }
+                    completedByKey[key] += approvedWorkLogQuantity;
+                }
+            }
+            // Tổng số lượng chuẩn bị giao theo (màu, size) từ payload.
+            var requestedByKey = payload
+                .GroupBy(x =>
+                {
+                    if (!orderSizeLookup.TryGetValue(x.OrderSizeId, out var os))
+                    {
+                        throw new ValidationException($"Đã Có Lỗi Xảy Ra Công Đoạn Không Khớp Nhau");
+                    }
+                    var sizeName = sizeLookup.TryGetValue(os.SizeId, out var mappedSize) ? mappedSize : string.Empty;
+                    return $"{os.Color?.Trim()?.ToLowerInvariant()}|{sizeName.Trim().ToLowerInvariant()}";
+                })
+                .ToDictionary(x => x.Key, x => x.Sum(y => y.DeliverQuantity));
+
+            foreach (var requested in requestedByKey)
+            {
+                var completed = completedByKey.TryGetValue(requested.Key, out var completedQuantity) ? completedQuantity : 0;
+                var deliveredOrShipping = deliveredOrShippingByKey.TryGetValue(requested.Key, out var deliveredQuantity) ? deliveredQuantity : 0;
+                var availableToShip = completed - deliveredOrShipping;
+
+                if (availableToShip <= 0)
+                {
+                    throw new ValidationException("Số lượng có thể giao không còn (đã giao hoặc đang giao hết)");
+                }
+
+                if (requested.Value > availableToShip)
+                {
+                    throw new ValidationException("Tổng số lượng chuẩn bị giao vượt quá số lượng còn có thể giao");
+                }
+            }
+            //
+
             var created = new List<Delivery>();
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1123,6 +1203,82 @@ namespace GPMS.APPLICATION.Services
             return await _deliveryRepo.Update(delivery);
         }
 
+
+
+        // Mục đích: dữ liệu cho màn hình ghi nhận giao hàng theo (màu, size) với giới hạn tối đa giao đợt này.
+        public async Task<IEnumerable<DeliveryPlanningItemViewDTO>> GetDeliveryPlanningByOrder(int orderId)
+        {
+            _ = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
+
+            var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
+            var orderSizeIds = orderSizes.Select(x => x.Id).ToHashSet();
+            var sizeLookup = (await _sizeRepo.GetAll(null)).ToDictionary(x => x.Id, x => x.Name);
+
+            var deliveries = (await _deliveryRepo.GetAll(null)).Where(x => orderSizeIds.Contains(x.OrderSizeId)).ToList();
+            var deliveredLookup = deliveries
+                .GroupBy(x => x.OrderSizeId)
+                .ToDictionary(x => x.Key, x => x.Sum(y => y.DeliverQuantity));
+
+            // Lấy toàn bộ production đang làm cho order để tính completed từ work log đã nghiệm thu ở công đoạn cuối.
+            var productions = (await _productionRepo.GetAll(null))
+                .Where(x => x.OrderId == orderId)
+                .ToList();
+            var completedLookup = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var production in productions)
+            {
+                // Lấy công đoạn cuối cùng (id lớn nhất) trong từng production.
+                var parts = (await _partRepo.GetAll(production.Id)).OrderByDescending(x => x.Id).ToList();
+                var lastPart = parts.FirstOrDefault();
+
+                if (lastPart is null)
+                {
+                    continue;
+                }
+
+                var finalPartOrderSizes = (await _partOrderSizeRepo.GetAll(lastPart.Id)).ToList();
+                foreach (var partOrderSize in finalPartOrderSizes)
+                {
+                    var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                    if (!completedLookup.ContainsKey(key))
+                    {
+                        completedLookup[key] = 0;
+                    }
+
+                    var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
+                        .Where(x => x.IsReadOnly)
+                        .Sum(x => Math.Max(0, x.Quantity));
+
+                    completedLookup[key] += approvedWorkLogQuantity;
+                }
+            }
+
+            return orderSizes
+                .OrderBy(x => x.Id)
+                .Select(orderSize =>
+                {
+                    var sizeName = sizeLookup.TryGetValue(orderSize.SizeId, out var mappedSize) ? mappedSize : string.Empty;
+                    var delivered = deliveredLookup.TryGetValue(orderSize.Id, out var totalDelivered) ? totalDelivered : 0;
+                    var remaining = Math.Max(0, orderSize.Quantity - delivered);
+
+                    var colorKey = orderSize.Color?.Trim()?.ToLowerInvariant() ?? string.Empty;
+                    var sizeKey = sizeName.Trim().ToLowerInvariant();
+                    var completedByFinalPart = completedLookup.TryGetValue($"{colorKey}|{sizeKey}", out var completed) ? completed : 0;
+                    var maxDeliverable = Math.Max(0, Math.Min(remaining, completedByFinalPart - delivered));
+
+                    return new DeliveryPlanningItemViewDTO
+                    {
+                        OrderSizeId = orderSize.Id,
+                        Color = orderSize.Color,
+                        SizeName = sizeName,
+                        TotalOrderedQuantity = orderSize.Quantity,
+                        DeliveredQuantity = delivered,
+                        RemainingQuantity = remaining,
+                        CompletedQuantity = completedByFinalPart,
+                        MaxDeliverableQuantity = maxDeliverable
+                    };
+                });
+        }
 
 
     }
