@@ -627,10 +627,7 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException($"Work log ID = {logId} không thuộc công đoạn hiện tại");
                     }
-                    if (DateOnly.FromDateTime(log.CreateDate) == today)
-                    {
-                        throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
-                    }
+                   
                     if(log.IsReadOnly == false)
                     {
                         continue;
@@ -1051,6 +1048,8 @@ namespace GPMS.APPLICATION.Services
             var order = await _orderRepo.GetById(orderId) ?? throw new ValidationException("Order không tồn tại");
             var payload = (deliveries ?? Enumerable.Empty<Delivery>()).ToList();
             if (payload.Count == 0) throw new ValidationException("Danh sách delivery không hợp lệ");
+
+
 
             //Trung Fixx - 14-04-26
 
