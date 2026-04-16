@@ -14,6 +14,6 @@ namespace GPMS.APPLICATION.ContextRepo
         // Remove Worker From Task  
         Task<ProductionPart> RemoveWorker(int partOrderSizeId, int workerId);
         // Lấy danh sách PM có thể phụ trách worker đó gồm tên user + kĩ năng + lịch nghỉ phép
-        Task<IEnumerable<User>> ListWorkerWithPM(int pm_id);
+        Task<IEnumerable<User>> ListWorkerWithPM(int pm_id,bool isPM);
     }
 }

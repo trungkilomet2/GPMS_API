@@ -349,7 +349,18 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("From date phải nhỏ hơn To date");
             }
-            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
+
+            User checkUser = await _userRepo.GetById(pm_id);
+            bool isPM = true;
+            foreach(var role in checkUser.Roles)
+            {
+              if(role.Id == RoleId_Constants.Owner)
+                {
+                    isPM = false;
+                }
+            }
+
+            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id,isPM);
             List<AssignWorkerViewDTO> listAssignWorker = new List<AssignWorkerViewDTO>();
             foreach (var user in listUser)
             {
