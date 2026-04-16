@@ -56,5 +56,6 @@ namespace GPMS.APPLICATION.Repositories
 
         Task<IEnumerable<DeliveryPlanningItemViewDTO>> GetDeliveryPlanningByOrder(int orderId);
 
+
     }
 }

@@ -1226,29 +1226,55 @@ namespace GPMS.APPLICATION.Services
 
             foreach (var production in productions)
             {
-                // Lấy công đoạn cuối cùng (id lớn nhất) trong từng production.
-                var parts = (await _partRepo.GetAll(production.Id)).OrderByDescending(x => x.Id).ToList();
-                var lastPart = parts.FirstOrDefault();
-
-                if (lastPart is null)
+                // Theo từng production, gom số lượng nghiệm thu (IsReadOnly = true) của từng công đoạn
+                // và lấy min theo key size-màu giữa tất cả công đoạn.
+                var parts = (await _partRepo.GetAll(production.Id)).OrderBy(x => x.Id).ToList();
+                if (parts.Count == 0)
                 {
                     continue;
                 }
 
-                var finalPartOrderSizes = (await _partOrderSizeRepo.GetAll(lastPart.Id)).ToList();
-                foreach (var partOrderSize in finalPartOrderSizes)
+                var completedByPart = new Dictionary<int, Dictionary<string, int>>();
+                foreach (var part in parts)
                 {
-                    var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                    var partOrderSizes = (await _partOrderSizeRepo.GetAll(part.Id)).ToList();
+                    var quantityByColorSize = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var partOrderSize in partOrderSizes)
+                    {
+                        var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                        var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
+                            .Where(x => x.IsReadOnly)
+                            .Sum(x => Math.Max(0, x.Quantity));
+
+                        if (!quantityByColorSize.ContainsKey(key))
+                        {
+                            quantityByColorSize[key] = 0;
+                        }
+
+                        quantityByColorSize[key] += approvedWorkLogQuantity;
+                    }
+
+                    completedByPart[part.Id] = quantityByColorSize;
+                }
+
+                var allKeys = completedByPart.Values
+                    .SelectMany(x => x.Keys)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                foreach (var key in allKeys)
+                {
+                    var minCompletedAcrossParts = completedByPart.Values
+                        .Select(x => x.TryGetValue(key, out var qty) ? qty : 0)
+                        .Min();
+
                     if (!completedLookup.ContainsKey(key))
                     {
                         completedLookup[key] = 0;
                     }
 
-                    var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
-                        .Where(x => x.IsReadOnly)
-                        .Sum(x => Math.Max(0, x.Quantity));
-
-                    completedLookup[key] += approvedWorkLogQuantity;
+                    completedLookup[key] += minCompletedAcrossParts;
                 }
             }
 
@@ -1278,7 +1304,6 @@ namespace GPMS.APPLICATION.Services
                     };
                 });
         }
-
 
     }
 }
