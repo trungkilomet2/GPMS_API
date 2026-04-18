@@ -33,7 +33,7 @@ namespace GMPS.API.DTOs
 
         public List<CreateSizeDTO>? Sizes { get; set; }
 
-        public List<UpdateTemplateDTO>? Templates { get; set; }
+        public List<CreateTemplateDTO>? Templates { get; set; }
 
         public List<UpdateMaterialDTO>? Materials { get; set; }
     }
