@@ -8,8 +8,7 @@ namespace GMPS.API.DTOs
         [Required(ErrorMessage = "Phải có Id người dùng")]
         [Range(1, int.MaxValue, ErrorMessage = "Id người dùng phải > 0")]
         public int UserId { get; set; }
-
-        [Url(ErrorMessage = "Link ảnh không hợp lệ")]
+        [RegularExpression(@"^(https?:\/\/.+)?$", ErrorMessage = "Link ảnh không hợp lệ")]
         [StringLength(255, ErrorMessage = "Link ảnh quá dài")]
         public string? Image { get; set; }
 
