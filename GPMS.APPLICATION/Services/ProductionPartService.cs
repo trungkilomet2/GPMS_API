@@ -600,10 +600,9 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { part })).First();
         }
 
-        public async Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partId)
+        public async Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partWorkLogId)
         {
-            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
-            var logs = await _workLogRepo.GetAll(part.Id);
+            var logs = await _workLogRepo.GetAll(partWorkLogId);
             var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
 
             var workers = new List<User>();
