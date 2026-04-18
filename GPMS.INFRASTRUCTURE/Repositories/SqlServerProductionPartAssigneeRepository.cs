@@ -151,7 +151,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
 
                List<USER> workers = await _context.USER
                 .Include(u => u.ROLE)
-                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
+                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id && u.US_ID == UserStatus_Constants.Active)
                 .ToListAsync();
 
                 return _mapper.Map<IEnumerable<User>>(workers);
@@ -172,7 +172,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     .Include(u => u.ROLE)
                     .Include(u => u.WS)
                     .Include(u => u.US)
-                    .Where(u => u.MANAGER_ID == pm_id
+                    .Where(u => u.MANAGER_ID == pm_id && u.US_ID == UserStatus_Constants.Active
                                 && u.ROLE.Any(r => r.NAME == Roles_Constants.PM)
                                 && !u.ROLE.Any(r => r.NAME == Roles_Constants.Admin || r.NAME == Roles_Constants.Customer))
                     .ToListAsync();
@@ -182,7 +182,7 @@ namespace GPMS.INFRASTRUCTURE.Repositories
                     .Include(u => u.ROLE)
                     .Include(u => u.WS)
                     .Include(u => u.US)
-                    .Where(u => pmIds.Contains(u.MANAGER_ID ?? 0)
+                    .Where(u => pmIds.Contains(u.MANAGER_ID ?? 0) && u.US_ID == UserStatus_Constants.Active
                                 && u.ROLE.Any(r => r.NAME == Roles_Constants.Worker)
                                 && !u.ROLE.Any(r => r.NAME == Roles_Constants.Admin || r.NAME == Roles_Constants.Customer))
                     .ToListAsync();
