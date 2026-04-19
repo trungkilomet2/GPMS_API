@@ -33,7 +33,7 @@ namespace GMPS.API.Controllers
         }
 
         [HttpGet("order-reject-by-id/{orderId}")]
-        [Authorize(Roles = "Owner")]
+        [Authorize(Roles = "Owner,Customer")]
         public async Task<ActionResult> GetOrderRejectById(int orderId)
         {
             try

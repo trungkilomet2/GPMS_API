@@ -126,12 +126,19 @@ namespace GPMS.APPLICATION.Services
                 // hệ thống cần đồng bộ theo danh sách mới để tránh part cũ còn tồn tại và ghi đè dữ liệu.
                 // Xóa luôn toàn bộ production part size cũ đi
                 var existingParts = (await _partRepo.GetAll(productionId)).ToList();
+                // 
+
                 foreach (var existingPart in existingParts)
-                {
-                    var existingLogs = await _workLogRepo.GetAll(existingPart.Id);
-                    if (existingLogs.Any())
+                {   
+                    var getPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);   
+
+                    foreach(var existdata in getPartOrderSizes)
                     {
-                        throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
+                        var existingLogs = await _workLogRepo.GetAll(existdata.Id);
+                        if (existingLogs.Any())
+                        {
+                            throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
+                        }
                     }
                     // Xóa luôn toàn bộ danh sách partOrderSize cũ đi tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
                     var existingPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);
