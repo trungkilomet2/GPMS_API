@@ -69,14 +69,16 @@ namespace GPMS.APPLICATION.Services
             return await BuildViews(list_parts_in_productions);
         }
 
-        public async Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partId)
+        public async Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partOrderSizeId)
         {
-            if (partId <= 0)
+            if (partOrderSizeId <= 0)
             {
-                throw new ValidationException("Part id phải > 0");
+                throw new ValidationException("Id phải > 0");
             }
 
-            var part = await _partRepo.GetById(partId);
+            var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId);
+
+            var part = await _partRepo.GetById(partOrderSize.ProductionPartId);
 
             if (part is null)
             {
