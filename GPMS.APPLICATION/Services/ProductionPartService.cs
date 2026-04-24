@@ -69,14 +69,16 @@ namespace GPMS.APPLICATION.Services
             return await BuildViews(list_parts_in_productions);
         }
 
-        public async Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partId)
+        public async Task<ProductionPartDetailViewDTO> GetPartAssignmentDetail(int partOrderSizeId)
         {
-            if (partId <= 0)
+            if (partOrderSizeId <= 0)
             {
-                throw new ValidationException("Part id phải > 0");
+                throw new ValidationException("Id phải > 0");
             }
 
-            var part = await _partRepo.GetById(partId);
+            var partOrderSize = await _partOrderSizeRepo.GetById(partOrderSizeId);
+
+            var part = await _partRepo.GetById(partOrderSize.ProductionPartId);
 
             if (part is null)
             {
@@ -126,12 +128,19 @@ namespace GPMS.APPLICATION.Services
                 // hệ thống cần đồng bộ theo danh sách mới để tránh part cũ còn tồn tại và ghi đè dữ liệu.
                 // Xóa luôn toàn bộ production part size cũ đi
                 var existingParts = (await _partRepo.GetAll(productionId)).ToList();
+                // 
+
                 foreach (var existingPart in existingParts)
-                {
-                    var existingLogs = await _workLogRepo.GetAll(existingPart.Id);
-                    if (existingLogs.Any())
+                {   
+                    var getPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);   
+
+                    foreach(var existdata in getPartOrderSizes)
                     {
-                        throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
+                        var existingLogs = await _workLogRepo.GetAll(existdata.Id);
+                        if (existingLogs.Any())
+                        {
+                            throw new ValidationException("Không thể thay mới danh sách công đoạn vì đã phát sinh log sản lượng ở công đoạn cũ");
+                        }
                     }
                     // Xóa luôn toàn bộ danh sách partOrderSize cũ đi tránh việc dữ liệu bị ghi đè không đồng bộ với part mới tạo ra
                     var existingPartOrderSizes = await _partOrderSizeRepo.GetAll(existingPart.Id);
@@ -349,7 +358,18 @@ namespace GPMS.APPLICATION.Services
             {
                 throw new ValidationException("From date phải nhỏ hơn To date");
             }
-            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id);
+
+            User checkUser = await _userRepo.GetById(pm_id);
+            bool isPM = true;
+            foreach(var role in checkUser.Roles)
+            {
+              if(role.Id == RoleId_Constants.Owner)
+                {
+                    isPM = false;
+                }
+            }
+
+            var listUser = await _partAssignRepo.ListWorkerWithPM(pm_id,isPM);
             List<AssignWorkerViewDTO> listAssignWorker = new List<AssignWorkerViewDTO>();
             foreach (var user in listUser)
             {
@@ -589,10 +609,9 @@ namespace GPMS.APPLICATION.Services
             return (await BuildViews(new[] { part })).First();
         }
 
-        public async Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partId)
+        public async Task<IEnumerable<User>> GetIssueWorkersByWorkLogs(int partWorkLogId)
         {
-            var part = await _partRepo.GetById(partId) ?? throw new ValidationException("Production part không tồn tại trong hệ thống");
-            var logs = await _workLogRepo.GetAll(part.Id);
+            var logs = await _workLogRepo.GetAll(partWorkLogId);
             var workerIds = logs.Select(x => x.UserId).Distinct().ToList();
 
             var workers = new List<User>();
@@ -627,10 +646,7 @@ namespace GPMS.APPLICATION.Services
                     {
                         throw new ValidationException($"Work log ID = {logId} không thuộc công đoạn hiện tại");
                     }
-                    if (DateOnly.FromDateTime(log.CreateDate) == today)
-                    {
-                        throw new ValidationException($"Work log ID = {logId} thuộc ngày hôm nay nên chưa thể thanh toán");
-                    }
+                   
                     if(log.IsReadOnly == false)
                     {
                         continue;
@@ -1052,6 +1068,8 @@ namespace GPMS.APPLICATION.Services
             var payload = (deliveries ?? Enumerable.Empty<Delivery>()).ToList();
             if (payload.Count == 0) throw new ValidationException("Danh sách delivery không hợp lệ");
 
+
+
             //Trung Fixx - 14-04-26
 
             var orderSizes = (await _orderSizeRepo.GetAll(orderId)).ToList();
@@ -1227,29 +1245,55 @@ namespace GPMS.APPLICATION.Services
 
             foreach (var production in productions)
             {
-                // Lấy công đoạn cuối cùng (id lớn nhất) trong từng production.
-                var parts = (await _partRepo.GetAll(production.Id)).OrderByDescending(x => x.Id).ToList();
-                var lastPart = parts.FirstOrDefault();
-
-                if (lastPart is null)
+                // Theo từng production, gom số lượng nghiệm thu (IsReadOnly = true) của từng công đoạn
+                // và lấy min theo key size-màu giữa tất cả công đoạn.
+                var parts = (await _partRepo.GetAll(production.Id)).OrderBy(x => x.Id).ToList();
+                if (parts.Count == 0)
                 {
                     continue;
                 }
 
-                var finalPartOrderSizes = (await _partOrderSizeRepo.GetAll(lastPart.Id)).ToList();
-                foreach (var partOrderSize in finalPartOrderSizes)
+                var completedByPart = new Dictionary<int, Dictionary<string, int>>();
+                foreach (var part in parts)
                 {
-                    var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                    var partOrderSizes = (await _partOrderSizeRepo.GetAll(part.Id)).ToList();
+                    var quantityByColorSize = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var partOrderSize in partOrderSizes)
+                    {
+                        var key = $"{partOrderSize.Color?.Trim()?.ToLowerInvariant()}|{partOrderSize.Size?.Trim()?.ToLowerInvariant()}";
+                        var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
+                            .Where(x => x.IsReadOnly)
+                            .Sum(x => Math.Max(0, x.Quantity));
+
+                        if (!quantityByColorSize.ContainsKey(key))
+                        {
+                            quantityByColorSize[key] = 0;
+                        }
+
+                        quantityByColorSize[key] += approvedWorkLogQuantity;
+                    }
+
+                    completedByPart[part.Id] = quantityByColorSize;
+                }
+
+                var allKeys = completedByPart.Values
+                    .SelectMany(x => x.Keys)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                foreach (var key in allKeys)
+                {
+                    var minCompletedAcrossParts = completedByPart.Values
+                        .Select(x => x.TryGetValue(key, out var qty) ? qty : 0)
+                        .Min();
+
                     if (!completedLookup.ContainsKey(key))
                     {
                         completedLookup[key] = 0;
                     }
 
-                    var approvedWorkLogQuantity = (await _workLogRepo.GetAll(partOrderSize.Id))
-                        .Where(x => x.IsReadOnly)
-                        .Sum(x => Math.Max(0, x.Quantity));
-
-                    completedLookup[key] += approvedWorkLogQuantity;
+                    completedLookup[key] += minCompletedAcrossParts;
                 }
             }
 
@@ -1279,7 +1323,6 @@ namespace GPMS.APPLICATION.Services
                     };
                 });
         }
-
 
     }
 }
