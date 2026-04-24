@@ -32,8 +32,8 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
 
             var json = JsonSerializer.Serialize(payload);
 
-            var response = await client.PostAsync(_config["OpenRouter:BaseUrl"] +"chat/completions",
-     new StringContent(json, Encoding.UTF8, "application/json"));
+            var response = await client.PostAsync(_config["OpenRouter:BaseUrl"] + Chat_Constants.Uri,
+                new StringContent(json, Encoding.UTF8, Chat_Constants.MediaType));
 
             var responseBody = await response.Content.ReadAsStringAsync();
             var completion = JsonSerializer.Deserialize<OpenRouterResponse>(
@@ -77,7 +77,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             client.BaseAddress = new Uri(baseUrl);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Chat_Constants.MediaType));
             client.DefaultRequestHeaders.TryAddWithoutValidation("HTTP-Referer", _config["OpenRouter:SiteUrl"]);
 
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-Title", _config["OpenRouter:SiteName"]);
@@ -88,7 +88,7 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
         {
             return new
             {
-                model = _config["OpenRouter:Model"] ?? "google/gemini-2.5-flash",
+                model = _config["OpenRouter:Model"] ?? Chat_Constants.ModelName,
                 temperature = 0.7,
                 max_tokens = 500,
 
@@ -117,20 +117,17 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             3. KHÔNG tiết lộ các thông tin nhạy cảm về nhân sự hoặc tài chính nội bộ trừ khi nó có trong tài liệu công khai.
             4. Luôn thân thiện, lịch sự và sử dụng tiếng Việt.
             5. Nếu câu hỏi hoàn toàn không liên quan đến xưởng may hoặc GPMS, hãy khéo léo từ chối.
-            6. Nếu khách hàng hỏi về quy trình thực hiện, thì chỉ cần trả lời quy trình thực hiện, không cần giải thích thêm về các khía cạnh khác của hệ thống GPMS.
-            7. Khi trả lời thì hãy trả về dạng html sử dụng <br> để xuống dòng và không dùng \n, không trả về một đoạn văn bản dài, hãy chia nhỏ câu trả lời thành nhiều đoạn nếu cần thiết để dễ đọc hơn.
+            6. Phải trả lời ngắn gọn hết sức có thể, không cần đi quá chi tiết về các khía cạnh khác của hệ thống GPMS.
+            7. Khi trả lời thì hãy trả về dạng html sử dụng <br> để xuống dòng, không trả về một đoạn văn bản dài, hãy chia nhỏ câu trả lời thành nhiều đoạn nếu cần thiết để dễ đọc hơn.
             8.Câu hỏi: Quy trình tạo đơn hàng
             ### VÍ DỤ TRẢ LỜI ĐÚNG:
             Bước 1: Tiếp nhận yêu cầu từ khách hàng<br>
             Bước 2: Tạo đơn hàng trên hệ thống<br>
             Bước 3: Phân bổ sản xuất<br>
             Bước 4: Theo dõi tiến độ<br>
-            ### VÍ DỤ TRẢ LỜI SAI:
-            Bước 1: Tiếp nhận yêu cầu từ khách hàng<br>\n
-            Bước 2: Tạo đơn hàng trên hệ thống<br>\n
-            Bước 3: Phân bổ sản xuất<br>\n
-            Bước 4: Theo dõi tiến độ<br>\n
-
+            ### CHÚ Ý THÊM:
+            - Đặc biệt chú ý quy tắc thứ 6, luôn trả lời ngắn gọn nhất có thể, không cần đi quá chi tiết về các khía cạnh khác của hệ thống GPMS, 
+            chỉ cần trả lời đúng trọng tâm câu hỏi là được, không cần phải giải thích thêm nhiều về các quy trình khác của hệ thống GPMS nếu nó không liên quan đến câu hỏi.
             """;
 
         private sealed class OpenRouterRequest
