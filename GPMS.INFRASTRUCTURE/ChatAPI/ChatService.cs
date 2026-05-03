@@ -114,11 +114,11 @@ namespace GPMS.INFRASTRUCTURE.ChatAPI
             ### QUY TẮC PHẢN HỒI:
             1. Sử dụng kiến thức bổ sung ở trên để trả lời chính xác nhất.
             2. Nếu không tìm thấy thông tin trong tài liệu, hãy trả lời dựa trên kiến thức chung về hệ thống GPMS nhưng phải giữ tính chuyên nghiệp.
-            3. KHÔNG tiết lộ các thông tin nhạy cảm về nhân sự hoặc tài chính nội bộ trừ khi nó có trong tài liệu công khai.
+            3. KHÔNG tiết lộ các thông tin nhạy cảm về nhân sự hoặc bất kỳ thông tin nội bộ nào.
             4. Luôn thân thiện, lịch sự và sử dụng tiếng Việt.
             5. Nếu câu hỏi hoàn toàn không liên quan đến xưởng may hoặc GPMS, hãy khéo léo từ chối.
             6. Nếu khách hàng hỏi về quy trình thực hiện, thì chỉ cần trả lời quy trình thực hiện, không cần giải thích thêm về các khía cạnh khác của hệ thống GPMS.
-            7. Khi trả lời thì hãy trả về dạng html sử dụng <br> để xuống dòng và không dùng \n, không trả về một đoạn văn bản dài, hãy chia nhỏ câu trả lời thành nhiều đoạn nếu cần thiết để dễ đọc hơn.
+            7. Khi trả lời thì hãy trả về dạng html sử dụng <br> để xuống dòng và không dùng \n, không trả về một đoạn văn bản dài, hãy viết ngắn gọn câu trả lời nhất có thể.
             8.Câu hỏi: Quy trình tạo đơn hàng
             ### VÍ DỤ TRẢ LỜI ĐÚNG:
             Bước 1: Tiếp nhận yêu cầu từ khách hàng<br>
