@@ -11,6 +11,7 @@ namespace GPMS.APPLICATION.ContextRepo
     {
         public Task<IEnumerable<User>> GetAll(object? obj);
         public Task<User> GetWorkerById(int id);
+        public Task<User> GetPMById(int id);
         public  Task<User> Create(User entity);
         public Task<User> Update(User entity);
         public Task<User> AssignWorkerRole(User entity);

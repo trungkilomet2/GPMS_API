@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using GPMS.APPLICATION.ContextRepo;
 using GPMS.DOMAIN.Constants;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -135,25 +137,63 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return await GetById(partId);
         }
 
-        public async Task<IEnumerable<User>> ListWorkerWithPM(int pm_id)
-        {
+        public async Task<IEnumerable<User>> ListWorkerWithPM(int pm_id, bool isPM)
+        {   
             USER check_id = await _context.USER.Include(u => u.ROLE).Where(x => x.USER_ID == pm_id).FirstOrDefaultAsync();
 
             if (check_id is null)
             {
-                throw new ValidationException("Không tồn tại PM trong hệ thống");
-            }
-            if (check_id.ROLE.Where(r => r.NAME.Equals(Roles_Constants.PM)).FirstOrDefault() is null)
-            {
-                throw new ValidationException("User đang không phải là PM trong hệ thống");
+                throw new ValidationException("Không tồn tại người dùng trong hệ thống");
             }
 
-            List<USER> workers = await _context.USER
+            if (isPM)
+            {
+
+               List<USER> workers = await _context.USER
                 .Include(u => u.ROLE)
-                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id)
+                .Where(u => u.ROLE.Any(r => r.NAME.Equals(Roles_Constants.Worker)) && u.MANAGER_ID == pm_id && u.US_ID == UserStatus_Constants.Active)
                 .ToListAsync();
 
-            return _mapper.Map<IEnumerable<User>>(workers);
+                return _mapper.Map<IEnumerable<User>>(workers);
+            }else
+            {
+                var owner = await _context.USER
+                .Include(u => u.ROLE)
+                .Include(u => u.WS)
+                .Include(u => u.US)
+                .FirstOrDefaultAsync(u => u.USER_ID == pm_id);
+
+                if (owner == null || !owner.ROLE.Any(r => r.NAME == Roles_Constants.Owner))
+                {
+                    throw new KeyNotFoundException($"Owner với Id '{pm_id}' không tồn tại.");
+                }
+
+                var pms = await _context.USER
+                    .Include(u => u.ROLE)
+                    .Include(u => u.WS)
+                    .Include(u => u.US)
+                    .Where(u => u.MANAGER_ID == pm_id && u.US_ID == UserStatus_Constants.Active
+                                && u.ROLE.Any(r => r.NAME == Roles_Constants.PM)
+                                && !u.ROLE.Any(r => r.NAME == Roles_Constants.Admin || r.NAME == Roles_Constants.Customer))
+                    .ToListAsync();
+
+                var pmIds = pms.Select(x => x.USER_ID).ToList();
+                var workers = await _context.USER
+                    .Include(u => u.ROLE)
+                    .Include(u => u.WS)
+                    .Include(u => u.US)
+                    .Where(u => pmIds.Contains(u.MANAGER_ID ?? 0) && u.US_ID == UserStatus_Constants.Active
+                                && u.ROLE.Any(r => r.NAME == Roles_Constants.Worker)
+                                && !u.ROLE.Any(r => r.NAME == Roles_Constants.Admin || r.NAME == Roles_Constants.Customer))
+                    .ToListAsync();
+
+                var hierarchyUsers = new List<USER> { owner };
+                hierarchyUsers.AddRange(pms);
+                hierarchyUsers.AddRange(workers);
+
+                return _mapper.Map<IEnumerable<User>>(hierarchyUsers);
+
+            }
         }
 
         

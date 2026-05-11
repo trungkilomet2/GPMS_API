@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using GPMS.APPLICATION.DTOs;
 using GPMS.DOMAIN.Entities;
 using GPMS.INFRASTRUCTURE.DataContext;
@@ -203,6 +203,7 @@ namespace GPMS.INFRASTRUCTURE.Mappers
             // PART WORK LOG
             CreateMap<GPMS.INFRASTRUCTURE.DataContext.PART_WORK_LOG, GPMS.DOMAIN.Entities.ProductionPartWorkLog>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.WL_ID))
+                .ForMember(dest => dest.PartId, opt => opt.MapFrom(src => src.PPOS != null ? src.PPOS.PP_ID : 0))
                 .ForMember(dest => dest.PartOrderSizeId, opt => opt.MapFrom(src => src.PPOS_ID))
                 .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.PPOS != null ? src.PPOS.SIZE : string.Empty))
                 .ForMember(dest => dest.Color, opt => opt.MapFrom(src => src.PPOS != null ? src.PPOS.COLOR : string.Empty))

@@ -679,13 +679,13 @@ namespace GMPS.API.Controllers
         }
 
 
-        [HttpGet("parts/issues/workers/{partId:int}")]
-        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartUserDTO>>>> GetIssueWorkers([Range(1, int.MaxValue)] int partId)
+        [HttpGet("parts/issues/workers/{partWorkLogId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<ProductionPartUserDTO>>>> GetIssueWorkers([Range(1, int.MaxValue)] int partWorkLogId)
         {
             if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
             try
             {
-                var workersByWorkLogs = await _productionPartService.GetIssueWorkersByWorkLogs(partId);
+                var workersByWorkLogs = await _productionPartService.GetIssueWorkersByWorkLogs(partWorkLogId);
                 var workers = workersByWorkLogs.Select(x => _mapper.Map<ProductionPartUserDTO>(x));
                 return Ok(new RestDTO<IEnumerable<ProductionPartUserDTO>> { Data = workers });
             }
@@ -695,7 +695,7 @@ namespace GMPS.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Get issue workers failed for part {PartId}", partId);
+                _logger.LogError(ex, "Get issue workers failed for part {PartId}", partWorkLogId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
@@ -931,6 +931,33 @@ namespace GMPS.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
             }
         }
+
+        [HttpGet("delivery/order/planning/{orderId:int}")]
+        public async Task<ActionResult<RestDTO<IEnumerable<DeliveryPlanningItemDTO>>>> GetDeliveryPlanningByOrder([Range(1, int.MaxValue)] int orderId)
+        {
+            if (!ModelState.IsValid) return BadRequest(new ValidationProblemDetails(ModelState));
+            try
+            {
+                var data = await _productionPartService.GetDeliveryPlanningByOrder(orderId);
+                return Ok(new RestDTO<IEnumerable<DeliveryPlanningItemDTO>>
+                {
+                    Data = _mapper.Map<IEnumerable<DeliveryPlanningItemDTO>>(data)
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails { Detail = ex.Message, Status = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get delivery planning failed for orderId {OrderId}", orderId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Detail = ex.Message, Status = 500 });
+            }
+        }
+
+
+
+
 
 
 

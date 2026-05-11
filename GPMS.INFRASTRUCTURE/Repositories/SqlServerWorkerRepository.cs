@@ -121,6 +121,16 @@ namespace GPMS.INFRASTRUCTURE.Repositories
             return _mapper.Map<List<User>>(users);
         }
 
+        public async Task<User> GetPMById(int id)
+        {
+            var users = await _context.USER
+                              .Include(u => u.ROLE)
+                              .Include(u => u.WS)
+                              .Include(u => u.US)
+                              .Where(u => u.USER_ID == id && u.ROLE.Any(r => r.NAME == Roles_Constants.PM )).FirstOrDefaultAsync();
+            return _mapper.Map<User>(users);
+        }
+
         public async Task<User> GetWorkerById(int id)
         {
             var users = await _context.USER

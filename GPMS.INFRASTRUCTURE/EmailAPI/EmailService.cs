@@ -1,13 +1,12 @@
-﻿using GPMS.APPLICATION.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.Net.Mail;
-using Microsoft.Extensions.Configuration;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Gmail.v1;
+using Google.Apis.Gmail.v1.Data;
+using Google.Apis.Services;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using MimeKit;
 
 namespace GPMS.INFRASTRUCTURE.EmailAPI
 {
@@ -15,6 +14,7 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
     {
         private readonly IConfiguration _config;
         private readonly IMemoryCache _memoryCache;
+
         public EmailService(IConfiguration config, IMemoryCache memoryCache)
         {
             _config = config;
@@ -28,16 +28,6 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
 
         public async Task SendEmailAsync(string toEmail, string subject, string body, EmailType emailType)
         {
-            var smtpClient = new SmtpClient(_config["Email:Smtp"])
-            {
-                Port = int.Parse(_config["Email:Port"]),
-                Credentials = new NetworkCredential(
-                    _config["Email:Username"],
-                    _config["Email:Password"]
-                ),
-                EnableSsl = true
-            };
-
             var normalizedEmail = toEmail.Trim().ToLower();
             string? generatedOtp = null;
             string? cacheKey = null;
@@ -64,30 +54,60 @@ namespace GPMS.INFRASTRUCTURE.EmailAPI
                     body = $"Mã OTP đặt lại mật khẩu của bạn là: <b>{generatedOtp}</b>. Có hiệu lực 5 phút.";
                     break;
                 case EmailType.OrderNotification:
-                    subject = "Order Notification";
+                    subject = string.IsNullOrEmpty(subject) ? "Order Notification" : subject;
                     break;
                 default:
-                    subject = "General Notification";
+                    subject = string.IsNullOrEmpty(subject) ? "General Notification" : subject;
                     break;
             }
 
-            var mail = new MailMessage
+            var mimeMessage = new MimeMessage();
+            mimeMessage.From.Add(MailboxAddress.Parse(_config["Gmail:FromEmail"]));
+            mimeMessage.To.Add(MailboxAddress.Parse(toEmail));
+            mimeMessage.Subject = subject;
+            mimeMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
+
+            using var memStream = new MemoryStream();
+            await mimeMessage.WriteToAsync(memStream);
+            var rawMessage = Convert.ToBase64String(memStream.ToArray())
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .Replace("=", "");
+
+            var credential = new UserCredential(
+                new GoogleAuthorizationCodeFlow(
+                    new GoogleAuthorizationCodeFlow.Initializer
+                    {
+                        ClientSecrets = new ClientSecrets
+                        {
+                            ClientId = _config["Gmail:ClientId"],
+                            ClientSecret = _config["Gmail:ClientSecret"]
+                        },
+                        Scopes = new[] { GmailService.Scope.GmailSend }
+                    }),
+                "user",
+                new TokenResponse
+                {
+                    RefreshToken = _config["Gmail:RefreshToken"]
+                }
+            );
+
+            // Tạo Gmail API service
+            var gmailService = new GmailService(new BaseClientService.Initializer
             {
-                From = new MailAddress(_config["Email:From"]),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
+                HttpClientInitializer = credential,
+                ApplicationName = "GPMS"
+            });
 
-            mail.To.Add(toEmail);
+            // Gửi email
+            var gmailMessage = new Message { Raw = rawMessage };
+            await gmailService.Users.Messages.Send(gmailMessage, "me").ExecuteAsync();
 
-            await smtpClient.SendMailAsync(mail);
-
+            // Lưu OTP vào cache nếu có
             if (generatedOtp != null && cacheKey != null)
             {
                 _memoryCache.Set(cacheKey, generatedOtp, TimeSpan.FromMinutes(5));
             }
         }
-
     }
 }
